@@ -1,0 +1,16 @@
+{
+  "name": "@recharge/shared",
+  "version": "1.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./index.js",
+    "./questions": "./questions.js",
+    "./scoring": "./scoring.js",
+    "./name": "./name.js",
+    "./fallbackQuestions": "./fallbackQuestions.js",
+    "./mbtiScoring": "./mbtiScoring.js"
+  },
+  "scripts": {
+    "test": "node --test scoring.test.js mbtiScoring.test.js"
+  }
+}

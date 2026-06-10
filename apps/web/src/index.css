@@ -1,0 +1,156 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply min-h-screen bg-warm text-on-surface;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-display;
+  }
+}
+
+@layer components {
+  .glass-panel {
+    @apply rounded-xl border border-white/50 bg-white/80 backdrop-blur-glass;
+    box-shadow: 0 8px 30px rgba(0, 52, 65, 0.06);
+  }
+
+  .surface-card {
+    @apply rounded-xl border border-black/[0.05] bg-surface-container-lowest;
+    box-shadow: 0 8px 30px rgba(0, 52, 65, 0.06);
+  }
+
+  .hero-badge {
+    @apply inline-flex items-center gap-2 rounded-full bg-badge-sky px-4 py-2 font-sans text-ai-badge font-bold uppercase tracking-[0.12em] text-primary;
+  }
+
+  .ai-badge {
+    @apply inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 font-sans text-ai-badge uppercase tracking-widest text-on-primary;
+  }
+
+  .personality-chip {
+    @apply rounded-full bg-secondary-container px-3 py-1 font-sans text-label-sm text-primary;
+  }
+
+  .sanctuary-gradient {
+    background: linear-gradient(
+      135deg,
+      #0f4c5c 0%,
+      #9acee1 35%,
+      #ffdcbe 70%,
+      #faf9f6 100%
+    );
+  }
+
+  .btn-interactive {
+    @apply transition-all duration-300 ease-out;
+  }
+
+  .screen-enter {
+    animation: screen-in 0.45s ease-out both;
+  }
+
+  .question-enter {
+    animation: question-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .question-exit {
+    animation: question-out 0.32s cubic-bezier(0.4, 0, 0.2, 1) both;
+  }
+
+  .option-enter {
+    animation: option-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .option-selected-pulse {
+    animation: option-pulse 0.35s ease-out;
+  }
+}
+
+@keyframes screen-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes question-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes question-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.98);
+  }
+}
+
+@keyframes option-in {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes option-pulse {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(0.98);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes pulse-ring {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.35;
+  }
+  50% {
+    transform: scale(1.04);
+    opacity: 0.12;
+  }
+}
+
+@keyframes spin-slow {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.processing-ring {
+  animation: pulse-ring 2.5s ease-in-out infinite;
+}
+
+.processing-arc {
+  animation: spin-slow 2s linear infinite;
+}
