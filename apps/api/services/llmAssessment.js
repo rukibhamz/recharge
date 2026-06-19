@@ -103,7 +103,7 @@ export function normalizeBurnoutResult(parsed) {
 
 export async function generatePersonalityTest(userName, demographics) {
   if (!hasAnyLlmProvider()) {
-    throw new Error('No LLM provider available. Personality test requires AI.');
+    throw new Error('No LLM provider available. Personality test requires a live connection.');
   }
 
   const ctx = buildUserPromptContext({ userName, demographics });
@@ -159,7 +159,7 @@ Return JSON only:
 
 export async function generateBurnoutTest(userName, demographics, personality) {
   if (!hasAnyLlmProvider()) {
-    throw new Error('No LLM provider available. Burnout test requires AI.');
+    throw new Error('No LLM provider available. Burnout test requires a live connection.');
   }
 
   const ctx = buildUserPromptContext({ userName, demographics });

@@ -31,7 +31,7 @@ export default function NameStep({ phase, initialName = '', onBack, onClose, onC
             What is your name?
           </h1>
           <p className="mt-3 text-center font-sans text-body-md text-on-surface-variant">
-            We&apos;ll use this to personalise your AI-built personality and burnout interviews.
+            We&apos;ll use this to personalise your personality and burnout interviews.
           </p>
 
           <form onSubmit={handleSubmit} className="mt-8 lg:mt-10">

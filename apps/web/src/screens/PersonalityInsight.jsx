@@ -20,7 +20,7 @@ export default function PersonalityInsight({ personality, userName, onContinue, 
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path d="M12 3l1.2 3.6L17 8l-3.8 1.2L12 13l-1.2-3.8L7 8l3.8-1.2L12 3z" fill="currentColor" />
             </svg>
-            AI personality read
+            Your personality read
           </span>
           <h1 className="mt-6 font-display text-headline-lg-mobile text-primary lg:text-headline-lg">
             {firstName ? `${firstName}, here's what we learned` : "Here's what we learned"}

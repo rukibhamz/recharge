@@ -10,7 +10,7 @@ const DESKTOP_FEATURES = [
         <path d="M9 9h6M9 13h4" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
       </svg>
     ),
-    title: 'AI-built interviews',
+    title: 'Tailored interviews',
     tint: 'bg-badge-sky text-primary',
   },
   {
@@ -51,7 +51,7 @@ const MOBILE_STATS = [
   },
   {
     stat: '5 min',
-    text: 'is all it takes to gain AI-driven clinical grade insights.',
+    text: 'is all it takes to gain personalised, clinical-grade insights.',
     tint: 'bg-secondary-container text-primary',
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
@@ -75,26 +75,26 @@ const MOBILE_STATS = [
 const STEPS = [
   {
     title: 'Share your context',
-    text: 'Name, location, age, and work — the AI uses this to write interviews that fit your life.',
+    text: 'Name, location, age, and work — we use this to write interviews that fit your life.',
   },
   {
     title: 'Personality interview',
-    text: 'Answer 10–15 AI-generated questions. The AI reads your responses and builds your personality profile.',
+    text: 'Answer 10–15 tailored questions. We read your responses and build your personality profile.',
   },
   {
     title: 'Burnout check-in',
-    text: 'A second AI interview shaped by your personality — then a personalised recovery plan.',
+    text: 'A second interview shaped by your personality — then a personalised recovery plan.',
   },
 ];
 
 const MOBILE_STEPS = [
   {
     title: 'Your context',
-    text: 'Tell us where you are and what you do — the AI builds custom interviews from this.',
+    text: 'Tell us where you are and what you do — we build custom interviews from this.',
   },
   {
     title: 'Personality read',
-    text: 'Complete your AI personality interview, then see what the AI learned about you.',
+    text: 'Complete your personality interview, then see what we learned about you.',
   },
   {
     title: 'Burnout & recovery',
@@ -128,7 +128,7 @@ export default function Hero({ onStart }) {
               Quiet your mind, look inward, and discover the path back to your most resilient self.
             </span>
             <span className="hidden lg:inline">
-              Two AI-built interviews — personality first, then burnout shaped by who you are.
+              Two tailored interviews — personality first, then burnout shaped by who you are.
               Personalised recommendations at the end. No account required.
             </span>
           </p>

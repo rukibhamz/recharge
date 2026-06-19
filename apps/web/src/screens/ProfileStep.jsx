@@ -52,7 +52,7 @@ export default function ProfileStep({ phase, initialProfile = {}, onBack, onClos
             About you
           </p>
           <h1 className="mt-4 text-center font-display text-headline-lg-mobile text-on-surface lg:text-headline-lg">
-            Help the AI understand your context
+            Help us understand your context
           </h1>
           <p className="mt-3 text-center font-sans text-body-md text-on-surface-variant">
             Location, age, and work shape your custom interviews and final recommendations.

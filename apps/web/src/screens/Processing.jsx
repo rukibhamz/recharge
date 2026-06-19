@@ -100,7 +100,7 @@ export default function Processing({ phase, messages = DEFAULT_MESSAGES }) {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path d="M12 3l1.2 3.6L17 8l-3.8 1.2L12 13l-1.2-3.8L7 8l3.8-1.2L12 3z" fill="currentColor" />
           </svg>
-          AI Processing
+          Processing
         </span>
       </section>
 

@@ -53,7 +53,7 @@ export default function Results({ data, error, onRetake, showSaveSection = true 
   const { displayName, profileContext, burnout, personality, recommendations, aiSource } = data;
   const copy = burnout.summary || BURNOUT_LEVEL_COPY[burnout.cls];
   const greeting = firstName(displayName);
-  const isAiPowered = aiSource && !['static', 'bank'].includes(aiSource);
+  const isPersonalised = aiSource && !['static', 'bank'].includes(aiSource);
 
   return (
     <div className="flex min-h-screen flex-col bg-warm">
@@ -66,7 +66,7 @@ export default function Results({ data, error, onRetake, showSaveSection = true 
             {greeting ? `${greeting}, your Recharge profile` : 'Your Recharge profile'}
           </h1>
           <p className="mt-2 font-sans text-body-md text-on-surface-variant">
-            AI-personalised read — information to guide your next step, not a verdict.
+            Personalised read — information to guide your next step, not a verdict.
           </p>
           {profileContext ? (
             <p className="mt-2 font-sans text-label-sm text-on-surface-variant/80">
@@ -104,7 +104,7 @@ export default function Results({ data, error, onRetake, showSaveSection = true 
               Recommendations for {personality.type.name}
             </h3>
             <span className="ai-badge">
-              {isAiPowered ? 'AI-personalised' : 'Curated'}
+              {isPersonalised ? 'Personalised' : 'Curated'}
             </span>
           </div>
           <div className="flex flex-col gap-4">

@@ -275,12 +275,12 @@ function AssessmentFlow() {
       {activePhase === 'loading-personality-test' && (
         <QuestionLoading
           phase="loading-personality-test"
-          badge="AI interview builder"
+          badge="Building your interview"
           messages={[
             'Building your personality interview…',
             firstName
-              ? `${firstName}, the AI is writing questions just for you.`
-              : 'The AI is writing questions tailored to your profile.',
+              ? `${firstName}, we're writing questions just for you.`
+              : 'Writing questions tailored to your profile.',
           ]}
         />
       )}
@@ -327,7 +327,7 @@ function AssessmentFlow() {
       {activePhase === 'loading-burnout-test' && (
         <QuestionLoading
           phase="loading-burnout-test"
-          badge="AI check-in builder"
+          badge="Preparing check-in"
           messages={[
             'Preparing your burnout check-in…',
             personalityResult?.type?.title

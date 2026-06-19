@@ -4,13 +4,29 @@ async function authHeaders(accessToken) {
   return headers;
 }
 
+async function parseJsonResponse(res, fallbackError) {
+  const text = await res.text();
+  if (!text?.trim()) {
+    throw new Error(
+      res.ok
+        ? 'The server returned an empty response. Please try again.'
+        : fallbackError,
+    );
+  }
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error(fallbackError);
+  }
+}
+
 export async function fetchPersonalityTest(userName, demographics) {
   const res = await fetch('/api/assess/personality/test', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ userName, demographics }),
   });
-  const data = await res.json();
+  const data = await parseJsonResponse(res, 'Could not generate personality test');
   if (!res.ok) throw new Error(data.error || 'Could not generate personality test');
   return data;
 }
@@ -26,7 +42,7 @@ export async function scorePersonalityTest({
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ userName, demographics, questions, answers }),
   });
-  const data = await res.json();
+  const data = await parseJsonResponse(res, 'Could not analyze personality');
   if (!res.ok) throw new Error(data.error || 'Could not analyze personality');
   return data;
 }
@@ -37,7 +53,7 @@ export async function fetchBurnoutTest({ userName, demographics, personality }) 
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ userName, demographics, personality }),
   });
-  const data = await res.json();
+  const data = await parseJsonResponse(res, 'Could not generate burnout test');
   if (!res.ok) throw new Error(data.error || 'Could not generate burnout test');
   return data;
 }
@@ -56,14 +72,14 @@ export async function completeAssessment(payload, accessToken) {
       burnoutAnswers: payload.burnoutAnswers,
     }),
   });
-  const data = await res.json();
+  const data = await parseJsonResponse(res, 'Assessment completion failed');
   if (!res.ok) throw new Error(data.error || 'Assessment completion failed');
   return data;
 }
 
 export async function fetchSharedSession(shareToken) {
   const res = await fetch(`/api/session/${shareToken}`);
-  const data = await res.json();
+  const data = await parseJsonResponse(res, 'Share link not found');
   if (!res.ok) throw new Error(data.error || 'Share link not found');
   return data;
 }
@@ -74,7 +90,7 @@ export async function linkSessionToAccount(sessionId, accessToken) {
     headers: await authHeaders(accessToken),
     body: JSON.stringify({ sessionId }),
   });
-  const data = await res.json();
+  const data = await parseJsonResponse(res, 'Could not save result to your account');
   if (!res.ok) throw new Error(data.error || 'Could not save result to your account');
   return data;
 }
@@ -83,7 +99,7 @@ export async function fetchHistory(accessToken) {
   const res = await fetch('/api/history', {
     headers: await authHeaders(accessToken),
   });
-  const data = await res.json();
+  const data = await parseJsonResponse(res, 'Could not load history');
   if (!res.ok) throw new Error(data.error || 'Could not load history');
   return data;
 }
@@ -92,7 +108,7 @@ export async function fetchSavedSession(sessionId, accessToken) {
   const res = await fetch(`/api/history/${sessionId}`, {
     headers: await authHeaders(accessToken),
   });
-  const data = await res.json();
+  const data = await parseJsonResponse(res, 'Could not load saved result');
   if (!res.ok) throw new Error(data.error || 'Could not load saved result');
   return data;
 }
