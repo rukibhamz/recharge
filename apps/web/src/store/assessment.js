@@ -1,26 +1,49 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { isValidDemographics } from '@recharge/shared/demographics';
 
-const emptyAnswers = () => Array(12).fill(null);
+const emptyAnswers = (n = 0) => Array(n).fill(null);
+const emptyDemographics = () => ({
+  country: '',
+  city: '',
+  ageBand: '',
+  workContext: '',
+  workSector: '',
+});
 
 export const useAssessmentStore = create(
   persist(
     (set, get) => ({
       phase: 'hero',
       userName: '',
+      demographics: emptyDemographics(),
       burnoutIndex: 0,
       personalityIndex: 0,
-      burnoutAnswers: emptyAnswers(),
-      personalityAnswers: emptyAnswers(),
+      burnoutAnswers: [],
+      personalityAnswers: [],
       personalityQuestions: [],
       burnoutQuestions: [],
+      personalityResult: null,
       results: null,
       error: null,
+      errorPhase: null,
 
       setPhase: (phase) => set({ phase }),
       setUserName: (userName) => set({ userName }),
-      setPersonalityQuestions: (personalityQuestions) => set({ personalityQuestions }),
-      setBurnoutQuestions: (burnoutQuestions) => set({ burnoutQuestions }),
+      setDemographics: (demographics) => set({ demographics }),
+      setPersonalityQuestions: (personalityQuestions) =>
+        set({
+          personalityQuestions,
+          personalityAnswers: emptyAnswers(personalityQuestions.length),
+          personalityIndex: 0,
+        }),
+      setBurnoutQuestions: (burnoutQuestions) =>
+        set({
+          burnoutQuestions,
+          burnoutAnswers: emptyAnswers(burnoutQuestions.length),
+          burnoutIndex: 0,
+        }),
+      setPersonalityResult: (personalityResult) => set({ personalityResult }),
       setBurnoutAnswer: (index, value) =>
         set((s) => {
           const burnoutAnswers = [...s.burnoutAnswers];
@@ -38,75 +61,106 @@ export const useAssessmentStore = create(
       nextPersonality: () => set((s) => ({ personalityIndex: s.personalityIndex + 1 })),
       prevPersonality: () =>
         set((s) => ({ personalityIndex: Math.max(0, s.personalityIndex - 1) })),
-      setResults: (results) => set({ results, phase: 'results', error: null }),
-      setError: (error) => set({ error, phase: 'results' }),
+      setResults: (results) => set({ results, phase: 'results', error: null, errorPhase: null }),
+      setError: (error, errorPhase = null) =>
+        set({ error, errorPhase, phase: 'error' }),
+      clearError: () => set({ error: null, errorPhase: null }),
       reset: () =>
         set({
           phase: 'hero',
           userName: '',
+          demographics: emptyDemographics(),
           burnoutIndex: 0,
           personalityIndex: 0,
-          burnoutAnswers: emptyAnswers(),
-          personalityAnswers: emptyAnswers(),
+          burnoutAnswers: [],
+          personalityAnswers: [],
           personalityQuestions: [],
           burnoutQuestions: [],
+          personalityResult: null,
           results: null,
           error: null,
+          errorPhase: null,
         }),
       getPayload: () => {
-        const {
-          userName,
-          burnoutAnswers,
-          personalityAnswers,
-          burnoutQuestions,
-          personalityQuestions,
-        } = get();
+        const state = get();
         return {
-          userName,
-          burnoutAnswers,
-          personalityAnswers,
-          burnoutQuestions,
-          personalityQuestions,
+          userName: state.userName,
+          demographics: state.demographics,
+          personality: state.personalityResult,
+          personalityAnswers: state.personalityAnswers,
+          personalityQuestions: state.personalityQuestions,
+          burnoutAnswers: state.burnoutAnswers,
+          burnoutQuestions: state.burnoutQuestions,
         };
+      },
+      isPersonalityComplete: () => {
+        const { personalityAnswers, personalityQuestions } = get();
+        return (
+          personalityQuestions.length > 0 &&
+          personalityAnswers.length === personalityQuestions.length &&
+          personalityAnswers.every((a) => a !== null)
+        );
+      },
+      isBurnoutComplete: () => {
+        const { burnoutAnswers, burnoutQuestions } = get();
+        return (
+          burnoutQuestions.length > 0 &&
+          burnoutAnswers.length === burnoutQuestions.length &&
+          burnoutAnswers.every((a) => a !== null)
+        );
       },
     }),
     {
-      name: 'recharge-assessment-v8',
+      name: 'recharge-assessment-v14',
       partialize: (s) => ({
         userName: s.userName,
+        demographics: s.demographics,
         burnoutIndex: s.burnoutIndex,
         personalityIndex: s.personalityIndex,
         burnoutAnswers: s.burnoutAnswers,
         personalityAnswers: s.personalityAnswers,
         personalityQuestions: s.personalityQuestions,
         burnoutQuestions: s.burnoutQuestions,
+        personalityResult: s.personalityResult,
       }),
       merge: (persisted, current) => {
         const merged = { ...current, ...persisted };
         const hasName = Boolean(merged.userName?.trim());
+        const hasProfile = isValidDemographics(merged.demographics);
+        const hasPersonalityTest = merged.personalityQuestions?.length >= 10;
+        const hasBurnoutTest = merged.burnoutQuestions?.length >= 10;
+        const hasPersonalityResult = Boolean(merged.personalityResult?.typeCode);
+        const personalityDone =
+          hasPersonalityTest &&
+          merged.personalityAnswers?.length === merged.personalityQuestions?.length &&
+          merged.personalityAnswers?.every((a) => a !== null);
         const burnoutStarted = merged.burnoutAnswers?.some((a) => a !== null);
-        const personalityStarted = merged.personalityAnswers?.some((a) => a !== null);
-        const burnoutDone = merged.burnoutAnswers?.every((a) => a !== null);
-        const personalityDone = merged.personalityAnswers?.every((a) => a !== null);
-        const hasPersonalityQuestions = merged.personalityQuestions?.length === 12;
-        const hasBurnoutQuestions = merged.burnoutQuestions?.length === 12;
+        const burnoutDone =
+          hasBurnoutTest &&
+          merged.burnoutAnswers?.length === merged.burnoutQuestions?.length &&
+          merged.burnoutAnswers?.every((a) => a !== null);
 
         if (personalityDone && burnoutDone) {
           merged.phase = 'processing';
-        } else if (burnoutStarted || (personalityDone && !burnoutDone)) {
-          merged.phase = hasBurnoutQuestions ? 'burnout' : 'loading-burnout';
-        } else if (personalityStarted) {
-          merged.phase = hasPersonalityQuestions ? 'personality' : 'loading-personality';
-        } else if (hasName && hasPersonalityQuestions) {
+        } else if (burnoutStarted || (hasPersonalityResult && hasBurnoutTest)) {
+          merged.phase = 'burnout';
+        } else if (hasPersonalityResult && !hasBurnoutTest) {
+          merged.phase = 'personality-insight';
+        } else if (personalityDone && !hasPersonalityResult) {
+          merged.phase = 'scoring-personality';
+        } else if (hasPersonalityTest) {
           merged.phase = 'personality';
+        } else if (hasName && hasProfile) {
+          merged.phase = 'loading-personality-test';
         } else if (hasName) {
-          merged.phase = 'loading-personality';
+          merged.phase = 'profile';
         } else {
           merged.phase = 'hero';
         }
 
         merged.results = null;
         merged.error = null;
+        merged.errorPhase = null;
         return merged;
       },
     },

@@ -33,6 +33,7 @@ Burnout & personality assessment PWA with AI-powered recovery recommendations.
    - `supabase/migrations/004_burnout_question_bank.sql` (burnout bank — 6 dimensions, 60 questions)
    - `supabase/migrations/005_personality_mbti_question_bank.sql` (MBTI personality — 4 dichotomies, 120 questions, 16 types)
    - `supabase/migrations/006_auth_profiles_rls.sql` (auth profiles + RLS)
+   - `supabase/migrations/007_session_demographics.sql` (country / age / work profile on sessions)
 
 4. **Enable Supabase Auth (optional — for saved results)**
 

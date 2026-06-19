@@ -101,3 +101,11 @@ export function validateAnswers(answers, expectedLength = 12, maxValue = 3) {
   }
   return { valid: true };
 }
+
+export function validateAnswersForQuestions(answers, questions) {
+  if (!Array.isArray(questions) || questions.length === 0) {
+    return { valid: false, error: 'Questions are required' };
+  }
+  const max = maxAnswerValue(questions);
+  return validateAnswers(answers, questions.length, max);
+}

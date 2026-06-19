@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
+import AssessmentFlowBar from '../components/assessment/AssessmentFlowBar.jsx';
 import Header from '../components/shared/Header.jsx';
 import Footer from '../components/shared/Footer.jsx';
 
-const MESSAGES = [
+const DEFAULT_MESSAGES = [
   'Creating your personal recovery map.',
   'Mapping your personality type…',
   'Analyzing burnout dimensions…',
@@ -47,13 +48,18 @@ function ProcessingIcon() {
   );
 }
 
-export default function Processing() {
+export default function Processing({ phase, messages = DEFAULT_MESSAGES }) {
   const [msgIndex, setMsgIndex] = useState(0);
   const [progress, setProgress] = useState(8);
 
   useEffect(() => {
+    setMsgIndex(0);
+    setProgress(8);
+  }, [phase, messages]);
+
+  useEffect(() => {
     const msgInterval = setInterval(() => {
-      setMsgIndex((i) => (i + 1) % MESSAGES.length);
+      setMsgIndex((i) => (i + 1) % messages.length);
     }, 2200);
     const progressInterval = setInterval(() => {
       setProgress((p) => Math.min(p + 6, 92));
@@ -62,7 +68,7 @@ export default function Processing() {
       clearInterval(msgInterval);
       clearInterval(progressInterval);
     };
-  }, []);
+  }, [messages]);
 
   return (
     <div className="flex min-h-screen flex-col bg-warm">
@@ -71,14 +77,20 @@ export default function Processing() {
         <Header />
       </div>
 
-      <section className="mx-auto flex max-w-landing flex-1 flex-col items-center justify-center px-margin-mobile py-12 text-center sm:px-8 lg:px-12 lg:py-20">
+      {phase ? (
+        <div className="pt-6">
+          <AssessmentFlowBar phase={phase} />
+        </div>
+      ) : null}
+
+      <section className="mx-auto flex max-w-landing flex-1 flex-col items-center justify-center px-margin-mobile py-12 text-center sm:px-8 lg:px-12 lg:py-16">
         <ProcessingIcon />
 
         <h1
           className="mt-10 max-w-lg font-display text-headline-lg-mobile text-primary lg:text-headline-lg"
           aria-live="polite"
         >
-          {MESSAGES[msgIndex]}
+          {messages[msgIndex]}
         </h1>
         <p className="mt-3 font-sans text-body-md text-on-surface-variant">
           This usually takes about 15 seconds

@@ -8,8 +8,11 @@ import sessionRouter from './routes/session.js';
 import historyRouter from './routes/history.js';
 import { rateLimit } from './middleware/rateLimit.js';
 import { ENV_EXISTS, ENV_PATH } from './loadEnv.js';
-import { geminiFeatures, geminiKeyFormat, isGeminiAvailable } from './config/gemini.js';
+import { geminiKeyFormat, isGeminiAvailable } from './config/gemini.js';
+import { llmFeatures, llmProviderOrder, ollamaModel } from './config/llm.js';
 import { geminiStats, getGeminiModel, isCircuitOpen } from './services/geminiClient.js';
+import { checkOllamaConnection, isOllamaConfigured, ollamaStats } from './services/ollamaClient.js';
+import { hasAnyLlmProvider, llmStats } from './services/llmProvider.js';
 import { isSupabaseConfigured, supabase } from './lib/supabase.js';
 import { checkQuestionBankHealth } from './services/questionBank.js';
 
@@ -21,22 +24,37 @@ app.use(cors({ origin: process.env.CORS_ORIGIN || 'http://localhost:5173' }));
 app.use(express.json());
 
 app.get('/health', async (_req, res) => {
-  const gemini = {
-    configured: isGeminiAvailable(),
-    keyFormat: geminiKeyFormat(),
-    model: getGeminiModel(),
-    features: geminiFeatures,
+  const ollamaConnected = isOllamaConfigured() ? await checkOllamaConnection() : false;
+
+  const llm = {
+    providerOrder: llmProviderOrder(),
+    anyProviderAvailable: hasAnyLlmProvider(),
+    features: llmFeatures,
     callsPerAssessment:
-      Number(geminiFeatures.personalityQuestions) +
-      Number(geminiFeatures.burnoutQuestions) +
-      Number(geminiFeatures.recommendations),
-    circuitOpen: isCircuitOpen(),
-    stats: geminiStats,
-    hints: isCircuitOpen()
-      ? ['Quota cooldown active — wait 2 min; calls use fallback content until then']
-      : getGeminiModel() === 'gemini-2.0-flash'
-        ? ['gemini-2.0-flash free quota may be exhausted — use gemini-2.5-flash-lite in .env']
-        : [],
+      Number(llmFeatures.personalityQuestions) +
+      Number(llmFeatures.burnoutQuestions) +
+      Number(llmFeatures.recommendations),
+    stats: llmStats,
+    gemini: {
+      configured: isGeminiAvailable(),
+      keyFormat: geminiKeyFormat(),
+      model: getGeminiModel(),
+      circuitOpen: isCircuitOpen(),
+      stats: geminiStats,
+    },
+    ollama: {
+      configured: isOllamaConfigured(),
+      connected: ollamaConnected,
+      model: ollamaModel(),
+      baseUrl: isOllamaConfigured() ? process.env.OLLAMA_BASE_URL || 'http://localhost:11434' : null,
+      stats: ollamaStats,
+    },
+    hints: [
+      ...(isCircuitOpen() ? ['Gemini circuit open — Ollama will be used if available'] : []),
+      ...(!hasAnyLlmProvider()
+        ? ['No LLM available — question banks and static recommendations will be used']
+        : []),
+    ],
   };
 
   const supabaseStatus = {
@@ -60,9 +78,9 @@ app.get('/health', async (_req, res) => {
   res.json({
     status: 'ok',
     env: { path: ENV_PATH, exists: ENV_EXISTS },
-    gemini,
+    llm,
     supabase: supabaseStatus,
-    questionBank,
+    questionBank: { ...questionBank, role: 'fallback-only' },
   });
 });
 

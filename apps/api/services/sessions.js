@@ -87,7 +87,15 @@ export async function buildSessionResponse(row) {
   };
 }
 
-export async function saveSession({ displayName, burnout, personality, recommendations, userId, email }) {
+export async function saveSession({
+  displayName,
+  demographics,
+  burnout,
+  personality,
+  recommendations,
+  userId,
+  email,
+}) {
   const sessionId = randomUUID();
   const shareToken = makeShareToken();
 
@@ -99,11 +107,12 @@ export async function saveSession({ displayName, burnout, personality, recommend
     id: sessionId,
     share_token: shareToken,
     display_name: displayName ?? null,
+    demographics: demographics ?? null,
     burnout_pct: burnout.pct,
     burnout_level: burnout.level,
     burnout_cls: burnout.cls,
-    personality_type: personality.type.id,
-    personality_name: personality.type.name,
+    personality_type: personality.typeCode ?? personality.type?.code ?? personality.type?.id,
+    personality_name: personality.type?.name ?? personality.typeCode,
     traits: personality.traits,
     recommendations,
   });

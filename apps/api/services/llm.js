@@ -1,5 +1,8 @@
-import { geminiApiKey, geminiFeatures } from '../config/gemini.js';
-import { generateJson, isCircuitOpen } from './geminiClient.js';
+import { llmFeatures } from '../config/llm.js';
+import { personalityRecoveryProfile } from '@recharge/shared/promptCoaching';
+import { generateJson, getLastLlmProvider, hasAnyLlmProvider } from './llmProvider.js';
+import { buildUserPromptContext } from './promptContext.js';
+import { COACH_VOICE_RULES, LOCATION_RULES } from '@recharge/shared/promptCoaching';
 
 export const STATIC_FALLBACK = {
   'Healthy Range': [
@@ -28,10 +31,29 @@ export const STATIC_FALLBACK = {
   ],
 };
 
-function buildPrompt(burnoutLevel, personalityType, name) {
-  const who = name ? `${name} (${personalityType})` : personalityType;
-  return `Wellbeing coach. User: ${who}, burnout: ${burnoutLevel}.
-Return 4 recovery tips as JSON array: [{"icon":"emoji","title":"max 5 words","tip":"max 20 words"}]`;
+function buildPrompt(burnoutLevel, personality, userName, demographics) {
+  const userContext = buildUserPromptContext({ userName, demographics });
+  const recoveryProfile = personalityRecoveryProfile(personality);
+
+  return `You are a culturally aware wellbeing coach speaking privately to one person.
+
+${userContext}
+
+${recoveryProfile}
+
+Burnout level: ${burnoutLevel}
+
+Write exactly 4 recovery recommendations as JSON array.
+Rules:
+- Match their personality type for HOW they recharge (social vs solo, lively vs calm venues, practical vs reflective)
+- Use their city ONLY if provided; never invent cities
+- Specific enough to act on this week — not generic wellness advice
+- Never mention app or product names
+
+${COACH_VOICE_RULES}
+${LOCATION_RULES}
+
+Return JSON only: [{"icon":"emoji","title":"max 5 words","tip":"max 32 words"}]`;
 }
 
 function normalizeRecommendations(parsed) {
@@ -42,19 +64,26 @@ function normalizeRecommendations(parsed) {
   throw new Error('Invalid recommendation format');
 }
 
-export async function generateRecommendations(burnoutLevel, personalityType, name = null) {
+export async function generateRecommendations(
+  burnoutLevel,
+  personality,
+  userName = null,
+  demographics = null,
+) {
   const fallback = STATIC_FALLBACK[burnoutLevel] ?? STATIC_FALLBACK['Moderate Burnout'];
 
-  if (!geminiFeatures.recommendations || !geminiApiKey() || isCircuitOpen()) {
+  if (!llmFeatures.recommendations || !hasAnyLlmProvider()) {
     return { recommendations: fallback, source: 'static' };
   }
 
   try {
-    const parsed = await generateJson(buildPrompt(burnoutLevel, personalityType.name, name));
+    const parsed = await generateJson(
+      buildPrompt(burnoutLevel, personality, userName, demographics),
+    );
     const recommendations = normalizeRecommendations(parsed);
-    return { recommendations, source: 'gemini' };
+    return { recommendations, source: getLastLlmProvider() ?? 'llm' };
   } catch (err) {
-    console.error('Gemini error:', err.message);
+    console.error('Recommendations LLM failed:', err.message);
     return { recommendations: fallback, source: 'static' };
   }
 }

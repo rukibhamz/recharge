@@ -1,0 +1,2 @@
+export const ASSESSMENT_QUESTION_MIN = 10;
+export const ASSESSMENT_QUESTION_MAX = 15;

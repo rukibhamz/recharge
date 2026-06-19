@@ -8,9 +8,13 @@
     "./scoring": "./scoring.js",
     "./name": "./name.js",
     "./fallbackQuestions": "./fallbackQuestions.js",
-    "./mbtiScoring": "./mbtiScoring.js"
+    "./mbtiScoring": "./mbtiScoring.js",
+    "./demographics": "./demographics.js",
+    "./promptCoaching": "./promptCoaching.js",
+    "./questionOptions": "./questionOptions.js",
+    "./assessmentConstants": "./assessmentConstants.js"
   },
   "scripts": {
-    "test": "node --test scoring.test.js mbtiScoring.test.js"
+    "test": "node --test scoring.test.js mbtiScoring.test.js demographics.test.js questionOptions.test.js"
   }
 }

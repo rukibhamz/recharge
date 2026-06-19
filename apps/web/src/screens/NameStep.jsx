@@ -2,9 +2,10 @@ import { useState } from 'react';
 import Header from '../components/shared/Header.jsx';
 import Footer from '../components/shared/Footer.jsx';
 import Button from '../components/shared/Button.jsx';
+import AssessmentFlowBar from '../components/assessment/AssessmentFlowBar.jsx';
 import { isValidName, sanitizeName } from '@recharge/shared/name';
 
-export default function NameStep({ initialName = '', onBack, onClose, onContinue }) {
+export default function NameStep({ phase, initialName = '', onBack, onClose, onContinue }) {
   const [name, setName] = useState(initialName);
   const [touched, setTouched] = useState(false);
   const valid = isValidName(name);
@@ -20,16 +21,17 @@ export default function NameStep({ initialName = '', onBack, onClose, onContinue
     <div className="flex min-h-screen flex-col bg-warm">
       <Header variant="assessment-mobile" onBack={onBack} onClose={onClose} />
 
-      <div className="mx-auto flex w-full max-w-container flex-1 flex-col justify-center px-margin-mobile pb-12 pt-8 sm:px-gutter lg:max-w-assess lg:px-8">
+      <div className="mx-auto flex w-full max-w-container flex-1 flex-col justify-center px-margin-mobile pb-12 pt-6 sm:px-gutter lg:max-w-assess lg:px-8">
+        {phase ? <AssessmentFlowBar phase={phase} className="mb-8" /> : null}
         <div className="surface-card rounded-xl p-6 lg:p-12">
           <p className="text-center font-sans text-label-sm uppercase tracking-[0.14em] text-primary">
-            Before we begin
+            Step 1 of 5
           </p>
           <h1 className="mt-4 text-center font-display text-headline-lg-mobile text-on-surface lg:text-headline-lg">
             What is your name?
           </h1>
           <p className="mt-3 text-center font-sans text-body-md text-on-surface-variant">
-            We&apos;ll use this to personalize your questions and results.
+            We&apos;ll use this to personalise your AI-built personality and burnout interviews.
           </p>
 
           <form onSubmit={handleSubmit} className="mt-8 lg:mt-10">

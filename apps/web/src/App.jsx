@@ -1,17 +1,21 @@
 import { useCallback, useEffect } from 'react';
 import { useAssessmentStore } from './store/assessment.js';
 import {
-  fetchBurnoutQuestions,
-  fetchPersonalityQuestions,
-  submitAssessment,
+  completeAssessment,
+  fetchBurnoutTest,
+  fetchPersonalityTest,
+  scorePersonalityTest,
 } from './services/api.js';
 import { useAuth } from './context/AuthContext.jsx';
 import { runOnce, clearFetchGuards } from './lib/fetchGuards.js';
 import ScreenTransition from './components/shared/ScreenTransition.jsx';
 import Hero from './screens/Hero.jsx';
 import NameStep from './screens/NameStep.jsx';
+import ProfileStep from './screens/ProfileStep.jsx';
 import BurnoutPhase from './screens/BurnoutPhase.jsx';
 import PersonalityPhase from './screens/PersonalityPhase.jsx';
+import PersonalityInsight from './screens/PersonalityInsight.jsx';
+import AssessmentError from './screens/AssessmentError.jsx';
 import Processing from './screens/Processing.jsx';
 import QuestionLoading from './screens/QuestionLoading.jsx';
 import Results from './screens/Results.jsx';
@@ -59,18 +63,23 @@ function AssessmentFlow() {
   const {
     phase,
     userName,
+    demographics,
     burnoutIndex,
     personalityIndex,
     burnoutAnswers,
     personalityAnswers,
     personalityQuestions,
     burnoutQuestions,
+    personalityResult,
     results,
     error,
+    errorPhase,
     setPhase,
     setUserName,
+    setDemographics,
     setPersonalityQuestions,
     setBurnoutQuestions,
+    setPersonalityResult,
     setBurnoutAnswer,
     setPersonalityAnswer,
     nextBurnout,
@@ -79,78 +88,129 @@ function AssessmentFlow() {
     prevPersonality,
     setResults,
     setError,
+    clearError,
     reset,
     getPayload,
+    isPersonalityComplete,
   } = useAssessmentStore();
 
-  const handleProcessing = useCallback(() => {
-    runOnce('assess', async () => {
-      try {
-        const payload = getPayload();
-        const token = await getAccessToken();
-        const data = await submitAssessment(payload, token);
-        setResults(data);
-      } catch (err) {
-        setError(err.message);
-      }
-    });
-  }, [getPayload, setResults, setError, getAccessToken]);
+  const firstName = userName?.trim().split(/\s+/)[0] ?? '';
 
-  const handleLoadPersonalityQuestions = useCallback(() => {
-    if (personalityQuestions.length === 12) {
+  const fail = useCallback(
+    (message, failedPhase) => {
+      setError(message, failedPhase ?? phase);
+    },
+    [phase, setError],
+  );
+
+  const handleLoadPersonalityTest = useCallback(() => {
+    if (personalityQuestions.length >= 10) {
       setPhase('personality');
       return;
     }
-    runOnce('personality', async () => {
+    runOnce('personality-test', async () => {
       try {
-        const { questions } = await fetchPersonalityQuestions(userName);
+        const { questions } = await fetchPersonalityTest(userName, demographics);
         setPersonalityQuestions(questions);
         setPhase('personality');
       } catch (err) {
-        setError(err.message);
-      }
-    });
-  }, [userName, personalityQuestions.length, setPersonalityQuestions, setPhase, setError]);
-
-  const handleLoadBurnoutQuestions = useCallback(() => {
-    if (burnoutQuestions.length === 12) {
-      setPhase('burnout');
-      return;
-    }
-    runOnce('burnout', async () => {
-      try {
-        const { questions } = await fetchBurnoutQuestions({
-          userName,
-          personalityAnswers,
-          personalityQuestions,
-        });
-        setBurnoutQuestions(questions);
-        setPhase('burnout');
-      } catch (err) {
-        setError(err.message);
+        fail(err.message, 'loading-personality-test');
       }
     });
   }, [
     userName,
-    personalityAnswers,
+    demographics,
+    personalityQuestions.length,
+    setPersonalityQuestions,
+    setPhase,
+    fail,
+  ]);
+
+  const handleScorePersonality = useCallback(() => {
+    runOnce('personality-score', async () => {
+      try {
+        const { personality } = await scorePersonalityTest({
+          userName,
+          demographics,
+          questions: personalityQuestions,
+          answers: personalityAnswers,
+        });
+        setPersonalityResult(personality);
+        setPhase('personality-insight');
+      } catch (err) {
+        fail(err.message, 'scoring-personality');
+      }
+    });
+  }, [
+    userName,
+    demographics,
     personalityQuestions,
+    personalityAnswers,
+    setPersonalityResult,
+    setPhase,
+    fail,
+  ]);
+
+  const handleLoadBurnoutTest = useCallback(() => {
+    if (!personalityResult?.typeCode) {
+      setPhase('scoring-personality');
+      return;
+    }
+    if (burnoutQuestions.length >= 10) {
+      setPhase('burnout');
+      return;
+    }
+    runOnce('burnout-test', async () => {
+      try {
+        const { questions } = await fetchBurnoutTest({
+          userName,
+          demographics,
+          personality: personalityResult,
+        });
+        setBurnoutQuestions(questions);
+        setPhase('burnout');
+      } catch (err) {
+        fail(err.message, 'loading-burnout-test');
+      }
+    });
+  }, [
+    userName,
+    demographics,
+    personalityResult,
     burnoutQuestions.length,
     setBurnoutQuestions,
     setPhase,
-    setError,
+    fail,
   ]);
 
-  useEffect(() => {
-    if (phase === 'loading-personality') handleLoadPersonalityQuestions();
-  }, [phase, handleLoadPersonalityQuestions]);
+  const handleComplete = useCallback(() => {
+    runOnce('complete', async () => {
+      try {
+        const payload = getPayload();
+        const token = await getAccessToken();
+        const data = await completeAssessment(payload, token);
+        setResults(data);
+      } catch (err) {
+        fail(err.message, 'processing');
+      }
+    });
+  }, [getPayload, setResults, fail, getAccessToken]);
 
   useEffect(() => {
-    if (phase === 'loading-burnout') handleLoadBurnoutQuestions();
-  }, [phase, handleLoadBurnoutQuestions]);
+    if (phase === 'loading-personality-test') handleLoadPersonalityTest();
+  }, [phase, handleLoadPersonalityTest]);
 
   useEffect(() => {
-    if (phase === 'processing') handleProcessing();
-  }, [phase, handleProcessing]);
+    if (phase === 'scoring-personality') handleScorePersonality();
+  }, [phase, handleScorePersonality]);
+
+  useEffect(() => {
+    if (phase === 'loading-burnout-test') handleLoadBurnoutTest();
+  }, [phase, handleLoadBurnoutTest]);
+
+  useEffect(() => {
+    if (phase === 'processing') handleComplete();
+  }, [phase, handleComplete]);
 
   const handleClose = () => {
     clearFetchGuards();
@@ -162,8 +222,25 @@ function AssessmentFlow() {
     reset();
   };
 
-  const activePhase =
-    phase === 'results' && !results && !error ? 'hero' : phase;
+  const handleRetry = () => {
+    const retryPhase = errorPhase ?? 'loading-personality-test';
+    clearError();
+    clearFetchGuards();
+    setPhase(retryPhase);
+  };
+
+  const activePhase = phase === 'error' ? 'error' : phase === 'results' && !results ? 'hero' : phase;
+
+  if (activePhase === 'error') {
+    return (
+      <AssessmentError
+        error={error}
+        errorPhase={errorPhase}
+        onRetry={handleRetry}
+        onStartOver={handleRetake}
+      />
+    );
+  }
 
   return (
     <ScreenTransition screenKey={activePhase}>
@@ -171,63 +248,106 @@ function AssessmentFlow() {
 
       {activePhase === 'name' && (
         <NameStep
+          phase="name"
           initialName={userName}
           onBack={() => setPhase('hero')}
           onClose={handleClose}
           onContinue={(name) => {
             setUserName(name);
-            setPhase('loading-personality');
+            setPhase('profile');
           }}
         />
       )}
 
-      {activePhase === 'loading-personality' && (
+      {activePhase === 'profile' && (
+        <ProfileStep
+          phase="profile"
+          initialProfile={demographics}
+          onBack={() => setPhase('name')}
+          onClose={handleClose}
+          onContinue={(profile) => {
+            setDemographics(profile);
+            setPhase('loading-personality-test');
+          }}
+        />
+      )}
+
+      {activePhase === 'loading-personality-test' && (
         <QuestionLoading
+          phase="loading-personality-test"
+          badge="AI interview builder"
           messages={[
-            'Conducting your personality test…',
-            userName
-              ? `${userName.split(' ')[0]}, preparing your questions…`
-              : 'Preparing your questions…',
+            'Building your personality interview…',
+            firstName
+              ? `${firstName}, the AI is writing questions just for you.`
+              : 'The AI is writing questions tailored to your profile.',
           ]}
         />
       )}
 
-      {activePhase === 'personality' && personalityQuestions.length === 12 && (
+      {activePhase === 'personality' && personalityQuestions.length >= 10 && (
         <PersonalityPhase
+          phase="personality"
           questions={personalityQuestions}
           index={personalityIndex}
           answers={personalityAnswers}
           onAnswer={(value) => setPersonalityAnswer(personalityIndex, value)}
           onNext={nextPersonality}
           onBack={() => {
-            if (personalityIndex === 0) setPhase('name');
+            if (personalityIndex === 0) setPhase('profile');
             else prevPersonality();
           }}
           onClose={handleClose}
-          onComplete={() => setPhase('loading-burnout')}
+          onComplete={() => {
+            if (isPersonalityComplete()) setPhase('scoring-personality');
+          }}
         />
       )}
 
-      {activePhase === 'loading-burnout' && (
-        <QuestionLoading
+      {activePhase === 'scoring-personality' && (
+        <Processing
+          phase="scoring-personality"
           messages={[
-            'Tailoring your burnout check…',
-            userName
-              ? `${userName.split(' ')[0]}, matching questions to your profile…`
-              : 'Matching questions to your profile…',
+            'Reading your personality patterns…',
+            'Understanding how you recharge and decide…',
           ]}
         />
       )}
 
-      {activePhase === 'burnout' && burnoutQuestions.length === 12 && (
+      {activePhase === 'personality-insight' && personalityResult && (
+        <PersonalityInsight
+          personality={personalityResult}
+          userName={userName}
+          onContinue={() => setPhase('loading-burnout-test')}
+          onBack={() => setPhase('personality')}
+          onClose={handleClose}
+        />
+      )}
+
+      {activePhase === 'loading-burnout-test' && (
+        <QuestionLoading
+          phase="loading-burnout-test"
+          badge="AI check-in builder"
+          messages={[
+            'Preparing your burnout check-in…',
+            personalityResult?.type?.title
+              ? `Questions shaped for a ${personalityResult.type.title} profile.`
+              : 'Questions shaped to your personality profile.',
+          ]}
+        />
+      )}
+
+      {activePhase === 'burnout' && burnoutQuestions.length >= 10 && (
         <BurnoutPhase
+          phase="burnout"
           questions={burnoutQuestions}
           index={burnoutIndex}
           answers={burnoutAnswers}
+          personalityType={personalityResult?.type?.title}
           onAnswer={(value) => setBurnoutAnswer(burnoutIndex, value)}
           onNext={nextBurnout}
           onBack={() => {
-            if (burnoutIndex === 0) setPhase('personality');
+            if (burnoutIndex === 0) setPhase('personality-insight');
             else prevBurnout();
           }}
           onClose={handleClose}
@@ -235,10 +355,18 @@ function AssessmentFlow() {
         />
       )}
 
-      {activePhase === 'processing' && <Processing />}
+      {activePhase === 'processing' && (
+        <Processing
+          phase="processing"
+          messages={[
+            'Assessing your energy and stress levels…',
+            'Crafting personalised recommendations…',
+          ]}
+        />
+      )}
 
       {activePhase === 'results' && (
-        <Results data={results} error={error} onRetake={handleRetake} />
+        <Results data={results} onRetake={handleRetake} />
       )}
     </ScreenTransition>
   );

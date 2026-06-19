@@ -4,9 +4,11 @@ import QuestionCard from '../components/assessment/QuestionCard.jsx';
 import { useAutoAdvance } from '../hooks/useAutoAdvance.js';
 
 export default function BurnoutPhase({
+  phase,
   questions,
   index,
   answers,
+  personalityType,
   onAnswer,
   onNext,
   onBack,
@@ -15,7 +17,8 @@ export default function BurnoutPhase({
 }) {
   const q = questions[index];
   const selected = answers[index];
-  const isLast = index === questions.length - 1;
+  const total = questions.length;
+  const isLast = index === total - 1;
 
   const { handleSelect, isExiting } = useAutoAdvance({
     questionIndex: index,
@@ -29,9 +32,10 @@ export default function BurnoutPhase({
 
   return (
     <AssessmentShell
-      partLabel="Part 2: Burnout Check"
+      phase={phase}
+      partLabel={personalityType ? `Burnout · ${personalityType}` : 'Burnout check-in'}
       questionIndex={index}
-      totalQuestions={questions.length}
+      totalQuestions={total}
       onBack={onBack}
       onClose={onClose}
     >

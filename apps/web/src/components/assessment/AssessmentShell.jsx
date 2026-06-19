@@ -2,7 +2,11 @@ import Header from '../shared/Header.jsx';
 import Footer from '../shared/Footer.jsx';
 import Logo from '../shared/Logo.jsx';
 
+import AssessmentFlowBar from './AssessmentFlowBar.jsx';
+import { phaseLabel } from '../../lib/assessmentFlow.js';
+
 export default function AssessmentShell({
+  phase,
   partLabel,
   questionIndex,
   totalQuestions,
@@ -11,10 +15,17 @@ export default function AssessmentShell({
   children,
 }) {
   const pct = Math.round(((questionIndex + 1) / totalQuestions) * 100);
+  const footerNote = phaseLabel(phase);
 
   return (
     <div className="flex min-h-screen flex-col bg-warm">
       <Header variant="assessment-mobile" onBack={onBack} onClose={onClose} />
+
+      {phase ? (
+        <div className="pt-4 lg:pt-6">
+          <AssessmentFlowBar phase={phase} />
+        </div>
+      ) : null}
 
       <header className="hidden border-b border-outline-variant/30 lg:block">
         <div className="mx-auto flex max-w-landing items-center justify-between px-12 py-6">
@@ -55,7 +66,7 @@ export default function AssessmentShell({
             />
           </div>
           <p className="mt-4 text-center font-sans text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant/80">
-            Adaptive path active
+            {footerNote || 'Answer at your own pace'}
           </p>
         </div>
 
@@ -66,7 +77,7 @@ export default function AssessmentShell({
             <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.5" />
             <path d="M12 10v5M12 8h.01" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
           </svg>
-          This data helps us calibrate your recovery journey.
+          {questionIndex + 1} of {totalQuestions} — pick the option that fits best.
         </p>
 
         <p className="mt-3 text-center font-sans text-[13px] text-on-surface-variant/70 lg:hidden">

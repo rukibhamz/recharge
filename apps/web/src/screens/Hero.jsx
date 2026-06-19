@@ -10,7 +10,7 @@ const DESKTOP_FEATURES = [
         <path d="M9 9h6M9 13h4" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
       </svg>
     ),
-    title: 'Personalized Questions',
+    title: 'AI-built interviews',
     tint: 'bg-badge-sky text-primary',
   },
   {
@@ -20,7 +20,7 @@ const DESKTOP_FEATURES = [
         <path d="M12 8v4l3 2" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
       </svg>
     ),
-    title: '5 Minutes',
+    title: 'Two smart phases',
     tint: 'bg-secondary-container text-primary',
   },
   {
@@ -33,7 +33,7 @@ const DESKTOP_FEATURES = [
         />
       </svg>
     ),
-    title: 'AI Recommendations',
+    title: 'Tailored recovery plan',
     tint: 'bg-tertiary-fixed/70 text-tertiary-container',
   },
 ];
@@ -74,31 +74,31 @@ const MOBILE_STATS = [
 
 const STEPS = [
   {
-    title: 'Understand Your Profile',
-    text: 'Start with personality questions that help us get to know you — your energy, style, and what drives you.',
+    title: 'Share your context',
+    text: 'Name, location, age, and work — the AI uses this to write interviews that fit your life.',
   },
   {
-    title: 'Detect Early Signs',
-    text: 'Then explore burnout with questions shaped by who you are, not a one-size-fits-all checklist.',
+    title: 'Personality interview',
+    text: 'Answer 10–15 AI-generated questions. The AI reads your responses and builds your personality profile.',
   },
   {
-    title: 'Actionable Recovery',
-    text: "Receive personalized, AI-generated strategies that prioritize who you are over a generic diagnosis.",
+    title: 'Burnout check-in',
+    text: 'A second AI interview shaped by your personality — then a personalised recovery plan.',
   },
 ];
 
 const MOBILE_STEPS = [
   {
-    title: 'Reflect',
-    text: 'Complete a curated, friction-less assessment designed to capture your current state without judgment.',
+    title: 'Your context',
+    text: 'Tell us where you are and what you do — the AI builds custom interviews from this.',
   },
   {
-    title: 'Analyze',
-    text: 'Our AI engines process your data against clinical benchmarks to visualize your current burnout risk levels.',
+    title: 'Personality read',
+    text: 'Complete your AI personality interview, then see what the AI learned about you.',
   },
   {
-    title: 'Recharge',
-    text: 'Receive personalized, actionable recommendations and a unique personality profile to guide your self-discovery.',
+    title: 'Burnout & recovery',
+    text: 'A tailored burnout check-in leads to recommendations matched to your type and location.',
   },
 ];
 
@@ -128,8 +128,8 @@ export default function Hero({ onStart }) {
               Quiet your mind, look inward, and discover the path back to your most resilient self.
             </span>
             <span className="hidden lg:inline">
-              Get to know yourself first, then explore burnout with personalized questions
-              and AI-powered recovery recommendations. No account required. 5 minutes to insight.
+              Two AI-built interviews — personality first, then burnout shaped by who you are.
+              Personalised recommendations at the end. No account required.
             </span>
           </p>
 

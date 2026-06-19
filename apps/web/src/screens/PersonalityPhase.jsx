@@ -4,6 +4,7 @@ import QuestionCard from '../components/assessment/QuestionCard.jsx';
 import { useAutoAdvance } from '../hooks/useAutoAdvance.js';
 
 export default function PersonalityPhase({
+  phase,
   questions,
   index,
   answers,
@@ -15,7 +16,8 @@ export default function PersonalityPhase({
 }) {
   const q = questions[index];
   const selected = answers[index];
-  const isLast = index === questions.length - 1;
+  const total = questions.length;
+  const isLast = index === total - 1;
 
   const { handleSelect, isExiting } = useAutoAdvance({
     questionIndex: index,
@@ -29,9 +31,10 @@ export default function PersonalityPhase({
 
   return (
     <AssessmentShell
-      partLabel="Part 1: Personality Profile"
+      phase={phase}
+      partLabel="Personality interview"
       questionIndex={index}
-      totalQuestions={questions.length}
+      totalQuestions={total}
       onBack={onBack}
       onClose={onClose}
     >

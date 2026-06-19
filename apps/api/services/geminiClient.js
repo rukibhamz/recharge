@@ -66,7 +66,7 @@ async function generateWithModel(modelName, prompt) {
   return JSON.parse(result.response.text());
 }
 
-export async function generateJson(prompt) {
+export async function generateGeminiJson(prompt) {
   if (!geminiApiKey()) {
     throw new Error('GEMINI_API_KEY not configured');
   }
