@@ -12,7 +12,7 @@ export const PERSONALITY_QUESTION_FORMAT = `Personality question format (critica
 - NEVER use "do you", "does", either/or ("X or Y"), or choice questions — those break the answer scale
 - Bad: "Do you feel more energised with others or alone?"
 - Good: "I feel more energised after spending time with others than after time alone."
-- Weave in their city/work naturally when relevant`;
+- Personalise using age and work context only — do NOT name cities, countries, or places in the question text`;
 
 export const PERSONALITY_OPTIONS_FORMAT = `Answer options (exactly 5 — must match THIS statement):
 - value 0 = strongly disagree with the "I ..." statement (opposite pole)
@@ -43,6 +43,13 @@ export const LOCATION_RULES = `Location accuracy (critical):
 - If only a country is given, use country-level context (work culture, norms) — do NOT invent or assume a specific city (e.g. do not mention Lagos unless the user said Lagos)
 - If a city is provided, anchor examples to THAT city only
 - Never stereotype or guess commute details for the wrong place`;
+
+/** Use when generating assessment questions — location stays out of question text. */
+export const QUESTION_NO_LOCATION_RULES = `Question wording (critical):
+- Do NOT mention cities, countries, neighbourhoods, landmarks, or commute routes in question text
+- Do NOT reference "where you live", "your area", or named places
+- Personalise questions using age band and work situation only (e.g. meetings, deadlines, remote work)
+- Keep questions universally answerable wherever they are`;
 
 export function locationContext(demographics) {
   const city = demographics?.city?.trim();

@@ -2,6 +2,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   demographicsPromptContext,
+  demographicsQuestionContext,
   guessCountryFromLocale,
   isValidDemographics,
   sanitizeDemographics,
@@ -28,6 +29,20 @@ describe('demographics', () => {
     assert.match(ctx, /Nigeria/);
     assert.match(ctx, /25–34/);
     assert.match(ctx, /Technology/);
+  });
+
+  it('builds question context without city or country', () => {
+    const block = demographicsQuestionContext({
+      country: 'NG',
+      city: 'Abuja',
+      ageBand: '25-34',
+      workContext: 'full_time',
+      workSector: 'tech',
+    });
+    assert.ok(!block.includes('Abuja'));
+    assert.ok(!block.includes('Nigeria'));
+    assert.ok(block.includes('25–34'));
+    assert.ok(block.includes('Employed full-time'));
   });
 
   it('sanitizes city', () => {

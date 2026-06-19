@@ -7,6 +7,54 @@ function makeShareToken() {
   return randomBytes(16).toString('hex');
 }
 
+function safePct(value, fallback = 50) {
+  const n = Math.round(Number(value));
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(100, Math.max(0, n));
+}
+
+const BURNOUT_CLS = new Set(['healthy', 'mild', 'moderate', 'severe']);
+
+function clsFromPct(pct) {
+  if (pct >= 70) return 'severe';
+  if (pct >= 45) return 'moderate';
+  if (pct >= 25) return 'mild';
+  return 'healthy';
+}
+
+const BURNOUT_LEVEL_LABELS = {
+  healthy: 'Healthy Range',
+  mild: 'Mild Burnout',
+  moderate: 'Moderate Burnout',
+  severe: 'Severe Burnout',
+};
+
+function sanitizeBurnoutForDb(burnout) {
+  const pct = safePct(burnout?.pct);
+  let cls = String(burnout?.cls ?? '').toLowerCase();
+  if (!BURNOUT_CLS.has(cls)) cls = clsFromPct(pct);
+  const level = burnout?.level || BURNOUT_LEVEL_LABELS[cls];
+  return { pct, cls, level };
+}
+
+function sanitizePersonalityForDb(personality) {
+  const typeCode = String(
+    personality?.typeCode ?? personality?.type?.code ?? personality?.type?.id ?? 'UNKNOWN',
+  )
+    .toUpperCase()
+    .replace(/[^A-Z]/g, '')
+    .slice(0, 16) || 'UNKNOWN';
+  const name = String(
+    personality?.type?.name ?? personality?.typeCode ?? typeCode ?? 'Unknown',
+  ).slice(0, 120) || 'Unknown';
+  const traits = Array.isArray(personality?.traits) ? personality.traits : [];
+  return { typeCode, name, traits };
+}
+
+function sanitizeRecommendationsForDb(recommendations) {
+  return Array.isArray(recommendations) ? recommendations : [];
+}
+
 export async function ensureProfile(userId, email) {
   if (!isSupabaseConfigured()) return;
   const { error } = await supabase.from('profiles').upsert(
@@ -100,26 +148,45 @@ export async function saveSession({
   const shareToken = makeShareToken();
 
   if (!isSupabaseConfigured()) {
-    return { sessionId, shareToken, persisted: false, linked: false };
+    return { sessionId, shareToken, persisted: false, linked: false, persistError: 'Database not configured' };
   }
 
-  const { error } = await supabase.from('sessions').insert({
+  const burnoutRow = sanitizeBurnoutForDb(burnout);
+  const personalityRow = sanitizePersonalityForDb(personality);
+  const recommendationsRow = sanitizeRecommendationsForDb(recommendations);
+
+  const baseRow = {
     id: sessionId,
     share_token: shareToken,
     display_name: displayName ?? null,
-    demographics: demographics ?? null,
-    burnout_pct: burnout.pct,
-    burnout_level: burnout.level,
-    burnout_cls: burnout.cls,
-    personality_type: personality.typeCode ?? personality.type?.code ?? personality.type?.id,
-    personality_name: personality.type?.name ?? personality.typeCode,
-    traits: personality.traits,
-    recommendations,
-  });
+    burnout_pct: burnoutRow.pct,
+    burnout_level: burnoutRow.level,
+    burnout_cls: burnoutRow.cls,
+    personality_type: personalityRow.typeCode,
+    personality_name: personalityRow.name,
+    traits: personalityRow.traits,
+    recommendations: recommendationsRow,
+  };
+
+  let row = { ...baseRow, demographics: demographics ?? null };
+  let { error } = await supabase.from('sessions').insert(row);
+
+  if (error && /demographics/i.test(error.message)) {
+    console.warn(
+      'Sessions demographics column missing — saving without demographics. Run migration 007_session_demographics.sql',
+    );
+    ({ error } = await supabase.from('sessions').insert(baseRow));
+  }
 
   if (error) {
-    console.error('Supabase insert error:', error.message);
-    return { sessionId, shareToken, persisted: false, linked: false };
+    console.error('Supabase insert error:', error.message, { code: error.code, details: error.details });
+    return {
+      sessionId,
+      shareToken,
+      persisted: false,
+      linked: false,
+      persistError: error.message,
+    };
   }
 
   let linked = false;
@@ -128,7 +195,7 @@ export async function saveSession({
     linked = linkResult.linked;
   }
 
-  return { sessionId, shareToken, persisted: true, linked };
+  return { sessionId, shareToken, persisted: true, linked, persistError: null };
 }
 
 export async function getSessionByShareToken(shareToken) {

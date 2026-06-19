@@ -3,11 +3,10 @@ import {
   ASSESSMENT_QUESTION_MIN,
 } from '@recharge/shared/assessmentConstants';
 import { AGREEMENT_OPTIONS, FREQUENCY_OPTIONS } from '@recharge/shared/questions';
-import { COACH_VOICE_RULES, LOCATION_RULES } from '@recharge/shared/promptCoaching';
 import { normalizeLlmOptions, optionLabelForValue } from '@recharge/shared/questionOptions';
 import { firstName } from '@recharge/shared/name';
 import { hasAnyLlmProvider, generateJson, getLastLlmProvider } from './llmProvider.js';
-import { buildUserPromptContext } from './promptContext.js';
+import { buildQuestionPromptContext, buildUserPromptContext } from './promptContext.js';
 import { generateRecommendations } from './llm.js';
 
 function llmSource() {
@@ -77,8 +76,11 @@ export function normalizePersonalityResult(parsed) {
 }
 
 export function normalizeBurnoutResult(parsed) {
-  const pct = Math.min(100, Math.max(0, Math.round(Number(parsed.pct ?? parsed.score ?? 50))));
-  let cls = String(parsed.cls ?? parsed.level_class ?? '').toLowerCase();
+  const rawPct = Number(parsed?.pct ?? parsed?.score ?? 50);
+  const pct = Number.isFinite(rawPct)
+    ? Math.min(100, Math.max(0, Math.round(rawPct)))
+    : 50;
+  let cls = String(parsed?.cls ?? parsed?.level_class ?? '').toLowerCase();
   const levelMap = {
     healthy: 'Healthy Range',
     mild: 'Mild Burnout',
@@ -106,7 +108,7 @@ export async function generatePersonalityTest(userName, demographics) {
     throw new Error('No LLM provider available. Personality test requires a live connection.');
   }
 
-  const ctx = buildUserPromptContext({ userName, demographics });
+  const ctx = buildQuestionPromptContext({ userName, demographics });
   const name = firstName(userName);
 
   const prompt = `Design a unique personality interview for ${name || 'this person'}.
@@ -116,11 +118,8 @@ ${ctx}
 Create exactly ${ASSESSMENT_QUESTION_MIN} to ${ASSESSMENT_QUESTION_MAX} questions that reveal how they gain energy, process information, make decisions, and organise life.
 - Each question: one clear "I ..." statement they can rate
 - Exactly 5 options per question (value 0–4, labels must fit THAT statement — not generic Likert text)
-- Personalise tone to their age and work context; mention city lightly at most once or twice
+- Personalise tone to their age and work context only — no place names
 - All questions must be answerable on a single 5-point scale
-
-${COACH_VOICE_RULES}
-${LOCATION_RULES}
 
 Return JSON only:
 {"questions":[{"id":"p1","text":"I ...","options":[{"value":0,"label":"..."},{"value":1,"label":"..."},{"value":2,"label":"..."},{"value":3,"label":"..."},{"value":4,"label":"..."}]}]}`;
@@ -162,7 +161,7 @@ export async function generateBurnoutTest(userName, demographics, personality) {
     throw new Error('No LLM provider available. Burnout test requires a live connection.');
   }
 
-  const ctx = buildUserPromptContext({ userName, demographics });
+  const ctx = buildQuestionPromptContext({ userName, demographics });
   const name = firstName(userName);
   const p = personality ?? {};
 
@@ -175,12 +174,9 @@ Their personality profile:
 - Summary: ${p.summary ?? p.type?.desc ?? ''}
 
 Create ${ASSESSMENT_QUESTION_MIN} to ${ASSESSMENT_QUESTION_MAX} "how often" questions about exhaustion, cynicism, overwhelm, recovery, and sense of accomplishment.
-- Tailor to their work situation, age, and location (use their city only if provided)
+- Tailor to their work situation and age only — no place names or commute specifics
 - Exactly 5 frequency options per question (value 0=never → 4=always, labels must match the question)
 - Build on their personality — e.g. social vs solo stress patterns
-
-${COACH_VOICE_RULES}
-${LOCATION_RULES}
 
 Return JSON only:
 {"questions":[{"id":"b1","text":"How often...","options":[{"value":0,"label":"..."},{"value":1,"label":"..."},{"value":2,"label":"..."},{"value":3,"label":"..."},{"value":4,"label":"..."}]}]}`;

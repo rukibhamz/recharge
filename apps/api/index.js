@@ -60,6 +60,7 @@ app.get('/health', async (_req, res) => {
   const supabaseStatus = {
     configured: isSupabaseConfigured(),
     connected: false,
+    demographicsColumn: null,
     error: null,
   };
 
@@ -68,6 +69,14 @@ app.get('/health', async (_req, res) => {
       const { error } = await supabase.from('sessions').select('id', { head: true, count: 'exact' });
       if (error) throw error;
       supabaseStatus.connected = true;
+
+      const { error: demoErr } = await supabase
+        .from('sessions')
+        .select('demographics', { head: true, count: 'exact' });
+      supabaseStatus.demographicsColumn = !demoErr;
+      if (demoErr && /demographics/i.test(demoErr.message)) {
+        supabaseStatus.hint = 'Run migration 007_session_demographics.sql in Supabase SQL Editor';
+      }
     } catch (err) {
       supabaseStatus.error = err.message;
     }

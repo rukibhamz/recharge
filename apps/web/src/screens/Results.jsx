@@ -50,7 +50,7 @@ export default function Results({ data, error, onRetake, showSaveSection = true 
     );
   }
 
-  const { displayName, profileContext, burnout, personality, recommendations, aiSource } = data;
+  const { displayName, profileContext, burnout, personality, recommendations, aiSource, persisted, persistError } = data;
   const copy = burnout.summary || BURNOUT_LEVEL_COPY[burnout.cls];
   const greeting = firstName(displayName);
   const isPersonalised = aiSource && !['static', 'bank'].includes(aiSource);
@@ -77,6 +77,15 @@ export default function Results({ data, error, onRetake, showSaveSection = true 
             </p>
           ) : null}
         </header>
+
+        {persisted === false ? (
+          <div className="mt-6 rounded-xl border border-severe/30 bg-severe/5 px-4 py-3 text-center font-sans text-body-md text-on-surface-variant">
+            Your results could not be saved to the cloud
+            {persistError ? ` (${persistError})` : ''}. Share links and account history will not work
+            until database setup is complete. You can still read your results below or retake the
+            assessment.
+          </div>
+        ) : null}
 
         <div className="surface-card mt-10 p-8">
           <ScoreRing pct={burnout.pct} cls={burnout.cls} level={burnout.level} />
@@ -114,11 +123,11 @@ export default function Results({ data, error, onRetake, showSaveSection = true 
           </div>
         </div>
 
-        {showSaveSection && data?.sessionId ? (
+        {showSaveSection && data?.sessionId && persisted !== false ? (
           <SaveResultsSection sessionId={data.sessionId} initiallyLinked={data.linked} />
         ) : null}
 
-        {shareToken && (
+        {shareToken && persisted !== false && (
           <div className="mt-12">
             <h3 className="text-center font-display text-headline-md text-primary">Share your snapshot</h3>
             <p className="mt-2 text-center font-sans text-body-md text-on-surface-variant">

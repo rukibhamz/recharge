@@ -12,6 +12,7 @@ import {
   completeAssessment,
   generateBurnoutTest,
   generatePersonalityTest,
+  normalizeBurnoutResult,
   scoreBurnoutTest,
   scorePersonalityTest,
 } from '../services/llmAssessment.js';
@@ -139,10 +140,12 @@ router.post('/complete', optionalAuth, async (req, res) => {
       personalityQuestions,
     });
 
-    const { sessionId, shareToken, persisted, linked } = await saveSession({
+    const safeBurnout = normalizeBurnoutResult(burnout);
+
+    const { sessionId, shareToken, persisted, linked, persistError } = await saveSession({
       displayName: name,
       demographics,
-      burnout,
+      burnout: safeBurnout,
       personality,
       recommendations,
       userId: req.user?.id,
@@ -153,10 +156,11 @@ router.post('/complete', optionalAuth, async (req, res) => {
       sessionId,
       shareToken,
       persisted,
+      persistError: persistError ?? null,
       linked: Boolean(linked),
       displayName: name,
       profileContext: demographicsLabels(demographics),
-      burnout,
+      burnout: safeBurnout,
       personality,
       recommendations,
       aiSource: aiSource ?? burnoutSource,

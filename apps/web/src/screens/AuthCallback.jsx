@@ -12,6 +12,8 @@ async function completeSignIn(session) {
       await linkSessionToAccount(pendingSessionId, session.access_token);
     } catch (err) {
       console.error('Pending link failed:', err.message);
+      window.location.replace(`/history?linkError=${encodeURIComponent(err.message)}`);
+      return;
     }
   }
   window.location.replace('/history');

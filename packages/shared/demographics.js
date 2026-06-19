@@ -141,6 +141,21 @@ export function demographicsPromptContext(demographics) {
   return lines.join('\n');
 }
 
+/** Profile block for question generation — omits city/country so the LLM does not weave in places. */
+export function demographicsQuestionContext(demographics) {
+  const d = sanitizeDemographics(demographics);
+  if (!d) return '';
+
+  const labels = demographicsLabels(d);
+  const lines = [
+    `Age band: ${labels.ageBand}`,
+    `Work situation: ${labels.workContext}`,
+    labels.workSector ? `Sector: ${labels.workSector}` : null,
+  ].filter(Boolean);
+
+  return lines.join('\n');
+}
+
 /** Guess country code from browser locale (e.g. en-NG → NG). */
 export function guessCountryFromLocale(locale = '') {
   const tag = String(locale || '').trim();

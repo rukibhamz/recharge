@@ -96,6 +96,23 @@ function AssessmentFlow() {
 
   const firstName = userName?.trim().split(/\s+/)[0] ?? '';
 
+  // Recover from stale persisted state that would otherwise render a blank screen
+  useEffect(() => {
+    if (phase === 'personality' && personalityQuestions.length < 10) {
+      setPhase('loading-personality-test');
+    } else if (phase === 'burnout' && burnoutQuestions.length < 10) {
+      setPhase('loading-burnout-test');
+    } else if (phase === 'personality-insight' && !personalityResult) {
+      setPhase(personalityQuestions.length >= 10 ? 'personality' : 'loading-personality-test');
+    }
+  }, [
+    phase,
+    personalityQuestions.length,
+    burnoutQuestions.length,
+    personalityResult,
+    setPhase,
+  ]);
+
   const fail = useCallback(
     (message, failedPhase) => {
       setError(message, failedPhase ?? phase);

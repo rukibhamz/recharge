@@ -1,3 +1,10 @@
+/** Empty in dev (Vite proxies /api). Set VITE_API_URL on Vercel to your hosted API origin. */
+const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+
+function apiUrl(path) {
+  return `${API_BASE}${path}`;
+}
+
 async function authHeaders(accessToken) {
   const headers = { 'Content-Type': 'application/json' };
   if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
@@ -21,7 +28,7 @@ async function parseJsonResponse(res, fallbackError) {
 }
 
 export async function fetchPersonalityTest(userName, demographics) {
-  const res = await fetch('/api/assess/personality/test', {
+  const res = await fetch(apiUrl('/api/assess/personality/test'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ userName, demographics }),
@@ -37,7 +44,7 @@ export async function scorePersonalityTest({
   questions,
   answers,
 }) {
-  const res = await fetch('/api/assess/personality/score', {
+  const res = await fetch(apiUrl('/api/assess/personality/score'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ userName, demographics, questions, answers }),
@@ -48,7 +55,7 @@ export async function scorePersonalityTest({
 }
 
 export async function fetchBurnoutTest({ userName, demographics, personality }) {
-  const res = await fetch('/api/assess/burnout/test', {
+  const res = await fetch(apiUrl('/api/assess/burnout/test'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ userName, demographics, personality }),
@@ -59,7 +66,7 @@ export async function fetchBurnoutTest({ userName, demographics, personality }) 
 }
 
 export async function completeAssessment(payload, accessToken) {
-  const res = await fetch('/api/assess/complete', {
+  const res = await fetch(apiUrl('/api/assess/complete'), {
     method: 'POST',
     headers: await authHeaders(accessToken),
     body: JSON.stringify({
@@ -78,14 +85,14 @@ export async function completeAssessment(payload, accessToken) {
 }
 
 export async function fetchSharedSession(shareToken) {
-  const res = await fetch(`/api/session/${shareToken}`);
+  const res = await fetch(apiUrl(`/api/session/${shareToken}`));
   const data = await parseJsonResponse(res, 'Share link not found');
   if (!res.ok) throw new Error(data.error || 'Share link not found');
   return data;
 }
 
 export async function linkSessionToAccount(sessionId, accessToken) {
-  const res = await fetch('/api/history/link', {
+  const res = await fetch(apiUrl('/api/history/link'), {
     method: 'POST',
     headers: await authHeaders(accessToken),
     body: JSON.stringify({ sessionId }),
@@ -96,7 +103,7 @@ export async function linkSessionToAccount(sessionId, accessToken) {
 }
 
 export async function fetchHistory(accessToken) {
-  const res = await fetch('/api/history', {
+  const res = await fetch(apiUrl('/api/history'), {
     headers: await authHeaders(accessToken),
   });
   const data = await parseJsonResponse(res, 'Could not load history');
@@ -105,7 +112,7 @@ export async function fetchHistory(accessToken) {
 }
 
 export async function fetchSavedSession(sessionId, accessToken) {
-  const res = await fetch(`/api/history/${sessionId}`, {
+  const res = await fetch(apiUrl(`/api/history/${sessionId}`), {
     headers: await authHeaders(accessToken),
   });
   const data = await parseJsonResponse(res, 'Could not load saved result');

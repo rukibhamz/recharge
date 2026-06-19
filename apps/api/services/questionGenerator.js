@@ -13,7 +13,7 @@ import {
 } from './questionBank.js';
 import { llmFeatures } from '../config/llm.js';
 import { generateJson, getLastLlmProvider, hasAnyLlmProvider } from './llmProvider.js';
-import { buildUserPromptContext } from './promptContext.js';
+import { buildQuestionPromptContext } from './promptContext.js';
 
 const TOTAL = 12;
 
@@ -51,7 +51,7 @@ export async function generateNextBurnoutQuestion({
   personalityQuestions,
 }) {
   const slot = burnoutSlot(index);
-  const userContext = buildUserPromptContext({ userName, demographics });
+  const userContext = buildQuestionPromptContext({ userName, demographics });
   const conversation = conversationThreadPrompt(normalizeThread(thread), userName);
 
   let personalitySummary = '';
@@ -78,7 +78,7 @@ Dimension focus: ${slot.dimension}${slot.needsReverse ? ' — this final questio
 
 Write ONE frequency question ("How often..." or similar). It must:
 - Follow conversationally from what they already shared
-- Reference their actual life (work, city if given) — never wrong cities
+- Reference their work and daily rhythm — never cities, countries, or named places
 - No survey jargon; sound like a caring friend checking in
 
 ${BURNOUT_OPTIONS_FORMAT}
