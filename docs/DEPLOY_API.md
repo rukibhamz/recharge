@@ -16,7 +16,8 @@ Set these in Render or Railway (not on Vercel):
 | `SUPABASE_SERVICE_ROLE_KEY` | Yes | Server only — never expose to browser |
 | `GEMINI_API_KEY` | Yes* | *Or use another provider in chain |
 | `LLM_PROVIDER_ORDER` | Yes | e.g. `gemini` (drop `ollama` in cloud — no local Ollama) |
-| `CORS_ORIGIN` | Yes | Your Vercel URL, e.g. `https://recharge.vercel.app` |
+| `CORS_ORIGIN` | Yes | Your Vercel URL, e.g. `https://recharge.vercel.app` (no trailing slash) |
+| `CORS_VERCEL_PREVIEWS` | Optional | Set `1` to allow any `https://*.vercel.app` preview URL |
 | `PORT` | Auto | Render/Railway set `PORT` — app reads `process.env.PORT` |
 | `GEMINI_MODEL` | Optional | Default in code: `gemini-2.5-flash-lite` |
 | `RATE_LIMIT_MAX` | Optional | Default `10` per window |

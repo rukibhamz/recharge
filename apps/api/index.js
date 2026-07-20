@@ -20,14 +20,65 @@ import { checkQuestionBankHealth } from './services/questionBank.js';
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-function corsOrigins() {
-  const raw = process.env.CORS_ORIGIN || 'http://localhost:5173';
-  return raw.split(',').map((o) => o.trim()).filter(Boolean);
+app.set('trust proxy', 1);
+
+function normalizeOrigin(origin) {
+  if (!origin || typeof origin !== 'string') return '';
+  return origin.trim().replace(/\/$/, '');
 }
 
+function corsOrigins() {
+  const raw = process.env.CORS_ORIGIN || 'http://localhost:5173';
+  return raw.split(',').map(normalizeOrigin).filter(Boolean);
+}
+
+function isAllowedCorsOrigin(requestOrigin) {
+  const origin = normalizeOrigin(requestOrigin);
+  if (!origin) return true;
+
+  const allowed = corsOrigins();
+  if (allowed.includes(origin)) return true;
+
+  if (process.env.CORS_VERCEL_PREVIEWS === '1') {
+    try {
+      const { protocol, hostname } = new URL(origin);
+      if (protocol === 'https:' && (hostname === 'vercel.app' || hostname.endsWith('.vercel.app'))) {
+        return true;
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+
+  return false;
+}
+
+const corsOptions = {
+  origin(origin, callback) {
+    if (isAllowedCorsOrigin(origin)) {
+      callback(null, true);
+    } else {
+      console.warn(`CORS blocked origin: ${origin || '(none)'} — allowed: ${corsOrigins().join(', ')}`);
+      callback(null, false);
+    }
+  },
+  methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+};
+
 app.use(helmet());
-app.use(cors({ origin: corsOrigins() }));
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 app.use(express.json());
+
+app.get('/', (_req, res) => {
+  res.json({
+    service: 'recharge-api',
+    status: 'ok',
+    health: '/health',
+    api: '/api/assess',
+  });
+});
 
 app.get('/health', async (_req, res) => {
   const ollamaConnected = isOllamaConfigured() ? await checkOllamaConnection() : false;
