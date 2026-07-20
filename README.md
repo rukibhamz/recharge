@@ -73,7 +73,7 @@ recharge/
 | `npm test` | Scoring unit tests |
 | `npm run db:migrate` | Apply Supabase SQL migrations (needs `DATABASE_URL`) |
 
-See [docs/MVP_IMPLEMENTATION_PLAN.md](docs/MVP_IMPLEMENTATION_PLAN.md) for launch checklist.
+Deploy: [Vercel (web)](docs/DEPLOY_VERCEL.md) · [Render / Railway (API)](docs/DEPLOY_API.md)
 
 ## Phase 1 (MVP) status
 
