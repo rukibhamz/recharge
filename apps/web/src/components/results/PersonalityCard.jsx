@@ -15,13 +15,13 @@ export default function PersonalityCard({ type }) {
           <p className="mt-2 font-sans text-body-md text-on-surface-variant">{type.desc}</p>
           {type.strengths ? (
             <p className="mt-3 font-sans text-body-md text-on-surface">
-              <span className="font-medium">Strengths: </span>
+              <span className="font-medium text-on-surface-variant">What seems to sustain you: </span>
               {type.strengths}
             </p>
           ) : null}
           {type.growthAreas ? (
             <p className="mt-2 font-sans text-body-md text-on-surface-variant">
-              <span className="font-medium">Growth areas: </span>
+              <span className="font-medium">Where to be gentle with yourself: </span>
               {type.growthAreas}
             </p>
           ) : null}

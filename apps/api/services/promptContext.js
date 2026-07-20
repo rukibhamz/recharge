@@ -6,6 +6,7 @@ import {
 import {
   COACH_VOICE_RULES,
   LOCATION_RULES,
+  PERSONALITY_INSIGHT_RULES,
   QUESTION_NO_LOCATION_RULES,
   locationContext,
 } from '@recharge/shared/promptCoaching';
@@ -23,6 +24,19 @@ export function buildUserPromptContext({ userName, demographics }) {
 
   parts.push(COACH_VOICE_RULES);
   parts.push(LOCATION_RULES);
+
+  return parts.join('\n\n');
+}
+
+/** Personality scoring — therapist-style read; no place names in output. */
+export function buildPersonalityInsightPromptContext({ userName, demographics }) {
+  const name = firstName(userName);
+  const parts = [];
+
+  if (name) parts.push(`Name: ${name}`);
+  parts.push(demographicsQuestionContext(demographics));
+  parts.push(COACH_VOICE_RULES);
+  parts.push(PERSONALITY_INSIGHT_RULES);
 
   return parts.join('\n\n');
 }

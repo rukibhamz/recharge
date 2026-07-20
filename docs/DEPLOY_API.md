@@ -141,6 +141,59 @@ User → Vercel (apps/web)
 
 ---
 
+# Gemini quota & rate limits
+
+Each full assessment can use **up to ~5 Gemini calls** (personality test, personality score, burnout test, burnout score, recommendations). On Render there is **no Ollama** — only Gemini + fallbacks.
+
+### 1. Tune Gemini (keep AI when possible)
+
+Set on **Render**:
+
+| Variable | Suggested | Purpose |
+|----------|-----------|---------|
+| `GEMINI_MODEL` | `gemini-2.5-flash-lite` | Cheapest / highest free RPM |
+| `GEMINI_MIN_INTERVAL_MS` | `6000`–`8000` | Space out calls (global queue) |
+| `GEMINI_MAX_RETRIES` | `2` | Retries on 429 with backoff |
+| `GEMINI_CIRCUIT_BREAKER_MS` | `120000` | Pause Gemini after all models fail |
+| `RATE_LIMIT_MAX` | `5`–`10` | Limit assessments per IP per hour |
+
+Check status: `GET /health` → `llm.gemini.quotaErrors`, `circuitOpen`, `questionBank.ready`.
+
+**Google side:** enable billing or raise quota in [Google AI Studio](https://aistudio.google.com/) / Cloud console if you hit daily caps.
+
+### 2. Automatic fallbacks (default — push latest API code)
+
+`LLM_ASSESSMENT_BANK_FALLBACK=true` (default):
+
+- LLM fails → **Supabase question bank** for tests (or static JSON if DB empty)
+- Score fails → **MBTI math + type profiles** / **burnout scoring**
+- Recommendations already fall back to **static tips** per level
+
+Ensure Supabase question tables are seeded (`/health` → `questionBank.ready: true`).
+
+### 3. Bank-only mode (no Gemini for questions)
+
+Zero question/score LLM calls — still uses static recommendations unless you leave recommendations on:
+
+```env
+LLM_PERSONALITY_QUESTIONS=false
+LLM_BURNOUT_QUESTIONS=false
+LLM_RECOMMENDATIONS=false
+```
+
+Optional: keep `LLM_RECOMMENDATIONS=true` for **one** Gemini call at the end only (still has static fallback).
+
+### 4. Local dev with Ollama
+
+```env
+LLM_PROVIDER_ORDER=gemini,ollama
+OLLAMA_BASE_URL=http://localhost:11434
+```
+
+When Gemini hits 429, the chain tries Ollama automatically.
+
+---
+
 # Troubleshooting
 
 | Problem | Fix |
@@ -148,6 +201,7 @@ User → Vercel (apps/web)
 | API 502 / crash on start | Check logs; ensure `SUPABASE_URL` and keys set; `npm start` runs from **repo root** |
 | CORS error in browser | `CORS_ORIGIN` must match Vercel URL exactly (scheme + host, no path) |
 | Assessment hangs | Render free tier cold start; or Gemini rate limits — check API logs |
+| Gemini 429 / quota | See [Gemini quota & rate limits](#gemini-quota--rate-limits); raise limits or use bank fallbacks |
 | `Cannot GET /` on API URL | Normal for `/` — use `/health` |
 | Vercel still calls localhost | Redeploy Vercel after setting `VITE_API_URL` (Vite bakes env at **build** time) |
 

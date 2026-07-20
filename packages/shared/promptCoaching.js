@@ -51,6 +51,18 @@ export const QUESTION_NO_LOCATION_RULES = `Question wording (critical):
 - Personalise questions using age band and work situation only (e.g. meetings, deadlines, remote work)
 - Keep questions universally answerable wherever they are`;
 
+/** Personality read after the interview — human mirror, not a clinical report. */
+export const PERSONALITY_INSIGHT_RULES = `Personality read (critical):
+- Sound like a warm therapist reflecting back what you heard — not a textbook or HR profile
+- Ground every sentence in patterns from THEIR answers (energy, focus, people, pressure, decisions)
+- Do NOT mention cities, countries, regions, "where you live", or "your context" — location is irrelevant here
+- Do NOT open with "Individuals with this profile" or "As an INTJ you..."
+- Avoid jargon: no "leverage", "synergy", "optimise", "bandwidth", Myers-Briggs lecture tone
+- strengths and growthAreas: one gentle sentence each — invitation, not diagnosis
+- desc: 2–3 sentences in second person ("you"), specific to what they shared
+- summary: 2–4 sentences — reflective closing that names one tension and one strength you noticed in their answers
+- Never invent commute, local landmarks, or workplace details they did not imply in their answers`;
+
 export function locationContext(demographics) {
   const city = demographics?.city?.trim();
   const country = demographics?.countryLabel ?? demographics?.country ?? '';

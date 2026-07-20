@@ -5,12 +5,72 @@ import {
 import { AGREEMENT_OPTIONS, FREQUENCY_OPTIONS } from '@recharge/shared/questions';
 import { normalizeLlmOptions, optionLabelForValue } from '@recharge/shared/questionOptions';
 import { firstName } from '@recharge/shared/name';
+import { scoreMbti, formatMbtiType } from '@recharge/shared/mbtiScoring';
+import { scoreBurnout } from '@recharge/shared/scoring';
+import { llmFeatures } from '../config/llm.js';
 import { hasAnyLlmProvider, generateJson, getLastLlmProvider } from './llmProvider.js';
-import { buildQuestionPromptContext, buildUserPromptContext } from './promptContext.js';
+import { buildQuestionPromptContext, buildPersonalityInsightPromptContext, buildUserPromptContext } from './promptContext.js';
 import { generateRecommendations } from './llm.js';
+import { getBurnoutBankQuestions, getMbtiTypeProfile, getPersonalityBankQuestions } from './questionBank.js';
 
 function llmSource() {
   return getLastLlmProvider() ?? 'llm';
+}
+
+function bankFallbackEnabled() {
+  const raw = process.env.LLM_ASSESSMENT_BANK_FALLBACK;
+  if (raw === 'false' || raw === '0') return false;
+  return true;
+}
+
+function questionsSupportMbtiScoring(questions) {
+  if (!Array.isArray(questions) || questions.length === 0) return false;
+  return questions.every((q) => q.scoredPole ?? q.scored_pole);
+}
+
+async function scorePersonalityFromBank(questions, answers) {
+  const mbti = scoreMbti(answers, questions);
+  let profile = null;
+  try {
+    profile = await getMbtiTypeProfile(mbti.typeCode);
+  } catch (err) {
+    console.warn('MBTI profile load failed:', err.message);
+  }
+  const type = formatMbtiType(
+    profile ?? {
+      code: mbti.typeCode,
+      title: '',
+      archetype: '',
+      description: '',
+      strengths: '',
+      growth_areas: '',
+    },
+  );
+  const personality = normalizePersonalityResult({
+    typeCode: mbti.typeCode,
+    type: {
+      title: type.title,
+      archetype: type.archetype,
+      desc: type.desc,
+      strengths: type.strengths,
+      growthAreas: type.growthAreas,
+      icon: type.icon,
+    },
+    traits: mbti.traits,
+    summary: type.desc,
+  });
+  return { personality, source: profile ? 'bank' : 'scoring' };
+}
+
+function scoreBurnoutFromAnswers(questions, answers) {
+  const scored = scoreBurnout(answers, questions);
+  return {
+    burnout: {
+      ...scored,
+      summary: `Based on your check-in answers, your current burnout score is ${scored.pct}% (${scored.level}).`,
+    },
+    source: 'scoring',
+  };
 }
 
 function formatQaBlock(questions, answers) {
@@ -104,7 +164,18 @@ export function normalizeBurnoutResult(parsed) {
 }
 
 export async function generatePersonalityTest(userName, demographics) {
+  const useBank = () => getPersonalityBankQuestions();
+
+  if (!llmFeatures.personalityQuestions) {
+    const { questions, source } = await useBank();
+    return { questions, count: questions.length, source };
+  }
+
   if (!hasAnyLlmProvider()) {
+    if (bankFallbackEnabled()) {
+      const { questions, source } = await useBank();
+      return { questions, count: questions.length, source };
+    }
     throw new Error('No LLM provider available. Personality test requires a live connection.');
   }
 
@@ -124,40 +195,70 @@ Create exactly ${ASSESSMENT_QUESTION_MIN} to ${ASSESSMENT_QUESTION_MAX} question
 Return JSON only:
 {"questions":[{"id":"p1","text":"I ...","options":[{"value":0,"label":"..."},{"value":1,"label":"..."},{"value":2,"label":"..."},{"value":3,"label":"..."},{"value":4,"label":"..."}]}]}`;
 
-  const parsed = await generateJson(prompt);
-  const questions = normalizeQuestions(parsed, 'personality');
-
-  return { questions, count: questions.length, source: llmSource() };
+  try {
+    const parsed = await generateJson(prompt);
+    const questions = normalizeQuestions(parsed, 'personality');
+    return { questions, count: questions.length, source: llmSource() };
+  } catch (err) {
+    console.warn('Personality test LLM failed:', err.message);
+    if (!bankFallbackEnabled()) throw err;
+    const { questions, source } = await useBank();
+    return { questions, count: questions.length, source };
+  }
 }
 
 export async function scorePersonalityTest(userName, demographics, questions, answers) {
-  if (!hasAnyLlmProvider()) {
-    throw new Error('No LLM provider available.');
-  }
-
-  const ctx = buildUserPromptContext({ userName, demographics });
+  const ctx = buildPersonalityInsightPromptContext({ userName, demographics });
   const qa = formatQaBlock(questions, answers);
 
-  const prompt = `You are an expert personality psychologist. Analyze these interview responses.
+  const prompt = `You are a skilled therapist listening to someone's personality interview. Reflect back what their answers reveal — with warmth, specificity, and zero geography.
 
 ${ctx}
 
+Their interview:
 ${qa}
 
-From their actual answers, infer:
-- Best-fit 4-letter personality type code (MBTI-style)
-- Four trait dimensions with percentage lean (0–100 toward poleA)
-- Personalised description, strengths, growth areas — specific to what they said
+Infer their best-fit 4-letter type from the answers (MBTI-style). Trait percentages show lean toward poleA (0–100).
+
+Write copy they will read on screen right after the interview. It should feel heard, not categorised.
 
 Return JSON only:
-{"typeCode":"ENFP","type":{"title":"Campaigner","archetype":"...","desc":"...","strengths":"...","growthAreas":"...","icon":"🌟"},"traits":[{"name":"Extraversion / Introversion","pct":72,"poleA":"E","poleB":"I"},{"name":"Sensing / Intuition","pct":40,"poleA":"S","poleB":"N"},{"name":"Thinking / Feeling","pct":55,"poleA":"T","poleB":"F"},{"name":"Judging / Perceiving","pct":35,"poleA":"J","poleB":"P"}],"summary":"..."}`;
+{"typeCode":"ENFP","type":{"title":"Campaigner","archetype":"short nickname e.g. The Encourager","desc":"2-3 sentences, second person, tied to their answers","strengths":"One gentle sentence — what seems to sustain them","growthAreas":"One gentle sentence — where they might need more compassion or space","icon":"🌟"},"traits":[{"name":"Extraversion / Introversion","pct":72,"poleA":"E","poleB":"I"},{"name":"Sensing / Intuition","pct":40,"poleA":"S","poleB":"N"},{"name":"Thinking / Feeling","pct":55,"poleA":"T","poleB":"F"},{"name":"Judging / Perceiving","pct":35,"poleA":"J","poleB":"P"}],"summary":"2-4 reflective sentences — themes from their answers, no type-code lecture, no places"}`;
 
-  const parsed = await generateJson(prompt);
-  return { personality: normalizePersonalityResult(parsed), source: llmSource() };
+  if (hasAnyLlmProvider()) {
+    try {
+      const parsed = await generateJson(prompt);
+      return { personality: normalizePersonalityResult(parsed), source: llmSource() };
+    } catch (err) {
+      console.warn('Personality score LLM failed:', err.message);
+      if (!bankFallbackEnabled() || !questionsSupportMbtiScoring(questions)) {
+        throw new Error(
+          err.message?.includes('429') || /quota|circuit/i.test(err.message ?? '')
+            ? 'Gemini is temporarily rate-limited. Wait a minute and try again, or retry later.'
+            : err.message,
+        );
+      }
+    }
+  } else if (!bankFallbackEnabled() || !questionsSupportMbtiScoring(questions)) {
+    throw new Error('No LLM provider available.');
+  }
+
+  return scorePersonalityFromBank(questions, answers);
 }
 
 export async function generateBurnoutTest(userName, demographics, personality) {
+  const useBank = () => getBurnoutBankQuestions();
+
+  if (!llmFeatures.burnoutQuestions) {
+    const { questions, source } = await useBank();
+    return { questions, count: questions.length, source };
+  }
+
   if (!hasAnyLlmProvider()) {
+    if (bankFallbackEnabled()) {
+      const { questions, source } = await useBank();
+      return { questions, count: questions.length, source };
+    }
     throw new Error('No LLM provider available. Burnout test requires a live connection.');
   }
 
@@ -181,17 +282,19 @@ Create ${ASSESSMENT_QUESTION_MIN} to ${ASSESSMENT_QUESTION_MAX} "how often" ques
 Return JSON only:
 {"questions":[{"id":"b1","text":"How often...","options":[{"value":0,"label":"..."},{"value":1,"label":"..."},{"value":2,"label":"..."},{"value":3,"label":"..."},{"value":4,"label":"..."}]}]}`;
 
-  const parsed = await generateJson(prompt);
-  const questions = normalizeQuestions(parsed, 'burnout');
-
-  return { questions, count: questions.length, source: llmSource() };
+  try {
+    const parsed = await generateJson(prompt);
+    const questions = normalizeQuestions(parsed, 'burnout');
+    return { questions, count: questions.length, source: llmSource() };
+  } catch (err) {
+    console.warn('Burnout test LLM failed:', err.message);
+    if (!bankFallbackEnabled()) throw err;
+    const { questions, source } = await useBank();
+    return { questions, count: questions.length, source };
+  }
 }
 
 export async function scoreBurnoutTest(userName, demographics, personality, questions, answers) {
-  if (!hasAnyLlmProvider()) {
-    throw new Error('No LLM provider available.');
-  }
-
   const ctx = buildUserPromptContext({ userName, demographics });
   const qa = formatQaBlock(questions, answers);
 
@@ -209,8 +312,19 @@ cls must be one of: healthy, mild, moderate, severe
 Return JSON only:
 {"pct":42,"cls":"moderate","level":"Moderate Burnout","summary":"2-3 sentences explaining what you see and why"}`;
 
-  const parsed = await generateJson(prompt);
-  return { burnout: normalizeBurnoutResult(parsed), source: llmSource() };
+  if (hasAnyLlmProvider()) {
+    try {
+      const parsed = await generateJson(prompt);
+      return { burnout: normalizeBurnoutResult(parsed), source: llmSource() };
+    } catch (err) {
+      console.warn('Burnout score LLM failed:', err.message);
+      if (!bankFallbackEnabled()) throw err;
+    }
+  } else if (!bankFallbackEnabled()) {
+    throw new Error('No LLM provider available.');
+  }
+
+  return scoreBurnoutFromAnswers(questions, answers);
 }
 
 export async function completeAssessment({

@@ -107,7 +107,7 @@ app.get('/health', async (_req, res) => {
       stats: ollamaStats,
     },
     hints: [
-      ...(isCircuitOpen() ? ['Gemini circuit open — Ollama will be used if available'] : []),
+      ...(isCircuitOpen() ? ['Gemini circuit open — using question bank / scoring fallbacks when enabled'] : []),
       ...(!hasAnyLlmProvider()
         ? ['No LLM available — question banks and static recommendations will be used']
         : []),
