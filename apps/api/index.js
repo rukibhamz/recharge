@@ -6,6 +6,7 @@ import assessRouter from './routes/assess.js';
 import questionsRouter from './routes/questions.js';
 import sessionRouter from './routes/session.js';
 import historyRouter from './routes/history.js';
+import accountRouter from './routes/account.js';
 import { rateLimit } from './middleware/rateLimit.js';
 import { ENV_EXISTS, ENV_PATH } from './loadEnv.js';
 import { geminiKeyFormat, isGeminiAvailable } from './config/gemini.js';
@@ -19,8 +20,13 @@ import { checkQuestionBankHealth } from './services/questionBank.js';
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+function corsOrigins() {
+  const raw = process.env.CORS_ORIGIN || 'http://localhost:5173';
+  return raw.split(',').map((o) => o.trim()).filter(Boolean);
+}
+
 app.use(helmet());
-app.use(cors({ origin: process.env.CORS_ORIGIN || 'http://localhost:5173' }));
+app.use(cors({ origin: corsOrigins() }));
 app.use(express.json());
 
 app.get('/health', async (_req, res) => {
@@ -97,12 +103,13 @@ app.use('/api/assess', rateLimit, assessRouter);
 app.use('/api/questions', rateLimit, questionsRouter);
 app.use('/api/session', sessionRouter);
 app.use('/api/history', historyRouter);
+app.use('/api/account', accountRouter);
 
 app.use((err, _req, res, _next) => {
   console.error(err);
   res.status(500).json({ error: 'Internal server error' });
 });
 
-app.listen(PORT, () => {
-  console.log(`Recharge API listening on http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Recharge API listening on port ${PORT}`);
 });

@@ -1,6 +1,6 @@
-export default function RecommendationCard({ icon, title, tip }) {
+export default function RecommendationCard({ icon, title, tip, className = 'surface-card' }) {
   return (
-    <div className="surface-card flex gap-4 p-5">
+    <div className={`flex gap-4 p-5 ${className}`}>
       <span
         className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-secondary-container text-xl"
         aria-hidden="true"

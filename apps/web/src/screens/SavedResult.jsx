@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { fetchSavedSession } from '../services/api.js';
 import Results from './Results.jsx';
@@ -12,6 +12,11 @@ export default function SavedResult({ sessionId }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const linkedBanner = useMemo(
+    () => new URLSearchParams(window.location.search).get('linked') === '1',
+    [],
+  );
 
   useEffect(() => {
     if (authLoading) return;
@@ -64,8 +69,8 @@ export default function SavedResult({ sessionId }) {
         <section className="mx-auto max-w-container flex-1 px-margin-mobile py-16 text-center">
           <h2 className="font-display text-headline-lg text-primary">Result not found</h2>
           <p className="mt-4 font-sans text-body-md text-on-surface-variant">{error}</p>
-          <Button className="mt-8" onClick={() => { window.location.href = '/history'; }}>
-            Back to history
+          <Button className="mt-8" onClick={() => { window.location.href = '/account'; }}>
+            Back to account
           </Button>
         </section>
         <Footer compact />
@@ -74,11 +79,18 @@ export default function SavedResult({ sessionId }) {
   }
 
   return (
-    <Results
-      data={data}
-      error={null}
-      onRetake={() => { window.location.href = '/'; }}
-      showSaveSection={false}
-    />
+    <>
+      {linkedBanner ? (
+        <div className="border-b border-status-healthy/30 bg-status-healthy/10 px-margin-mobile py-3 text-center font-sans text-body-md text-on-surface">
+          Saved to your account.
+        </div>
+      ) : null}
+      <Results
+        data={data}
+        error={null}
+        onRetake={() => { window.location.href = '/'; }}
+        showSaveSection={false}
+      />
+    </>
   );
 }

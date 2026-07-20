@@ -1,16 +1,13 @@
 import { BURNOUT_LEVEL_COPY } from '@recharge/shared/questions';
-import { firstName } from '@recharge/shared/name';
 import Header from '../components/shared/Header.jsx';
 import Footer from '../components/shared/Footer.jsx';
 import Button from '../components/shared/Button.jsx';
 import ScoreRing from '../components/results/ScoreRing.jsx';
-import PersonalityCard from '../components/results/PersonalityCard.jsx';
 import TraitBars from '../components/results/TraitBars.jsx';
 import RecommendationCard from '../components/results/RecommendationCard.jsx';
 import ShareCard from '../components/results/ShareCard.jsx';
 import { useShareCard } from '../hooks/useShareCard.js';
 import SaveResultsSection from '../components/results/SaveResultsSection.jsx';
-import AssessmentFlowBar from '../components/assessment/AssessmentFlowBar.jsx';
 
 export default function Results({ data, error, onRetake, showSaveSection = true }) {
   const shareToken = data?.shareToken;
@@ -50,115 +47,110 @@ export default function Results({ data, error, onRetake, showSaveSection = true 
     );
   }
 
-  const { displayName, profileContext, burnout, personality, recommendations, aiSource, persisted, persistError } = data;
+  const {
+    displayName,
+    burnout,
+    personality,
+    recommendations,
+    aiSource,
+    persisted,
+    persistError,
+    sessionId,
+    linked,
+  } = data;
   const copy = burnout.summary || BURNOUT_LEVEL_COPY[burnout.cls];
-  const greeting = firstName(displayName);
   const isPersonalised = aiSource && !['static', 'bank'].includes(aiSource);
+  const cloudSaved = persisted !== false;
+  const personalityTitle = personality.type?.title || personality.type?.name || 'Your profile';
+  const personalitySubtitle = personality.type?.archetype || 'Personality archetype';
 
   return (
     <div className="flex min-h-screen flex-col bg-warm">
       <Header />
 
-      <section className="mx-auto w-full max-w-container flex-1 px-margin-mobile py-12 sm:px-gutter">
-        <AssessmentFlowBar phase="results" className="mb-10" />
-        <header className="text-center">
-          <h1 className="font-display text-headline-lg text-primary">
-            {greeting ? `${greeting}, your Recharge profile` : 'Your Recharge profile'}
-          </h1>
-          <p className="mt-2 font-sans text-body-md text-on-surface-variant">
-            Personalised read — information to guide your next step, not a verdict.
-          </p>
-          {profileContext ? (
-            <p className="mt-2 font-sans text-label-sm text-on-surface-variant/80">
-              Personalized for {profileContext.city ? `${profileContext.city}, ` : ''}
-              {profileContext.country}
-              {profileContext.workContext ? ` · ${profileContext.workContext}` : ''}
-              {profileContext.ageBand ? ` · ${profileContext.ageBand}` : ''}
-            </p>
-          ) : null}
-        </header>
-
+      <main className="mx-auto w-full max-w-container flex-1 space-y-stack-gap px-margin-mobile py-stack-gap sm:px-gutter">
         {persisted === false ? (
-          <div className="mt-6 rounded-xl border border-severe/30 bg-severe/5 px-4 py-3 text-center font-sans text-body-md text-on-surface-variant">
+          <div className="rounded-xl border border-severe/30 bg-severe/5 px-4 py-3 text-center font-sans text-body-md text-on-surface-variant">
             Your results could not be saved to the cloud
             {persistError ? ` (${persistError})` : ''}. Share links and account history will not work
-            until database setup is complete. You can still read your results below or retake the
-            assessment.
+            until database setup is complete.
           </div>
         ) : null}
 
-        <div className="surface-card mt-10 p-8">
+        <section className="glass-card p-gutter text-center">
           <ScoreRing pct={burnout.pct} cls={burnout.cls} level={burnout.level} />
-          <p className="mt-6 text-center font-sans text-body-md text-on-surface-variant">{copy}</p>
-        </div>
-
-        {personality.summary ? (
-          <p className="mt-4 text-center font-sans text-body-md leading-relaxed text-on-surface-variant">
-            {personality.summary}
+          <h2 className="mt-6 font-display text-headline-lg text-primary">{burnout.level}</h2>
+          <p className="mx-auto mt-4 max-w-md font-sans text-body-md text-on-surface-variant">
+            {copy}
           </p>
-        ) : null}
+        </section>
 
-        <div className="mt-8">
-          <PersonalityCard type={personality.type} />
-        </div>
-
-        <div className="surface-card mt-8 p-6">
-          <h3 className="mb-4 font-display text-headline-md text-on-surface">Trait dimensions</h3>
-          <TraitBars traits={personality.traits} />
-        </div>
-
-        <div className="mt-10">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
-            <h3 className="font-display text-headline-md text-primary">
-              Recommendations for {personality.type.name}
-            </h3>
-            <span className="ai-badge">
-              {isPersonalised ? 'Personalised' : 'Curated'}
-            </span>
+        <section className="glass-card p-gutter">
+          <div className="mb-6 flex items-center gap-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary-container text-2xl text-primary">
+              {personality.type?.icon ?? '✨'}
+            </div>
+            <div>
+              <h3 className="font-display text-headline-md text-primary">{personalityTitle}</h3>
+              <span className="font-sans text-label-sm text-on-surface-variant">
+                {personalitySubtitle}
+              </span>
+            </div>
           </div>
-          <div className="flex flex-col gap-4">
+          <p className="mb-8 font-sans text-body-md text-on-surface-variant">
+            {personality.summary || personality.type?.desc}
+          </p>
+          <TraitBars traits={personality.traits} />
+        </section>
+
+        <section className="space-y-gutter">
+          <div className="flex items-center justify-between">
+            <h3 className="font-display text-headline-md text-primary">Strategic recovery</h3>
+            <span className="ai-badge">{isPersonalised ? 'Personalised' : 'Curated'}</span>
+          </div>
+          <div className="grid grid-cols-1 gap-gutter md:grid-cols-2">
             {recommendations.map((rec, i) => (
-              <RecommendationCard key={i} {...rec} />
+              <RecommendationCard
+                key={i}
+                {...rec}
+                className="glass-card p-6 transition-transform hover:scale-[1.02]"
+              />
             ))}
           </div>
-        </div>
+        </section>
 
-        {showSaveSection && data?.sessionId && persisted !== false ? (
-          <SaveResultsSection sessionId={data.sessionId} initiallyLinked={data.linked} />
-        ) : null}
+        <section className="flex flex-col gap-4">
+          {shareToken && cloudSaved ? (
+            <Button className="w-full" size="lg" onClick={copyLink}>
+              {copied ? 'Link copied!' : 'Share results'}
+            </Button>
+          ) : null}
 
-        {shareToken && persisted !== false && (
-          <div className="mt-12">
-            <h3 className="text-center font-display text-headline-md text-primary">Share your snapshot</h3>
-            <p className="mt-2 text-center font-sans text-body-md text-on-surface-variant">
-              Download a card or copy a link — your name and exact score stay private.
-            </p>
-
-            <div className="mt-6 flex justify-center overflow-hidden rounded-xl border border-outline-variant/30 bg-surface-soft p-4">
-              <ShareCard
-                displayName={displayName}
-                burnout={burnout}
-                personality={personality}
-              />
-            </div>
-
-            <div className="mt-6 flex flex-wrap justify-center gap-3">
-              <Button onClick={downloadCard} disabled={downloading}>
-                {downloading ? 'Preparing…' : 'Download image'}
-              </Button>
-              <Button variant="secondary" onClick={copyLink}>
-                {copied ? 'Link copied!' : 'Copy share link'}
-              </Button>
-            </div>
-          </div>
-        )}
-
-        <div className="mt-12 text-center">
-          <Button variant="secondary" onClick={onRetake}>
+          <Button variant="secondary" className="w-full" onClick={onRetake}>
             Retake assessment
           </Button>
-        </div>
-      </section>
+
+          {shareToken && cloudSaved ? (
+            <Button variant="ghost" className="w-full" onClick={downloadCard} disabled={downloading}>
+              {downloading ? 'Preparing image…' : 'Download share card'}
+            </Button>
+          ) : null}
+
+          {showSaveSection && sessionId ? (
+            <SaveResultsSection
+              sessionId={sessionId}
+              initiallyLinked={linked}
+              cloudSaved={cloudSaved}
+            />
+          ) : null}
+        </section>
+
+        {shareToken && cloudSaved ? (
+          <div className="flex justify-center overflow-hidden rounded-xl border border-outline-variant/30 bg-surface-soft p-4">
+            <ShareCard displayName={displayName} burnout={burnout} personality={personality} />
+          </div>
+        ) : null}
+      </main>
 
       <Footer />
     </div>

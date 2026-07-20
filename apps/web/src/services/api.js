@@ -119,3 +119,30 @@ export async function fetchSavedSession(sessionId, accessToken) {
   if (!res.ok) throw new Error(data.error || 'Could not load saved result');
   return data;
 }
+
+export async function downloadAccountExport(accessToken) {
+  const res = await fetch(apiUrl('/api/account/export'), {
+    headers: await authHeaders(accessToken),
+  });
+  if (!res.ok) {
+    const data = await parseJsonResponse(res, 'Could not export your data');
+    throw new Error(data.error || 'Could not export your data');
+  }
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `recharge-export-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+export async function deleteAccount(accessToken) {
+  const res = await fetch(apiUrl('/api/account'), {
+    method: 'DELETE',
+    headers: await authHeaders(accessToken),
+  });
+  const data = await parseJsonResponse(res, 'Could not delete account');
+  if (!res.ok) throw new Error(data.error || 'Could not delete account');
+  return data;
+}

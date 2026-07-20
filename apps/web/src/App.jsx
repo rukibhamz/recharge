@@ -22,8 +22,10 @@ import Results from './screens/Results.jsx';
 import SharePage from './screens/SharePage.jsx';
 import Login from './screens/Login.jsx';
 import AuthCallback from './screens/AuthCallback.jsx';
-import HistoryPage from './screens/HistoryPage.jsx';
+import AccountSettings from './screens/AccountSettings.jsx';
+import HistoryRedirect from './screens/HistoryRedirect.jsx';
 import SavedResult from './screens/SavedResult.jsx';
+import LegalPage from './screens/LegalPage.jsx';
 
 const SHARE_PATH = /^\/share\/([a-f0-9]{32})$/i;
 const HISTORY_DETAIL_PATH = /^\/history\/([0-9a-f-]{36})$/i;
@@ -35,7 +37,11 @@ function usePathRoute() {
 
   if (path === '/auth/callback') return { kind: 'auth-callback' };
   if (path === '/login') return { kind: 'login' };
+  if (path === '/account') return { kind: 'account' };
   if (path === '/history') return { kind: 'history' };
+  if (path === '/privacy') return { kind: 'legal', legal: 'privacy' };
+  if (path === '/terms') return { kind: 'legal', legal: 'terms' };
+  if (path === '/security') return { kind: 'legal', legal: 'security' };
 
   const historyMatch = path.match(HISTORY_DETAIL_PATH);
   if (historyMatch) return { kind: 'history-detail', sessionId: historyMatch[1] };
@@ -51,7 +57,9 @@ export default function App() {
 
   if (route.kind === 'auth-callback') return <AuthCallback />;
   if (route.kind === 'login') return <Login />;
-  if (route.kind === 'history') return <HistoryPage />;
+  if (route.kind === 'account') return <AccountSettings />;
+  if (route.kind === 'legal') return <LegalPage kind={route.legal} />;
+  if (route.kind === 'history') return <HistoryRedirect />;
   if (route.kind === 'history-detail') return <SavedResult sessionId={route.sessionId} />;
   if (route.kind === 'share') return <SharePage shareToken={route.shareToken} />;
 

@@ -10,13 +10,15 @@ async function completeSignIn(session) {
   if (pendingSessionId) {
     try {
       await linkSessionToAccount(pendingSessionId, session.access_token);
+      window.location.replace(`/history/${pendingSessionId}?linked=1`);
+      return;
     } catch (err) {
       console.error('Pending link failed:', err.message);
-      window.location.replace(`/history?linkError=${encodeURIComponent(err.message)}`);
+      window.location.replace(`/account?linkError=${encodeURIComponent(err.message)}`);
       return;
     }
   }
-  window.location.replace('/history');
+  window.location.replace('/account');
 }
 
 export default function AuthCallback() {

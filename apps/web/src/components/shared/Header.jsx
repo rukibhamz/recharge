@@ -2,23 +2,28 @@ import Logo from './Logo.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 
 function AccountNav() {
-  const { user, loading, signOut, isConfigured } = useAuth();
+  const { user, loading, isConfigured } = useAuth();
 
   if (!isConfigured || loading) return null;
 
   if (user) {
     return (
-      <nav className="flex items-center gap-4 font-sans text-body-md text-on-surface-variant">
-        <a href="/history" className="btn-interactive hover:text-primary">
-          My results
-        </a>
-        <button
-          type="button"
-          onClick={() => signOut().then(() => { window.location.href = '/'; })}
-          className="btn-interactive hover:text-primary"
+      <nav className="flex items-center gap-4">
+        <a
+          href="/account"
+          className="hidden font-sans text-body-md text-on-surface-variant btn-interactive hover:text-primary sm:inline"
         >
-          Sign out
-        </button>
+          Account
+        </a>
+        <a
+          href="/account"
+          className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-secondary-container text-primary"
+          aria-label="Account settings"
+        >
+          <span className="font-display text-body-md font-semibold">
+            {(user.email?.[0] ?? '?').toUpperCase()}
+          </span>
+        </a>
       </nav>
     );
   }

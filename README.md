@@ -69,7 +69,11 @@ recharge/
 | `npm run dev:web` | Web only |
 | `npm run dev:api` | API only |
 | `npm run build` | Production web build |
+| `npm start` | Production API server |
 | `npm test` | Scoring unit tests |
+| `npm run db:migrate` | Apply Supabase SQL migrations (needs `DATABASE_URL`) |
+
+See [docs/MVP_IMPLEMENTATION_PLAN.md](docs/MVP_IMPLEMENTATION_PLAN.md) for launch checklist.
 
 ## Phase 1 (MVP) status
 

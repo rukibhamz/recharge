@@ -21,6 +21,11 @@
     box-shadow: 0 8px 30px rgba(0, 52, 65, 0.06);
   }
 
+  .glass-card {
+    @apply rounded-xl border border-black/[0.05] bg-white/80 backdrop-blur-glass;
+    box-shadow: 0 10px 20px rgba(0, 52, 65, 0.04);
+  }
+
   .surface-card {
     @apply rounded-xl border border-black/[0.05] bg-surface-container-lowest;
     box-shadow: 0 8px 30px rgba(0, 52, 65, 0.06);
