@@ -4,7 +4,9 @@
   "type": "module",
   "scripts": {
     "dev": "node --env-file=../../.env --watch index.js",
-    "start": "node --env-file=../../.env index.js"
+    "start": "node --env-file=../../.env index.js",
+    "build": "node -e \"console.error('\\n\\n  Wrong Vercel project root.\\n  This folder is the Express API — do NOT deploy it on Vercel.\\n\\n  Fix: Vercel → Settings → General → Root Directory\\n       Set to: (empty) repository root  OR  apps/web\\n\\n  Host the API on Render/Railway: npm start\\n'); process.exit(1)\"",
+    "vercel-build": "npm run build"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.0",
