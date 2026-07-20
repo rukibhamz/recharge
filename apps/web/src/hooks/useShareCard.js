@@ -1,9 +1,10 @@
 import { useCallback, useState } from 'react';
-import html2canvas from 'html2canvas';
+import { toPng } from 'html-to-image';
 
 export function useShareCard(shareToken) {
   const [downloading, setDownloading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [downloadError, setDownloadError] = useState(null);
 
   const shareUrl =
     typeof window !== 'undefined' && shareToken
@@ -12,19 +13,49 @@ export function useShareCard(shareToken) {
 
   const downloadCard = useCallback(async () => {
     const el = document.getElementById('share-card');
-    if (!el) return;
+    if (!el) {
+      setDownloadError('Share card not found. Refresh the page and try again.');
+      return;
+    }
 
     setDownloading(true);
+    setDownloadError(null);
+
     try {
-      const canvas = await html2canvas(el, {
-        backgroundColor: '#FAF9F6',
-        scale: 2,
-        useCORS: true,
+      if (document.fonts?.ready) {
+        await document.fonts.ready;
+      }
+      await new Promise((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(resolve));
       });
+
+      el.scrollIntoView({ block: 'center' });
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+
+      const rect = el.getBoundingClientRect();
+      if (rect.width < 1 || rect.height < 1) {
+        throw new Error('Share card is not visible on screen.');
+      }
+
+      const dataUrl = await toPng(el, {
+        cacheBust: true,
+        pixelRatio: 2,
+        backgroundColor: '#FAF9F6',
+        width: Math.ceil(rect.width),
+        height: Math.ceil(rect.height),
+      });
+
+      if (!dataUrl || dataUrl.length < 100) {
+        throw new Error('Image export produced an empty file.');
+      }
+
       const link = document.createElement('a');
       link.download = 'recharge-profile.png';
-      link.href = canvas.toDataURL('image/png');
+      link.href = dataUrl;
       link.click();
+    } catch (err) {
+      console.error('Share card export failed:', err);
+      setDownloadError(err.message || 'Could not create image. Try again.');
     } finally {
       setDownloading(false);
     }
@@ -37,5 +68,5 @@ export function useShareCard(shareToken) {
     setTimeout(() => setCopied(false), 2000);
   }, [shareUrl]);
 
-  return { shareUrl, downloading, copied, downloadCard, copyLink };
+  return { shareUrl, downloading, copied, downloadError, downloadCard, copyLink };
 }

@@ -11,7 +11,7 @@ import SaveResultsSection from '../components/results/SaveResultsSection.jsx';
 
 export default function Results({ data, error, onRetake, showSaveSection = true }) {
   const shareToken = data?.shareToken;
-  const { downloading, copied, downloadCard, copyLink } = useShareCard(shareToken);
+  const { downloading, copied, downloadError, downloadCard, copyLink } = useShareCard(shareToken);
 
   if (error) {
     return (
@@ -131,9 +131,14 @@ export default function Results({ data, error, onRetake, showSaveSection = true 
           </Button>
 
           {shareToken && cloudSaved ? (
-            <Button variant="ghost" className="w-full" onClick={downloadCard} disabled={downloading}>
-              {downloading ? 'Preparing image…' : 'Download share card'}
-            </Button>
+            <>
+              <Button variant="ghost" className="w-full" onClick={downloadCard} disabled={downloading}>
+                {downloading ? 'Preparing image…' : 'Download share card'}
+              </Button>
+              {downloadError ? (
+                <p className="text-center font-sans text-body-md text-severe">{downloadError}</p>
+              ) : null}
+            </>
           ) : null}
 
           {showSaveSection && sessionId ? (
