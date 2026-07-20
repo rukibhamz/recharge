@@ -111,19 +111,36 @@ export const useAssessmentStore = create(
       },
     }),
     {
-      name: 'recharge-assessment-v14',
-      partialize: (s) => ({
-        userName: s.userName,
-        demographics: s.demographics,
-        burnoutIndex: s.burnoutIndex,
-        personalityIndex: s.personalityIndex,
-        burnoutAnswers: s.burnoutAnswers,
-        personalityAnswers: s.personalityAnswers,
-        personalityQuestions: s.personalityQuestions,
-        burnoutQuestions: s.burnoutQuestions,
-        personalityResult: s.personalityResult,
-      }),
+      name: 'recharge-assessment-v15',
+      partialize: (s) => {
+        const base = {
+          userName: s.userName,
+          demographics: s.demographics,
+          burnoutIndex: s.burnoutIndex,
+          personalityIndex: s.personalityIndex,
+          burnoutAnswers: s.burnoutAnswers,
+          personalityAnswers: s.personalityAnswers,
+          personalityQuestions: s.personalityQuestions,
+          burnoutQuestions: s.burnoutQuestions,
+          personalityResult: s.personalityResult,
+        };
+        if (s.results) {
+          return { ...base, results: s.results, phase: 'results' };
+        }
+        return base;
+      },
       merge: (persisted, current) => {
+        if (persisted?.results) {
+          return {
+            ...current,
+            ...persisted,
+            phase: 'results',
+            results: persisted.results,
+            error: null,
+            errorPhase: null,
+          };
+        }
+
         const merged = { ...current, ...persisted };
         const hasName = Boolean(merged.userName?.trim());
         const hasProfile = isValidDemographics(merged.demographics);

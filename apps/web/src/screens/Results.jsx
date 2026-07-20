@@ -10,8 +10,19 @@ import { useShareCard } from '../hooks/useShareCard.js';
 import SaveResultsSection from '../components/results/SaveResultsSection.jsx';
 
 export default function Results({ data, error, onRetake, showSaveSection = true }) {
-  const shareToken = data?.shareToken;
-  const { downloading, copied, downloadError, downloadCard, copyLink } = useShareCard(shareToken);
+  const shareToken = data?.shareToken ?? null;
+  const shareCardPayload =
+    data?.burnout && data?.personality
+      ? {
+          displayName: data.displayName,
+          burnout: data.burnout,
+          personality: data.personality,
+        }
+      : null;
+  const { downloading, copied, downloadError, downloadCard, copyLink } = useShareCard(
+    shareToken,
+    shareCardPayload,
+  );
 
   if (error) {
     return (

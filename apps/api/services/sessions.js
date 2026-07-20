@@ -94,6 +94,10 @@ export async function linkSessionToUser(userId, sessionId, email) {
 }
 
 async function buildPersonalityFromRow(row) {
+  if (row.personality_snapshot && typeof row.personality_snapshot === 'object') {
+    return row.personality_snapshot;
+  }
+
   const typeCode = String(row.personality_type ?? '').toUpperCase();
   let type = {
     id: row.personality_type,
@@ -129,6 +133,7 @@ export async function buildSessionResponse(row) {
       pct: row.burnout_pct,
       level: row.burnout_level,
       cls: row.burnout_cls,
+      summary: row.burnout_summary ?? null,
     },
     personality,
     recommendations: row.recommendations ?? [],
@@ -162,8 +167,10 @@ export async function saveSession({
     burnout_pct: burnoutRow.pct,
     burnout_level: burnoutRow.level,
     burnout_cls: burnoutRow.cls,
+    burnout_summary: burnout?.summary ? String(burnout.summary).slice(0, 4000) : null,
     personality_type: personalityRow.typeCode,
     personality_name: personalityRow.name,
+    personality_snapshot: personality ?? null,
     traits: personalityRow.traits,
     recommendations: recommendationsRow,
   };
@@ -176,6 +183,21 @@ export async function saveSession({
       'Sessions demographics column missing — saving without demographics. Run migration 007_session_demographics.sql',
     );
     ({ error } = await supabase.from('sessions').insert(baseRow));
+  }
+
+  if (error && /personality_snapshot|burnout_summary/i.test(error.message)) {
+    console.warn(
+      'Session snapshot columns missing — saving without rich copy. Run migration 008_session_snapshots.sql',
+    );
+    const slim = { ...baseRow };
+    delete slim.personality_snapshot;
+    delete slim.burnout_summary;
+    ({ error } = await supabase.from('sessions').insert(
+      demographics != null ? { ...slim, demographics } : slim,
+    ));
+    if (error && /demographics/i.test(error.message)) {
+      ({ error } = await supabase.from('sessions').insert(slim));
+    }
   }
 
   if (error) {
@@ -206,12 +228,20 @@ export async function getSessionByShareToken(shareToken) {
   const { data, error } = await supabase
     .from('sessions')
     .select(
-      'burnout_level, burnout_cls, personality_type, personality_name, traits, recommendations, created_at',
+      'id, share_token, display_name, burnout_pct, burnout_level, burnout_cls, burnout_summary, personality_type, personality_name, personality_snapshot, traits, recommendations, created_at',
     )
     .eq('share_token', shareToken)
     .maybeSingle();
 
   return { data, error };
+}
+
+export async function getSharedSessionResponse(shareToken) {
+  const { data, error } = await getSessionByShareToken(shareToken);
+  if (error) return { data: null, error };
+  if (!data) return { data: null, error: null };
+  const response = await buildSessionResponse(data);
+  return { data: response, error: null };
 }
 
 export async function getSessionsForUser(userId) {
@@ -281,7 +311,7 @@ export async function getSessionForUser(userId, sessionId) {
   const { data, error } = await supabase
     .from('sessions')
     .select(
-      'id, share_token, display_name, burnout_pct, burnout_level, burnout_cls, personality_type, personality_name, traits, recommendations, created_at',
+      'id, share_token, display_name, burnout_pct, burnout_level, burnout_cls, burnout_summary, personality_type, personality_name, personality_snapshot, traits, recommendations, created_at',
     )
     .eq('id', sessionId)
     .maybeSingle();

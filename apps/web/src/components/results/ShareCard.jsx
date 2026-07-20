@@ -1,4 +1,5 @@
-/** Capture-safe layout: inline hex colors (html2canvas / export libs miss some Tailwind tokens). */
+import { normalizeShareCardContent } from '../../lib/shareCardContent.js';
+
 const C = {
   warm: '#FAF9F6',
   primary: '#003441',
@@ -9,11 +10,11 @@ const C = {
 };
 
 export default function ShareCard({ displayName, burnout, personality }) {
-  const first = displayName?.trim().split(/\s+/)[0];
-  const type = personality?.type ?? {};
-  const icon = type.icon ?? '✨';
-  const typeName = type.name ?? type.title ?? 'Your profile';
-  const typeDesc = type.desc ?? '';
+  const { first, burnoutLevel, icon, typeName, typeDesc } = normalizeShareCardContent({
+    displayName,
+    burnout,
+    personality,
+  });
 
   return (
     <div
@@ -90,7 +91,7 @@ export default function ShareCard({ displayName, burnout, personality }) {
             color: C.primary,
           }}
         >
-          {burnout?.level ?? '—'}
+          {burnoutLevel}
         </p>
       </div>
 
@@ -127,7 +128,7 @@ export default function ShareCard({ displayName, burnout, personality }) {
                   color: C.onSurfaceVariant,
                 }}
               >
-                {typeDesc.length > 140 ? `${typeDesc.slice(0, 137)}…` : typeDesc}
+                {typeDesc}
               </p>
             ) : null}
           </div>

@@ -3,7 +3,9 @@ import { fetchSharedSession } from '../services/api.js';
 import Header from '../components/shared/Header.jsx';
 import Footer from '../components/shared/Footer.jsx';
 import Button from '../components/shared/Button.jsx';
+import ScoreRing from '../components/results/ScoreRing.jsx';
 import PersonalityCard from '../components/results/PersonalityCard.jsx';
+import TraitBars from '../components/results/TraitBars.jsx';
 import RecommendationCard from '../components/results/RecommendationCard.jsx';
 import { BURNOUT_LEVEL_COPY } from '@recharge/shared/questions';
 
@@ -47,42 +49,60 @@ export default function SharePage({ shareToken }) {
   }
 
   const { burnout, personality, recommendations } = data;
-  const copy = BURNOUT_LEVEL_COPY[burnout.cls];
+  const burnoutCopy = burnout.summary || BURNOUT_LEVEL_COPY[burnout.cls];
+  const personalitySummary = personality.summary || personality.type?.desc;
 
   return (
     <div className="flex min-h-screen flex-col bg-warm">
       <Header />
 
-      <section className="mx-auto w-full max-w-container flex-1 px-margin-mobile py-12 sm:px-gutter">
+      <main className="mx-auto w-full max-w-container flex-1 space-y-stack-gap px-margin-mobile py-stack-gap sm:px-gutter">
         <header className="text-center">
           <p className="font-sans text-label-sm uppercase tracking-[0.14em] text-primary">
             Shared Recharge profile
           </p>
-          <h1 className="mt-2 font-display text-headline-lg text-primary">{burnout.level}</h1>
-          <p className="mt-3 font-sans text-body-md text-on-surface-variant">{copy}</p>
         </header>
 
-        <div className="mt-8">
-          <PersonalityCard type={personality.type} />
-        </div>
+        <section className="glass-card p-gutter text-center">
+          <ScoreRing pct={burnout.pct ?? 0} cls={burnout.cls} level={burnout.level} />
+          <h1 className="mt-6 font-display text-headline-lg text-primary">{burnout.level}</h1>
+          <p className="mx-auto mt-4 max-w-md font-sans text-body-md text-on-surface-variant">
+            {burnoutCopy}
+          </p>
+        </section>
 
-        {recommendations?.length > 0 && (
-          <div className="mt-10">
-            <h3 className="mb-4 font-display text-headline-md text-primary">Recovery ideas</h3>
-            <div className="flex flex-col gap-4">
+        <section className="glass-card p-gutter">
+          <PersonalityCard type={personality.type} />
+          {personalitySummary ? (
+            <p className="mt-6 font-sans text-body-md leading-relaxed text-on-surface-variant">
+              {personalitySummary}
+            </p>
+          ) : null}
+          {personality.traits?.length > 0 ? (
+            <div className="mt-8">
+              <h3 className="mb-4 font-display text-headline-md text-on-surface">Your leanings</h3>
+              <TraitBars traits={personality.traits} />
+            </div>
+          ) : null}
+        </section>
+
+        {recommendations?.length > 0 ? (
+          <section className="space-y-gutter">
+            <h3 className="font-display text-headline-md text-primary">Strategic recovery</h3>
+            <div className="grid grid-cols-1 gap-gutter md:grid-cols-2">
               {recommendations.map((rec, i) => (
-                <RecommendationCard key={i} {...rec} />
+                <RecommendationCard key={i} {...rec} className="glass-card p-6" />
               ))}
             </div>
-          </div>
-        )}
+          </section>
+        ) : null}
 
-        <div className="mt-12 text-center">
+        <div className="text-center">
           <Button onClick={() => { window.location.href = '/'; }}>
             Discover your own profile
           </Button>
         </div>
-      </section>
+      </main>
 
       <Footer />
     </div>
