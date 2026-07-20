@@ -2,46 +2,48 @@
 
 The **Express API does not run on Vercel**. Deploy `apps/api` on Render/Railway and set `VITE_API_URL` on Vercel.
 
-## Fix: `vite: command not found`
+## Vercel settings (pick one)
 
-Vite is a **devDependency**. If install skips dev deps, or Root Directory is `apps/web` without a monorepo install, `vite` is missing.
-
-**Do this:**
-
-1. **Root Directory** = `apps/web` (OK) — use `apps/web/vercel.json` in repo:
-   - Install: `cd ../.. && npm install` (installs whole monorepo + devDeps)
-   - Build: `cd ../.. && npm run build -w @recharge/web`
-   - Output: `dist`
-
-   **Or** Root Directory = **empty** — use root `vercel.json` and output `apps/web/dist`.
-
-2. Redeploy after pushing `.npmrc` (`include=dev`) and the updated build script (`npx vite build`).
-
-3. Optional Vercel env: `NPM_CONFIG_INCLUDE=dev` if install still omits devDependencies.
-
-
-This happens when Vercel **Root Directory** is set to `apps/api`. The API has no static build.
-
-In Vercel → **Project Settings → General → Root Directory**:
+### Option A — Repo root (recommended)
 
 | Setting | Value |
 |---------|--------|
-| Root Directory | **empty** (repo root) **or** `apps/web` |
-| **Not** | `apps/api` |
+| Root Directory | *(empty)* |
+| Install Command | `npm install` |
+| Build Command | `npm run vercel-build` |
+| Output Directory | `apps/web/dist` |
 
-Then redeploy.
+Root `vercel.json` sets this automatically after you push.
 
-## Recommended: repo root
+### Option B — `apps/web` as root
 
-Use the root `vercel.json`:
+| Setting | Value |
+|---------|--------|
+| Root Directory | `apps/web` |
+| Install Command | `cd ../.. && npm install` |
+| Build Command | `cd ../.. && npm run vercel-build` |
+| Output Directory | `dist` |
 
-- **Install:** `npm install`
-- **Build:** `npm run build -w @recharge/web`
-- **Output:** `apps/web/dist`
+**Never** set Root Directory to `apps/api`.
 
-## Alternative: `apps/web` as root
+---
 
-Use `apps/web/vercel.json` (install runs from monorepo root).
+## Common errors
+
+### `Missing script: "build"` in `@recharge/api`
+
+Root Directory is `apps/api`. Use Option A or B above.
+
+### `vite: command not found` / `ERR_MODULE_NOT_FOUND`
+
+1. **Install must run at monorepo root** (`npm install` from repo root, or `cd ../.. && npm install` when root is `apps/web`).
+2. **Build command** must be `npm run vercel-build` (from root), not a bare `vite` in `apps/web` alone.
+3. Commit `.npmrc` (`include=dev`).
+4. Optional env: `NPM_CONFIG_INCLUDE` = `dev`.
+
+The web app build runs: `node ../../node_modules/vite/bin/vite.js build` so Vite is found after a root install.
+
+---
 
 ## Environment variables (Vercel)
 
@@ -49,9 +51,9 @@ Use `apps/web/vercel.json` (install runs from monorepo root).
 |----------|----------|
 | `VITE_SUPABASE_URL` | Yes |
 | `VITE_SUPABASE_ANON_KEY` | Yes |
-| `VITE_API_URL` | Yes — e.g. `https://recharge-api.onrender.com` |
+| `VITE_API_URL` | Yes — your Render/Railway API URL |
 
-Do **not** put `SUPABASE_SERVICE_ROLE_KEY` or `GEMINI_API_KEY` on Vercel (frontend only).
+Do **not** put `SUPABASE_SERVICE_ROLE_KEY` or `GEMINI_API_KEY` on Vercel.
 
 ## Supabase Auth
 
@@ -59,5 +61,5 @@ Add redirect URL: `https://YOUR-PROJECT.vercel.app/auth/callback`
 
 ## `Cannot GET /`
 
-- On **Vercel:** should serve `index.html` via rewrites — if you see this, build failed or wrong output directory.
-- If you opened your **API** URL in the browser without `/health`, Express returns `Cannot GET /` — that is normal; use `/health` or deploy the web app on Vercel separately.
+- On **Vercel**: build failed or wrong output directory — fix build first.
+- On **API host**: normal for `/` — use `/health`.

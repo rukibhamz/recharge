@@ -10,6 +10,7 @@
     "dev:web": "npm run dev -w @recharge/web",
     "dev:api": "npm run dev -w @recharge/api",
     "build": "npm run build -w @recharge/web",
+    "vercel-build": "npm run build -w @recharge/web",
     "start": "npm run start -w @recharge/api",
     "start:api": "npm run start -w @recharge/api",
     "test": "npm run test -w @recharge/shared",
