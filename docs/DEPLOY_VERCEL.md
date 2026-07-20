@@ -2,7 +2,23 @@
 
 The **Express API does not run on Vercel**. Deploy `apps/api` on Render/Railway and set `VITE_API_URL` on Vercel.
 
-## Fix: `Missing script: "build"` in `@recharge/api`
+## Fix: `vite: command not found`
+
+Vite is a **devDependency**. If install skips dev deps, or Root Directory is `apps/web` without a monorepo install, `vite` is missing.
+
+**Do this:**
+
+1. **Root Directory** = `apps/web` (OK) — use `apps/web/vercel.json` in repo:
+   - Install: `cd ../.. && npm install` (installs whole monorepo + devDeps)
+   - Build: `cd ../.. && npm run build -w @recharge/web`
+   - Output: `dist`
+
+   **Or** Root Directory = **empty** — use root `vercel.json` and output `apps/web/dist`.
+
+2. Redeploy after pushing `.npmrc` (`include=dev`) and the updated build script (`npx vite build`).
+
+3. Optional Vercel env: `NPM_CONFIG_INCLUDE=dev` if install still omits devDependencies.
+
 
 This happens when Vercel **Root Directory** is set to `apps/api`. The API has no static build.
 
