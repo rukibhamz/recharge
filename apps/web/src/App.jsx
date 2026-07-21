@@ -26,6 +26,7 @@ import AccountSettings from './screens/AccountSettings.jsx';
 import HistoryRedirect from './screens/HistoryRedirect.jsx';
 import SavedResult from './screens/SavedResult.jsx';
 import LegalPage from './screens/LegalPage.jsx';
+import AdminDashboard from './screens/AdminDashboard.jsx';
 
 const SHARE_PATH = /^\/share\/([a-f0-9]{32})$/i;
 const HISTORY_DETAIL_PATH = /^\/history\/([0-9a-f-]{36})$/i;
@@ -38,6 +39,7 @@ function usePathRoute() {
   if (path === '/auth/callback') return { kind: 'auth-callback' };
   if (path === '/login') return { kind: 'login' };
   if (path === '/account') return { kind: 'account' };
+  if (path === '/admin') return { kind: 'admin' };
   if (path === '/history') return { kind: 'history' };
   if (path === '/privacy') return { kind: 'legal', legal: 'privacy' };
   if (path === '/terms') return { kind: 'legal', legal: 'terms' };
@@ -58,6 +60,7 @@ export default function App() {
   if (route.kind === 'auth-callback') return <AuthCallback />;
   if (route.kind === 'login') return <Login />;
   if (route.kind === 'account') return <AccountSettings />;
+  if (route.kind === 'admin') return <AdminDashboard />;
   if (route.kind === 'legal') return <LegalPage kind={route.legal} />;
   if (route.kind === 'history') return <HistoryRedirect />;
   if (route.kind === 'history-detail') return <SavedResult sessionId={route.sessionId} />;

@@ -2,14 +2,15 @@ import {
   ASSESSMENT_QUESTION_MAX,
   ASSESSMENT_QUESTION_MIN,
 } from '@recharge/shared/assessmentConstants';
-import { AGREEMENT_OPTIONS, FREQUENCY_OPTIONS } from '@recharge/shared/questions';
-import { normalizeLlmOptions, optionLabelForValue } from '@recharge/shared/questionOptions';
+import { optionsForScale, resolveQuestionScale } from '@recharge/shared/questions';
+import { coerceOptionsToScale, optionLabelForValue } from '@recharge/shared/questionOptions';
 import { firstName } from '@recharge/shared/name';
 import { scoreMbti, formatMbtiType } from '@recharge/shared/mbtiScoring';
 import { scoreBurnout } from '@recharge/shared/scoring';
 import { llmFeatures } from '../config/llm.js';
 import { hasAnyLlmProvider, generateJson, getLastLlmProvider } from './llmProvider.js';
 import { buildQuestionPromptContext, buildPersonalityInsightPromptContext, buildUserPromptContext } from './promptContext.js';
+import { BURNOUT_MIXED_SCALE_RULES } from '@recharge/shared/promptCoaching';
 import { generateRecommendations } from './llm.js';
 import { getBurnoutBankQuestions, getMbtiTypeProfile, getPersonalityBankQuestions } from './questionBank.js';
 
@@ -83,17 +84,23 @@ function formatQaBlock(questions, answers) {
 }
 
 function normalizeQuestions(raw, phase) {
-  const fallback = phase === 'personality' ? AGREEMENT_OPTIONS : FREQUENCY_OPTIONS;
   const list = Array.isArray(raw) ? raw : raw?.questions;
   if (!Array.isArray(list)) throw new Error('Invalid question list from LLM');
 
   const questions = list
-    .map((q, i) => ({
-      id: String(q.id ?? `${phase[0]}${i + 1}`),
-      text: String(q.text ?? q.question ?? '').trim(),
-      scale: phase === 'personality' ? 'agreement' : 'frequency',
-      options: normalizeLlmOptions(q.options, fallback),
-    }))
+    .map((q, i) => {
+      const text = String(q.text ?? q.question ?? '').trim();
+      const scale =
+        phase === 'personality'
+          ? 'agreement'
+          : resolveQuestionScale({ scale: q.scale, text }, 'burnout');
+      return {
+        id: String(q.id ?? `${phase[0]}${i + 1}`),
+        text,
+        scale,
+        options: coerceOptionsToScale(q.options, scale),
+      };
+    })
     .filter((q) => q.text.length > 8);
 
   if (questions.length < ASSESSMENT_QUESTION_MIN) {
@@ -274,13 +281,15 @@ Their personality profile:
 - Type: ${p.typeCode ?? ''} — ${p.type?.title ?? ''}
 - Summary: ${p.summary ?? p.type?.desc ?? ''}
 
-Create ${ASSESSMENT_QUESTION_MIN} to ${ASSESSMENT_QUESTION_MAX} "how often" questions about exhaustion, cynicism, overwhelm, recovery, and sense of accomplishment.
-- Tailor to their work situation and age only — no place names or commute specifics
-- Exactly 5 frequency options per question (value 0=never → 4=always, labels must match the question)
+Create ${ASSESSMENT_QUESTION_MIN} to ${ASSESSMENT_QUESTION_MAX} varied burnout check-in questions — mix "I ..." agreement statements and "How often..." frequency items as each topic needs.
+- Cover exhaustion, cynicism, overwhelm, recovery, and sense of accomplishment
+- Tailor to their work situation and age only — no place names
 - Build on their personality — e.g. social vs solo stress patterns
 
+${BURNOUT_MIXED_SCALE_RULES}
+
 Return JSON only:
-{"questions":[{"id":"b1","text":"How often...","options":[{"value":0,"label":"..."},{"value":1,"label":"..."},{"value":2,"label":"..."},{"value":3,"label":"..."},{"value":4,"label":"..."}]}]}`;
+{"questions":[{"id":"b1","text":"...","scale":"agreement","options":[{"value":0,"label":"..."},{"value":1,"label":"..."},{"value":2,"label":"..."},{"value":3,"label":"..."},{"value":4,"label":"..."}]},{"id":"b2","text":"How often...","scale":"frequency","options":[{"value":0,"label":"..."},{"value":1,"label":"..."},{"value":2,"label":"..."},{"value":3,"label":"..."},{"value":4,"label":"..."}]}]}`;
 
   try {
     const parsed = await generateJson(prompt);

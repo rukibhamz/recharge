@@ -1,14 +1,24 @@
 import Logo from './Logo.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { useIsAdmin } from '../../hooks/useIsAdmin.js';
 
 function AccountNav() {
   const { user, loading, isConfigured } = useAuth();
+  const { isAdmin } = useIsAdmin();
 
   if (!isConfigured || loading) return null;
 
   if (user) {
     return (
       <nav className="flex items-center gap-4">
+        {isAdmin ? (
+          <a
+            href="/admin"
+            className="hidden font-sans text-body-md text-on-surface-variant btn-interactive hover:text-primary sm:inline"
+          >
+            Admin
+          </a>
+        ) : null}
         <a
           href="/account"
           className="hidden font-sans text-body-md text-on-surface-variant btn-interactive hover:text-primary sm:inline"

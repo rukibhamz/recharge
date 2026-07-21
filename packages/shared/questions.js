@@ -31,62 +31,74 @@ export const BURNOUT_QUESTIONS = [
     id: 'b01',
     text: 'I feel emotionally drained from my work or daily responsibilities.',
     dimension: 'emotional_exhaustion',
+    scale: 'agreement',
   },
   {
     id: 'b02',
     text: 'How often have you felt physically exhausted before the workday even begins?',
     dimension: 'emotional_exhaustion',
+    scale: 'frequency',
   },
   {
     id: 'b03',
     text: 'I feel used up at the end of the workday.',
     dimension: 'emotional_exhaustion',
+    scale: 'agreement',
   },
   {
     id: 'b04',
     text: 'How often do you feel emotionally drained by your work?',
     dimension: 'emotional_exhaustion',
+    scale: 'frequency',
   },
   {
     id: 'b05',
     text: 'I feel I treat some people as if they were impersonal objects.',
     dimension: 'depersonalisation',
+    scale: 'agreement',
   },
   {
     id: 'b06',
     text: "I feel I've become more callous toward people.",
     dimension: 'depersonalisation',
+    scale: 'agreement',
   },
   {
     id: 'b07',
     text: 'I worry that my work is hardening me emotionally.',
     dimension: 'depersonalisation',
+    scale: 'agreement',
   },
   {
     id: 'b08',
     text: 'I feel detached from the people I work with or live around.',
     dimension: 'depersonalisation',
+    scale: 'agreement',
   },
   {
     id: 'b09',
     text: 'I feel I am working too hard on things.',
     dimension: 'emotional_exhaustion',
+    scale: 'agreement',
   },
   {
     id: 'b10',
     text: 'I feel stressed by my responsibilities.',
     dimension: 'emotional_exhaustion',
+    scale: 'agreement',
   },
   {
     id: 'b11',
     text: 'I feel overwhelmed by the pace of my life.',
     dimension: 'emotional_exhaustion',
+    scale: 'agreement',
   },
   {
     id: 'b12',
     text: 'I feel a strong sense of accomplishment in what I do.',
     dimension: 'personal_accomplishment',
     reverseScored: true,
+    scale: 'agreement',
   },
 ];
 
@@ -154,17 +166,46 @@ export const PERSONALITY_QUESTIONS = [
   },
 ];
 
+export function inferQuestionScale(text) {
+  const t = String(text ?? '').trim();
+  if (!t) return 'agreement';
+  if (/^how often\b/i.test(t)) return 'frequency';
+  if (/\bhow often (do|have|does|did) you\b/i.test(t)) return 'frequency';
+  return 'agreement';
+}
+
+/** Explicit scale from DB/LLM wins; infer from text only when missing. */
+export function resolveQuestionScale(question, phase = 'personality') {
+  const raw = question?.scale ?? question?.response_scale;
+  if (raw === 'frequency' || raw === 'agreement') return raw;
+  if (question?.text) return inferQuestionScale(question.text);
+  return phase === 'burnout' ? 'agreement' : 'agreement';
+}
+
+export function optionsForScale(scale) {
+  return scale === 'frequency' ? FREQUENCY_OPTIONS : AGREEMENT_OPTIONS;
+}
+
 export function optionsForQuestion(question, phase = 'personality') {
-  if (Array.isArray(question.options) && question.options.length > 0) {
-    return question.options;
-  }
   if (question.typeSelector || question.scale === 'choice') {
     return MOTIVATOR_OPTIONS;
   }
-  if (question.scale === 'frequency' || phase === 'burnout') {
-    return FREQUENCY_OPTIONS;
+
+  const scale = resolveQuestionScale(question, phase);
+  const fallback = optionsForScale(scale);
+
+  if (Array.isArray(question.options) && question.options.length > 0) {
+    const labels = question.options.map((o) => String(o?.label ?? '').toLowerCase()).join(' ');
+    const isFrequencyLabels = /\bnever\b/.test(labels) && /\balways\b/.test(labels);
+    const isAgreementLabels =
+      /\bstrongly disagree\b/.test(labels) ||
+      (/\bagree\b/.test(labels) && /\bdisagree\b/.test(labels));
+    if (scale === 'agreement' && isFrequencyLabels) return AGREEMENT_OPTIONS;
+    if (scale === 'frequency' && isAgreementLabels) return FREQUENCY_OPTIONS;
+    return question.options;
   }
-  return AGREEMENT_OPTIONS;
+
+  return fallback;
 }
 
 export const BURNOUT_LEVEL_COPY = {

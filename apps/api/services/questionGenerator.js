@@ -1,11 +1,13 @@
-import { FREQUENCY_OPTIONS } from '@recharge/shared/questions';
+import { inferQuestionScale, optionsForScale, resolveQuestionScale } from '@recharge/shared/questions';
 import {
-  BURNOUT_OPTIONS_FORMAT,
+  BURNOUT_MIXED_SCALE_RULES,
   COACH_VOICE_RULES,
+  PERSONALITY_OPTIONS_FORMAT,
+  BURNOUT_OPTIONS_FORMAT,
   burnoutSlot,
   conversationThreadPrompt,
 } from '@recharge/shared/promptCoaching';
-import { normalizeLlmOptions, optionLabelForValue } from '@recharge/shared/questionOptions';
+import { coerceOptionsToScale, optionLabelForValue } from '@recharge/shared/questionOptions';
 import { scoreMbti } from '@recharge/shared/mbtiScoring';
 import {
   getBurnoutBankQuestions,
@@ -76,27 +78,28 @@ ${conversation}
 
 Dimension focus: ${slot.dimension}${slot.needsReverse ? ' — this final question should be positively worded (reverse-scored: feeling capable or accomplished)' : ''}.
 
-Write ONE frequency question ("How often..." or similar). It must:
-- Follow conversationally from what they already shared
-- Reference their work and daily rhythm — never cities, countries, or named places
-- No survey jargon; sound like a caring friend checking in
+Write ONE burnout check-in question (number ${index + 1} of ${TOTAL}). Choose the scale that fits how you phrase it:
+- "I ..." statement → scale "agreement" (${PERSONALITY_OPTIONS_FORMAT})
+- "How often..." → scale "frequency" (${BURNOUT_OPTIONS_FORMAT})
 
-${BURNOUT_OPTIONS_FORMAT}
+${BURNOUT_MIXED_SCALE_RULES}
 
 ${COACH_VOICE_RULES}
 
 Return JSON only:
-{"text":"...","dimension":"${slot.dimension}","reverseScored":${slot.needsReverse},"options":[{"value":0,"label":"..."},{"value":1,"label":"..."},{"value":2,"label":"..."},{"value":3,"label":"..."},{"value":4,"label":"..."}]}`;
+{"text":"...","scale":"agreement","dimension":"${slot.dimension}","reverseScored":${slot.needsReverse},"options":[{"value":0,"label":"..."},{"value":1,"label":"..."},{"value":2,"label":"..."},{"value":3,"label":"..."},{"value":4,"label":"..."}]}`;
 
   try {
     const parsed = await generateJson(prompt);
+    const text = String(parsed.text);
+    const scale = resolveQuestionScale({ scale: parsed.scale, text }, 'burnout');
     const question = {
       id: `llm-b${index + 1}`,
-      text: String(parsed.text),
+      text,
       dimension: parsed.dimension ?? slot.dimension,
       reverseScored: slot.needsReverse ? true : Boolean(parsed.reverseScored),
-      scale: 'frequency',
-      options: normalizeLlmOptions(parsed.options, FREQUENCY_OPTIONS),
+      scale,
+      options: coerceOptionsToScale(parsed.options, scale),
     };
 
     return { question, source: llmSource() };

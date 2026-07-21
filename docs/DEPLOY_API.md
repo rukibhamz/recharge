@@ -18,6 +18,7 @@ Set these in Render or Railway (not on Vercel):
 | `LLM_PROVIDER_ORDER` | Yes | e.g. `gemini` (drop `ollama` in cloud — no local Ollama) |
 | `CORS_ORIGIN` | Yes | Your Vercel URL, e.g. `https://recharge.vercel.app` (no trailing slash) |
 | `CORS_VERCEL_PREVIEWS` | Optional | Set `1` to allow any `https://*.vercel.app` preview URL |
+| `ADMIN_EMAILS` | Optional | Comma-separated emails allowed to open `/admin` stats (API-only) |
 | `PORT` | Auto | Render/Railway set `PORT` — app reads `process.env.PORT` |
 | `GEMINI_MODEL` | Optional | Default in code: `gemini-2.5-flash-lite` |
 | `RATE_LIMIT_MAX` | Optional | Default `10` per window |

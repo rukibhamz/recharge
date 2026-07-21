@@ -2,6 +2,7 @@ import {
   buildFallbackBurnoutQuestions,
   buildFallbackPersonalityQuestions,
 } from '@recharge/shared/fallbackQuestions';
+import { optionsForScale, resolveQuestionScale } from '@recharge/shared/questions';
 import { supabase, isSupabaseConfigured } from '../lib/supabase.js';
 
 const CACHE_MS = Number(process.env.QUESTION_BANK_CACHE_MS) || 300_000;
@@ -73,17 +74,27 @@ function formatPersonalitySelection(questions, options) {
   }));
 }
 
-function formatBurnoutSelection(questions, options) {
-  return questions.map((q, i) => ({
-    id: `bank-b${i + 1}`,
-    bankId: q.id,
-    text: q.question_text,
-    dimension: DIMENSION_SLUGS[q.dimension] ?? q.dimension?.toLowerCase(),
-    dimensionName: q.dimension,
-    reverseScored: false,
-    scale: 'frequency',
-    options: options.map((o) => ({ value: o.value, label: o.label })),
-  }));
+function formatBurnoutSelection(questions, frequencyOptions) {
+  return questions.map((q, i) => {
+    const scale = resolveQuestionScale({
+      response_scale: q.response_scale,
+      text: q.question_text,
+    }, 'burnout');
+    return {
+      id: `bank-b${i + 1}`,
+      bankId: q.id,
+      text: q.question_text,
+      dimension: DIMENSION_SLUGS[q.dimension] ?? q.dimension?.toLowerCase(),
+      dimensionName: q.dimension,
+      reverseScored: false,
+      scale,
+      response_scale: scale,
+      options:
+        scale === 'frequency'
+          ? frequencyOptions.map((o) => ({ value: o.value, label: o.label }))
+          : optionsForScale('agreement'),
+    };
+  });
 }
 
 function selectBalancedBurnoutQuestions(allQuestions) {

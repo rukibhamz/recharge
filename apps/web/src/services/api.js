@@ -146,3 +146,24 @@ export async function deleteAccount(accessToken) {
   if (!res.ok) throw new Error(data.error || 'Could not delete account');
   return data;
 }
+
+export async function fetchAdminAccess(accessToken) {
+  const res = await fetch(apiUrl('/api/admin/me'), {
+    headers: await authHeaders(accessToken),
+  });
+  if (res.status === 401 || res.status === 403 || res.status === 503) {
+    return { admin: false };
+  }
+  const data = await parseJsonResponse(res, 'Could not verify admin access');
+  if (!res.ok) return { admin: false };
+  return data;
+}
+
+export async function fetchAdminStats(accessToken) {
+  const res = await fetch(apiUrl('/api/admin/stats'), {
+    headers: await authHeaders(accessToken),
+  });
+  const data = await parseJsonResponse(res, 'Could not load admin stats');
+  if (!res.ok) throw new Error(data.error || 'Could not load admin stats');
+  return data;
+}

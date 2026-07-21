@@ -2,6 +2,8 @@ import {
   AGREEMENT_OPTIONS,
   BURNOUT_QUESTIONS,
   FREQUENCY_OPTIONS,
+  inferQuestionScale,
+  optionsForScale,
 } from './questions.js';
 
 function shuffle(arr) {
@@ -61,16 +63,14 @@ export function buildFallbackPersonalityQuestions() {
 
 export function buildFallbackBurnoutQuestions() {
   return shuffle(BURNOUT_QUESTIONS).map((q, i) => {
-    const base = {
+    const scale = q.scale ?? inferQuestionScale(q.text);
+    return {
       id: `fb${i + 1}`,
       text: q.text,
       dimension: q.dimension,
       reverseScored: Boolean(q.reverseScored),
-      scale: 'frequency',
-    };
-    return {
-      ...base,
-      options: FREQUENCY_OPTIONS,
+      scale,
+      options: optionsForScale(scale),
     };
   });
 }

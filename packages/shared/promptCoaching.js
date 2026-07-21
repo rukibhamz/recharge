@@ -38,6 +38,15 @@ export const BURNOUT_OPTIONS_FORMAT = `Answer options (exactly 5 — must match 
   3:"Most workdays"
   4:"Nearly every day"`;
 
+/** Burnout LLM / bank — each item declares its own scale. */
+export const BURNOUT_MIXED_SCALE_RULES = `Burnout question scales (critical — per question):
+- Each question MUST include "scale": either "agreement" or "frequency"
+- scale "agreement": first-person "I ..." statement — 5 options from strongly disagree → strongly agree (labels may be natural, statement-specific)
+- scale "frequency": "How often..." (or similar) — 5 options from never → always (labels may be natural, question-specific)
+- Mix both styles across the set — match scale to how the question is worded
+- Options MUST match the declared scale; never put Never/Always on an "I ..." statement or agree/disagree on a how-often question
+- Personalise wording to their work and age — no place names`;
+
 export const LOCATION_RULES = `Location accuracy (critical):
 - ONLY reference cities, neighbourhoods, or landmarks the user explicitly provided
 - If only a country is given, use country-level context (work culture, norms) — do NOT invent or assume a specific city (e.g. do not mention Lagos unless the user said Lagos)

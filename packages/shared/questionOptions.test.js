@@ -3,9 +3,11 @@ import assert from 'node:assert/strict';
 import { AGREEMENT_OPTIONS } from './questions.js';
 import {
   isValidPersonalityStatement,
+  coerceOptionsToScale,
   normalizeLlmOptions,
   optionLabelForValue,
 } from './questionOptions.js';
+import { inferQuestionScale, optionsForQuestion, resolveQuestionScale } from './questions.js';
 
 describe('questionOptions', () => {
   it('normalizes valid LLM options', () => {
@@ -44,5 +46,18 @@ describe('questionOptions', () => {
 
   it('resolves label for value', () => {
     assert.equal(optionLabelForValue(AGREEMENT_OPTIONS, 3), 'Agree');
+  });
+
+  it('coerces Never/Always options to agreement for I statements', () => {
+    const freq = [
+      { value: 0, label: 'Never' },
+      { value: 1, label: 'Rarely' },
+      { value: 2, label: 'Sometimes' },
+      { value: 3, label: 'Often' },
+      { value: 4, label: 'Always' },
+    ];
+    const out = coerceOptionsToScale(freq, 'agreement');
+    assert.equal(out[0].label, 'Strongly disagree');
+    assert.equal(out[4].label, 'Strongly agree');
   });
 });

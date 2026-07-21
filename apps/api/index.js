@@ -7,6 +7,7 @@ import questionsRouter from './routes/questions.js';
 import sessionRouter from './routes/session.js';
 import historyRouter from './routes/history.js';
 import accountRouter from './routes/account.js';
+import adminRouter from './routes/admin.js';
 import { rateLimit } from './middleware/rateLimit.js';
 import { ENV_EXISTS, ENV_PATH } from './loadEnv.js';
 import { geminiKeyFormat, isGeminiAvailable } from './config/gemini.js';
@@ -155,6 +156,7 @@ app.use('/api/questions', rateLimit, questionsRouter);
 app.use('/api/session', sessionRouter);
 app.use('/api/history', historyRouter);
 app.use('/api/account', accountRouter);
+app.use('/api/admin', adminRouter);
 
 app.use((err, _req, res, _next) => {
   console.error(err);
