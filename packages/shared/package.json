@@ -12,7 +12,9 @@
     "./demographics": "./demographics.js",
     "./promptCoaching": "./promptCoaching.js",
     "./questionOptions": "./questionOptions.js",
-    "./assessmentConstants": "./assessmentConstants.js"
+    "./assessmentConstants": "./assessmentConstants.js",
+    "./workspaceContent": "./workspaceContent.js",
+    "./llmConnectors": "./llmConnectors.js"
   },
   "scripts": {
     "test": "node --test scoring.test.js mbtiScoring.test.js demographics.test.js questionOptions.test.js questions.test.js"

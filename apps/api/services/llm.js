@@ -72,7 +72,7 @@ export async function generateRecommendations(
 ) {
   const fallback = STATIC_FALLBACK[burnoutLevel] ?? STATIC_FALLBACK['Moderate Burnout'];
 
-  if (!llmFeatures.recommendations || !hasAnyLlmProvider()) {
+  if (!llmFeatures.recommendations || !(await hasAnyLlmProvider())) {
     return { recommendations: fallback, source: 'static' };
   }
 

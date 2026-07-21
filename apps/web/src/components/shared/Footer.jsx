@@ -1,12 +1,20 @@
 import Logo from './Logo.jsx';
+import { useTenant } from '../../context/TenantContext.jsx';
 
 export default function Footer({ compact = false }) {
+  const { brandName, content, isWhiteLabel } = useTenant();
+
   return (
     <footer
       className={`mt-auto border-t border-outline-variant/40 bg-warm ${compact ? 'py-8' : 'py-12'}`}
     >
       <div className="mx-auto max-w-landing px-margin-mobile text-center sm:px-8 lg:px-12">
         <Logo className="inline-block" />
+        {content.footerTagline ? (
+          <p className="mx-auto mt-3 max-w-md font-sans text-body-md text-on-surface-variant">
+            {content.footerTagline}
+          </p>
+        ) : null}
         <div className="mt-4 flex flex-wrap items-center justify-center gap-x-8 gap-y-2 font-sans text-body-md text-on-surface-variant">
           <a href="/privacy" className="transition hover:text-primary">
             Privacy Policy
@@ -21,7 +29,8 @@ export default function Footer({ compact = false }) {
           )}
         </div>
         <p className="mt-4 font-sans text-[12px] text-on-surface-variant/60">
-          © Recharge. Confidential & Proprietary
+          © {brandName}
+          {isWhiteLabel ? ' · Powered by Recharge' : '. Confidential & Proprietary'}
         </p>
       </div>
     </footer>

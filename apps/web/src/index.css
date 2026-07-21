@@ -13,6 +13,23 @@
   h4 {
     @apply font-display;
   }
+
+  /* Optional white-label override when TenantProvider sets --tenant-primary */
+  .text-primary {
+    color: var(--tenant-primary, theme('colors.primary'));
+  }
+  .bg-primary {
+    background-color: var(--tenant-primary, theme('colors.primary'));
+  }
+  .border-primary {
+    border-color: var(--tenant-primary, theme('colors.primary'));
+  }
+  .ring-primary {
+    --tw-ring-color: var(--tenant-primary, theme('colors.primary'));
+  }
+  .hover\:text-primary:hover {
+    color: var(--tenant-primary, theme('colors.primary'));
+  }
 }
 
 @layer components {

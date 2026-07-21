@@ -167,3 +167,103 @@ export async function fetchAdminStats(accessToken) {
   if (!res.ok) throw new Error(data.error || 'Could not load admin stats');
   return data;
 }
+
+export async function fetchAdminWorkspaces(accessToken) {
+  const res = await fetch(apiUrl('/api/admin/workspaces'), {
+    headers: await authHeaders(accessToken),
+  });
+  const data = await parseJsonResponse(res, 'Could not load workspaces');
+  if (!res.ok) throw new Error(data.error || 'Could not load workspaces');
+  return data;
+}
+
+export async function createAdminWorkspace(accessToken, payload) {
+  const res = await fetch(apiUrl('/api/admin/workspaces'), {
+    method: 'POST',
+    headers: await authHeaders(accessToken),
+    body: JSON.stringify(payload),
+  });
+  const data = await parseJsonResponse(res, 'Could not create workspace');
+  if (!res.ok) throw new Error(data.error || 'Could not create workspace');
+  return data;
+}
+
+export async function updateAdminWorkspace(accessToken, id, payload) {
+  const res = await fetch(apiUrl(`/api/admin/workspaces/${id}`), {
+    method: 'PATCH',
+    headers: await authHeaders(accessToken),
+    body: JSON.stringify(payload),
+  });
+  const data = await parseJsonResponse(res, 'Could not update workspace');
+  if (!res.ok) throw new Error(data.error || 'Could not update workspace');
+  return data;
+}
+
+export async function deleteAdminWorkspace(accessToken, id) {
+  const res = await fetch(apiUrl(`/api/admin/workspaces/${id}`), {
+    method: 'DELETE',
+    headers: await authHeaders(accessToken),
+  });
+  const data = await parseJsonResponse(res, 'Could not delete workspace');
+  if (!res.ok) throw new Error(data.error || 'Could not delete workspace');
+  return data;
+}
+
+export async function resolveTenant(host) {
+  const q = host ? `?host=${encodeURIComponent(host)}` : '';
+  const res = await fetch(apiUrl(`/api/tenant/resolve${q}`));
+  const data = await parseJsonResponse(res, 'Could not resolve tenant');
+  if (!res.ok) throw new Error(data.error || 'Could not resolve tenant');
+  return data;
+}
+
+export async function fetchAdminConnectors(accessToken) {
+  const res = await fetch(apiUrl('/api/admin/connectors'), {
+    headers: await authHeaders(accessToken),
+  });
+  const data = await parseJsonResponse(res, 'Could not load AI connectors');
+  if (!res.ok) throw new Error(data.error || 'Could not load AI connectors');
+  return data;
+}
+
+export async function createAdminConnector(accessToken, payload) {
+  const res = await fetch(apiUrl('/api/admin/connectors'), {
+    method: 'POST',
+    headers: await authHeaders(accessToken),
+    body: JSON.stringify(payload),
+  });
+  const data = await parseJsonResponse(res, 'Could not create connector');
+  if (!res.ok) throw new Error(data.error || 'Could not create connector');
+  return data;
+}
+
+export async function updateAdminConnector(accessToken, id, payload) {
+  const res = await fetch(apiUrl(`/api/admin/connectors/${id}`), {
+    method: 'PATCH',
+    headers: await authHeaders(accessToken),
+    body: JSON.stringify(payload),
+  });
+  const data = await parseJsonResponse(res, 'Could not update connector');
+  if (!res.ok) throw new Error(data.error || 'Could not update connector');
+  return data;
+}
+
+export async function deleteAdminConnector(accessToken, id) {
+  const res = await fetch(apiUrl(`/api/admin/connectors/${id}`), {
+    method: 'DELETE',
+    headers: await authHeaders(accessToken),
+  });
+  const data = await parseJsonResponse(res, 'Could not delete connector');
+  if (!res.ok) throw new Error(data.error || 'Could not delete connector');
+  return data;
+}
+
+export async function testAdminConnector(accessToken, id) {
+  const res = await fetch(apiUrl(`/api/admin/connectors/${id}/test`), {
+    method: 'POST',
+    headers: await authHeaders(accessToken),
+  });
+  const data = await parseJsonResponse(res, 'Connector test failed');
+  if (!res.ok) throw new Error(data.error || 'Connector test failed');
+  return data;
+}

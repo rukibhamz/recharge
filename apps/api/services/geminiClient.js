@@ -44,10 +44,6 @@ function parseRetryDelayMs(err) {
   return 8_000;
 }
 
-function modelsToTry() {
-  return [...new Set([PRIMARY_MODEL, ...FALLBACK_MODELS])];
-}
-
 export function isCircuitOpen() {
   return Date.now() < circuitOpenUntil;
 }
@@ -56,8 +52,8 @@ export function getGeminiModel() {
   return activeModel;
 }
 
-async function generateWithModel(modelName, prompt) {
-  const genAI = new GoogleGenerativeAI(geminiApiKey());
+async function generateWithModel(modelName, prompt, apiKey) {
+  const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({
     model: modelName,
     generationConfig: { responseMimeType: 'application/json' },
@@ -66,8 +62,9 @@ async function generateWithModel(modelName, prompt) {
   return JSON.parse(result.response.text());
 }
 
-export async function generateGeminiJson(prompt) {
-  if (!geminiApiKey()) {
+export async function generateGeminiJson(prompt, options = {}) {
+  const apiKey = options.apiKey || geminiApiKey();
+  if (!apiKey) {
     throw new Error('GEMINI_API_KEY not configured');
   }
 
@@ -75,13 +72,16 @@ export async function generateGeminiJson(prompt) {
     throw new Error('Gemini quota cooldown active — using fallback content');
   }
 
+  const candidates = options.model
+    ? [options.model]
+    : [...new Set([PRIMARY_MODEL, ...FALLBACK_MODELS])];
+
   const run = async () => {
     const elapsed = Date.now() - lastCallAt;
     if (elapsed < MIN_INTERVAL_MS) {
       await sleep(MIN_INTERVAL_MS - elapsed);
     }
 
-    const candidates = modelsToTry();
     let lastErr;
 
     for (const modelName of candidates) {
@@ -89,7 +89,7 @@ export async function generateGeminiJson(prompt) {
         try {
           lastCallAt = Date.now();
           geminiStats.totalCalls += 1;
-          const parsed = await generateWithModel(modelName, prompt);
+          const parsed = await generateWithModel(modelName, prompt, apiKey);
           activeModel = modelName;
           geminiStats.activeModel = modelName;
           return parsed;

@@ -64,7 +64,7 @@ export async function generateNextBurnoutQuestion({
     personalitySummary = '';
   }
 
-  if (!llmFeatures.burnoutQuestions || !hasAnyLlmProvider()) {
+  if (!llmFeatures.burnoutQuestions || !(await hasAnyLlmProvider())) {
     const q = await bankBurnoutQuestion(index);
     return { question: q, source: 'bank' };
   }

@@ -52,16 +52,18 @@ function extractJson(text) {
   }
 }
 
-export async function generateOllamaJson(prompt) {
-  if (!isOllamaConfigured()) {
+export async function generateOllamaJson(prompt, options = {}) {
+  const base = (options.baseUrl || ollamaBaseUrl()).replace(/\/$/, '');
+  const model = options.model || ollamaModel();
+  if (!base || !model) {
     throw new Error('Ollama not configured');
   }
 
-  const res = await fetch(`${ollamaBaseUrl()}/api/chat`, {
+  const res = await fetch(`${base}/api/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: ollamaModel(),
+      model,
       stream: false,
       format: 'json',
       messages: [
@@ -87,5 +89,6 @@ export async function generateOllamaJson(prompt) {
 
   ollamaStats.totalCalls += 1;
   ollamaStats.connected = true;
+  ollamaStats.model = model;
   return extractJson(content);
 }

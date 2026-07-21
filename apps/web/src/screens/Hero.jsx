@@ -1,6 +1,7 @@
 import Header from '../components/shared/Header.jsx';
 import Footer from '../components/shared/Footer.jsx';
 import Button from '../components/shared/Button.jsx';
+import { useTenant } from '../context/TenantContext.jsx';
 
 const DESKTOP_FEATURES = [
   {
@@ -103,6 +104,8 @@ const MOBILE_STEPS = [
 ];
 
 export default function Hero({ onStart }) {
+  const { content } = useTenant();
+
   return (
     <div className="flex min-h-screen flex-col bg-warm">
       <Header />
@@ -114,28 +117,23 @@ export default function Hero({ onStart }) {
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path d="M12 3l1.2 3.6L17 8l-3.8 1.2L12 13l-1.2-3.8L7 8l3.8-1.2L12 3z" fill="currentColor" />
             </svg>
-            <span className="hidden sm:inline">Science-informed warmth</span>
-            <span className="sm:hidden">A science-informed sanctuary</span>
+            <span className="hidden sm:inline">{content.badge}</span>
+            <span className="sm:hidden">{content.badgeMobile}</span>
           </span>
 
           <h1 className="mx-auto mt-8 max-w-3xl font-display text-headline-lg-mobile text-primary sm:text-display-lg">
-            <span className="lg:hidden">Are you truly okay?</span>
-            <span className="hidden lg:inline">Are you truly okay, or just managing?</span>
+            <span className="lg:hidden">{content.headline}</span>
+            <span className="hidden lg:inline">{content.headlineDesktop}</span>
           </h1>
 
           <p className="mx-auto mt-6 max-w-2xl font-sans text-body-md text-on-surface-variant lg:text-body-lg">
-            <span className="lg:hidden">
-              Quiet your mind, look inward, and discover the path back to your most resilient self.
-            </span>
-            <span className="hidden lg:inline">
-              Two tailored interviews — personality first, then burnout shaped by who you are.
-              Personalised recommendations at the end. No account required.
-            </span>
+            <span className="lg:hidden">{content.supporting}</span>
+            <span className="hidden lg:inline">{content.supportingDesktop}</span>
           </p>
 
           <div className="mt-10 hidden justify-center lg:flex">
             <Button size="lg" onClick={onStart} className="min-w-[220px]">
-              Begin Assessment
+              {content.cta}
             </Button>
           </div>
         </section>
@@ -224,7 +222,7 @@ export default function Hero({ onStart }) {
 
       <div className="sticky bottom-0 border-t border-outline-variant/40 bg-warm/95 p-5 backdrop-blur-glass lg:hidden">
         <Button size="lg" className="w-full" onClick={onStart}>
-          Begin Assessment
+          {content.cta}
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path
               d="M5 12h14M13 6l6 6-6 6"

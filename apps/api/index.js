@@ -8,6 +8,7 @@ import sessionRouter from './routes/session.js';
 import historyRouter from './routes/history.js';
 import accountRouter from './routes/account.js';
 import adminRouter from './routes/admin.js';
+import tenantRouter from './routes/tenant.js';
 import { rateLimit } from './middleware/rateLimit.js';
 import { ENV_EXISTS, ENV_PATH } from './loadEnv.js';
 import { geminiKeyFormat, isGeminiAvailable } from './config/gemini.js';
@@ -86,7 +87,7 @@ app.get('/health', async (_req, res) => {
 
   const llm = {
     providerOrder: llmProviderOrder(),
-    anyProviderAvailable: hasAnyLlmProvider(),
+    anyProviderAvailable: await hasAnyLlmProvider(),
     features: llmFeatures,
     callsPerAssessment:
       Number(llmFeatures.personalityQuestions) +
@@ -109,7 +110,7 @@ app.get('/health', async (_req, res) => {
     },
     hints: [
       ...(isCircuitOpen() ? ['Gemini circuit open — using question bank / scoring fallbacks when enabled'] : []),
-      ...(!hasAnyLlmProvider()
+      ...(!(await hasAnyLlmProvider())
         ? ['No LLM available — question banks and static recommendations will be used']
         : []),
     ],
@@ -157,6 +158,7 @@ app.use('/api/session', sessionRouter);
 app.use('/api/history', historyRouter);
 app.use('/api/account', accountRouter);
 app.use('/api/admin', adminRouter);
+app.use('/api/tenant', tenantRouter);
 
 app.use((err, _req, res, _next) => {
   console.error(err);

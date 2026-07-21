@@ -178,7 +178,7 @@ export async function generatePersonalityTest(userName, demographics) {
     return { questions, count: questions.length, source };
   }
 
-  if (!hasAnyLlmProvider()) {
+  if (!(await hasAnyLlmProvider())) {
     if (bankFallbackEnabled()) {
       const { questions, source } = await useBank();
       return { questions, count: questions.length, source };
@@ -232,7 +232,7 @@ Write copy they will read on screen right after the interview. It should feel he
 Return JSON only:
 {"typeCode":"ENFP","type":{"title":"Campaigner","archetype":"short nickname e.g. The Encourager","desc":"2-3 sentences, second person, tied to their answers","strengths":"One gentle sentence — what seems to sustain them","growthAreas":"One gentle sentence — where they might need more compassion or space","icon":"🌟"},"traits":[{"name":"Extraversion / Introversion","pct":72,"poleA":"E","poleB":"I"},{"name":"Sensing / Intuition","pct":40,"poleA":"S","poleB":"N"},{"name":"Thinking / Feeling","pct":55,"poleA":"T","poleB":"F"},{"name":"Judging / Perceiving","pct":35,"poleA":"J","poleB":"P"}],"summary":"2-4 reflective sentences — themes from their answers, no type-code lecture, no places"}`;
 
-  if (hasAnyLlmProvider()) {
+  if (await hasAnyLlmProvider()) {
     try {
       const parsed = await generateJson(prompt);
       return { personality: normalizePersonalityResult(parsed), source: llmSource() };
@@ -261,7 +261,7 @@ export async function generateBurnoutTest(userName, demographics, personality) {
     return { questions, count: questions.length, source };
   }
 
-  if (!hasAnyLlmProvider()) {
+  if (!(await hasAnyLlmProvider())) {
     if (bankFallbackEnabled()) {
       const { questions, source } = await useBank();
       return { questions, count: questions.length, source };
@@ -321,7 +321,7 @@ cls must be one of: healthy, mild, moderate, severe
 Return JSON only:
 {"pct":42,"cls":"moderate","level":"Moderate Burnout","summary":"2-3 sentences explaining what you see and why"}`;
 
-  if (hasAnyLlmProvider()) {
+  if (await hasAnyLlmProvider()) {
     try {
       const parsed = await generateJson(prompt);
       return { burnout: normalizeBurnoutResult(parsed), source: llmSource() };

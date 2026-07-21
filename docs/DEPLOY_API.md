@@ -19,6 +19,23 @@ Set these in Render or Railway (not on Vercel):
 | `CORS_ORIGIN` | Yes | Your Vercel URL, e.g. `https://recharge.vercel.app` (no trailing slash) |
 | `CORS_VERCEL_PREVIEWS` | Optional | Set `1` to allow any `https://*.vercel.app` preview URL |
 | `ADMIN_EMAILS` | Optional | Comma-separated emails allowed to open `/admin` stats (API-only) |
+
+### Business SaaS (white-label)
+
+1. Run migration `011_saas_workspaces.sql` in Supabase.
+2. Open `/admin` → **Business SaaS** → add a workspace (slug, domain, content, brand colour).
+3. In **Vercel → Domains**, add the client hostname and configure DNS.
+4. Set workspace status to **Active**.
+5. Visiting that domain loads branding via `GET /api/tenant/resolve`.
+
+### AI connectors (admin)
+
+1. Run migration `012_llm_connectors.sql` in Supabase.
+2. Open `/admin` → **AI connectors**.
+3. Add Gemini, OpenAI, Anthropic, OpenRouter, and/or Ollama with model + API key.
+4. Set **priority** (lower = tried first). Use **Test** to verify.
+5. If no DB connectors exist, the API still uses `GEMINI_API_KEY` / Ollama env vars.
+
 | `PORT` | Auto | Render/Railway set `PORT` — app reads `process.env.PORT` |
 | `GEMINI_MODEL` | Optional | Default in code: `gemini-2.5-flash-lite` |
 | `RATE_LIMIT_MAX` | Optional | Default `10` per window |
