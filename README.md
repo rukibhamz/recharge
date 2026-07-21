@@ -39,8 +39,12 @@ Burnout & personality assessment PWA with AI-powered recovery recommendations.
 
    In the Supabase dashboard:
    - **Authentication → Providers → Email**: enable magic link / OTP
-   - **Authentication → URL configuration**: add redirect URL `http://localhost:5173/auth/callback`
+   - **Authentication → URL configuration**:
+     - **Site URL** = production app URL (e.g. `https://YOUR-PROJECT.vercel.app`) — not localhost in prod
+     - **Redirect URLs** = `https://YOUR-PROJECT.vercel.app/auth/callback` and `http://localhost:5173/auth/callback`
+   - **Authentication → Emails**: set sender name to **Recharge** and edit the Magic Link template (see `docs/DEPLOY_VERCEL.md`)
    - Copy the **anon key** into `.env` as `VITE_SUPABASE_ANON_KEY` (and `SUPABASE_ANON_KEY` if needed)
+   - On Vercel, set `VITE_APP_URL` to your live web origin (no trailing slash)
 
 5. **Start development**
 

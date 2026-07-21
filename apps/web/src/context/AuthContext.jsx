@@ -37,7 +37,11 @@ export function AuthProvider({ children }) {
 
   const signInWithOtp = useCallback(async (email) => {
     if (!supabase) throw new Error('Sign-in is not configured.');
-    const redirectTo = `${window.location.origin}/auth/callback`;
+    // Prefer explicit production origin so magic links never fall back to a
+    // localhost Site URL when VITE_APP_URL is set on Vercel.
+    const configuredOrigin = (import.meta.env.VITE_APP_URL || '').replace(/\/$/, '');
+    const origin = configuredOrigin || window.location.origin;
+    const redirectTo = `${origin}/auth/callback`;
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim(),
       options: { emailRedirectTo: redirectTo },
