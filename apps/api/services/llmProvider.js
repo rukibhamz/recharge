@@ -5,6 +5,7 @@ import {
   generateOpenAiCompatibleJson,
 } from './openaiCompatClient.js';
 import { getRuntimeConnectors } from './connectors.js';
+import { recordLlmCall } from './llmMonitor.js';
 
 export const llmStats = {
   totalCalls: 0,
@@ -67,14 +68,30 @@ export async function generateJson(prompt) {
   const errors = [];
 
   for (const connector of connectors) {
+    const started = Date.now();
     try {
       const { data, provider } = await callConnector(connector, prompt);
+      const latencyMs = Date.now() - started;
+      recordLlmCall({
+        connector,
+        success: true,
+        latencyMs,
+        source: 'assessment',
+      });
       llmStats.totalCalls += 1;
       llmStats.lastProvider = provider;
       llmStats.lastConnectorId = connector.id;
       llmStats.lastError = null;
       return data;
     } catch (err) {
+      const latencyMs = Date.now() - started;
+      recordLlmCall({
+        connector,
+        success: false,
+        latencyMs,
+        error: err.message,
+        source: 'assessment',
+      });
       errors.push(`${connector.name} (${connector.provider}): ${err.message}`);
       llmStats.lastError = err.message;
       llmStats.lastErrorAt = new Date().toISOString();
@@ -85,9 +102,26 @@ export async function generateJson(prompt) {
   throw new Error(`All LLM providers failed (${errors.join(' | ')})`);
 }
 
-export async function testConnectorRuntime(connector) {
-  const probe =
-    'Return JSON only: {"ok":true,"message":"connector-test"}';
-  const { data, provider } = await callConnector(connector, probe);
-  return { ok: true, provider, sample: data };
+export async function testConnectorRuntime(connector, { source = 'test' } = {}) {
+  const probe = 'Return JSON only: {"ok":true,"message":"connector-test"}';
+  const started = Date.now();
+  try {
+    const { data, provider } = await callConnector(connector, probe);
+    recordLlmCall({
+      connector,
+      success: true,
+      latencyMs: Date.now() - started,
+      source,
+    });
+    return { ok: true, provider, sample: data };
+  } catch (err) {
+    recordLlmCall({
+      connector,
+      success: false,
+      latencyMs: Date.now() - started,
+      error: err.message,
+      source,
+    });
+    throw err;
+  }
 }

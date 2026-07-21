@@ -267,3 +267,22 @@ export async function testAdminConnector(accessToken, id) {
   if (!res.ok) throw new Error(data.error || 'Connector test failed');
   return data;
 }
+
+export async function fetchAdminLlmMonitor(accessToken) {
+  const res = await fetch(apiUrl('/api/admin/llm-monitor'), {
+    headers: await authHeaders(accessToken),
+  });
+  const data = await parseJsonResponse(res, 'Could not load AI monitoring');
+  if (!res.ok) throw new Error(data.error || 'Could not load AI monitoring');
+  return data;
+}
+
+export async function probeAdminLlmMonitor(accessToken) {
+  const res = await fetch(apiUrl('/api/admin/llm-monitor/probe'), {
+    method: 'POST',
+    headers: await authHeaders(accessToken),
+  });
+  const data = await parseJsonResponse(res, 'Could not probe AI connectors');
+  if (!res.ok) throw new Error(data.error || 'Could not probe AI connectors');
+  return data;
+}

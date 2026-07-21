@@ -7,6 +7,7 @@ import Button from '../components/shared/Button.jsx';
 import LoadingDots from '../components/shared/LoadingDots.jsx';
 import WorkspaceManager from '../components/admin/WorkspaceManager.jsx';
 import ConnectorsManager from '../components/admin/ConnectorsManager.jsx';
+import LlmMonitorPanel from '../components/admin/LlmMonitorPanel.jsx';
 import { formatDate } from '../lib/formatDate.js';
 
 function StatCard({ label, value, hint }) {
@@ -78,6 +79,7 @@ export default function AdminDashboard() {
   const tabs = [
     { id: 'stats', label: 'Statistics' },
     { id: 'connectors', label: 'AI connectors' },
+    { id: 'monitor', label: 'AI monitoring' },
     { id: 'saas', label: 'Business SaaS' },
   ];
 
@@ -129,6 +131,9 @@ export default function AdminDashboard() {
         {!error && tab === 'saas' ? <WorkspaceManager getAccessToken={getAccessToken} /> : null}
         {!error && tab === 'connectors' ? (
           <ConnectorsManager getAccessToken={getAccessToken} />
+        ) : null}
+        {!error && tab === 'monitor' ? (
+          <LlmMonitorPanel getAccessToken={getAccessToken} />
         ) : null}
 
         {!error && tab === 'stats' ? (

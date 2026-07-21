@@ -36,6 +36,13 @@ Set these in Render or Railway (not on Vercel):
 4. Set **priority** (lower = tried first). Use **Test** to verify.
 5. If no DB connectors exist, the API still uses `GEMINI_API_KEY` / Ollama env vars.
 
+### AI monitoring
+
+1. Run migration `013_llm_usage_logs.sql` in Supabase.
+2. Open `/admin` → **AI monitoring**.
+3. View per-model calls, success rate (uptime), latency (24h / 7d + live process).
+4. Use **Probe all models** to run a live health check against every enabled connector.
+
 | `PORT` | Auto | Render/Railway set `PORT` — app reads `process.env.PORT` |
 | `GEMINI_MODEL` | Optional | Default in code: `gemini-2.5-flash-lite` |
 | `RATE_LIMIT_MAX` | Optional | Default `10` per window |

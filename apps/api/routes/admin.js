@@ -17,6 +17,7 @@ import {
   updateConnector,
 } from '../services/connectors.js';
 import { testConnectorRuntime } from '../services/llmProvider.js';
+import { getLlmMonitorSnapshot, probeConnectorAvailability } from '../services/llmMonitor.js';
 import { LLM_PROVIDERS } from '@recharge/shared/llmConnectors';
 
 const router = Router();
@@ -139,6 +140,29 @@ router.post('/connectors/:id/test', requireAdmin, async (req, res) => {
     res.json(result);
   } catch (err) {
     res.status(502).json({ error: err.message || 'Connector test failed.', ok: false });
+  }
+});
+
+router.get('/llm-monitor', requireAdmin, async (_req, res) => {
+  try {
+    const monitor = await getLlmMonitorSnapshot();
+    res.json(monitor);
+  } catch (err) {
+    console.error('LLM monitor failed:', err.message);
+    res.status(500).json({ error: err.message || 'Could not load LLM monitor.' });
+  }
+});
+
+router.post('/llm-monitor/probe', requireAdmin, async (_req, res) => {
+  try {
+    const probe = await probeConnectorAvailability((c) =>
+      testConnectorRuntime(c, { source: 'probe' }),
+    );
+    const monitor = await getLlmMonitorSnapshot();
+    res.json({ ...probe, monitor });
+  } catch (err) {
+    console.error('LLM probe failed:', err.message);
+    res.status(500).json({ error: err.message || 'Could not probe connectors.' });
   }
 });
 
