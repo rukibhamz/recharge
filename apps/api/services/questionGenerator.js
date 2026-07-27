@@ -1,113 +1,78 @@
-import { inferQuestionScale, optionsForScale, resolveQuestionScale } from '@recharge/shared/questions';
-import {
-  BURNOUT_MIXED_SCALE_RULES,
-  COACH_VOICE_RULES,
-  PERSONALITY_OPTIONS_FORMAT,
-  BURNOUT_OPTIONS_FORMAT,
-  burnoutSlot,
-  conversationThreadPrompt,
-} from '@recharge/shared/promptCoaching';
-import { coerceOptionsToScale, optionLabelForValue } from '@recharge/shared/questionOptions';
-import { scoreMbti } from '@recharge/shared/mbtiScoring';
+import { optionLabelForValue } from '@recharge/shared/questionOptions';
+import { scoreMbti, formatMbtiType } from '@recharge/shared/mbtiScoring';
+import { llmFeatures } from '../config/llm.js';
 import {
   getBurnoutBankQuestions,
   getPersonalityBankQuestions,
+  selectBurnoutAnchors,
+  getMbtiTypeProfile,
 } from './questionBank.js';
-import { llmFeatures } from '../config/llm.js';
-import { generateJson, getLastLlmProvider, hasAnyLlmProvider } from './llmProvider.js';
+import { runAgentTask } from './assessmentAgent.js';
 import { buildQuestionPromptContext } from './promptContext.js';
 
 const TOTAL = 12;
 
-function llmSource() {
-  return getLastLlmProvider() ?? 'llm';
-}
-
-function normalizeThread(thread) {
-  if (!Array.isArray(thread)) return [];
-  return thread
-    .filter((t) => t?.question)
-    .map((t) => ({
-      question: String(t.question),
-      answer: String(t.answer ?? ''),
-      answerValue: t.answerValue,
-    }));
-}
-
-async function bankBurnoutQuestion(index) {
-  const { questions } = await getBurnoutBankQuestions();
-  return questions[index] ?? questions[0];
-}
-
-/** Personality uses the curated MBTI bank — instant load, standard agreement scale, no LLM. */
+/** Personality uses anchored bank (agent personalizes via /assess flow). */
 export async function generatePersonalityQuestions() {
   return getPersonalityBankQuestions();
 }
 
+/**
+ * Single next burnout question — uses Assessment Agent rewrite of an anchor slot.
+ * Falls back to bank text when LLM is off or fails.
+ */
 export async function generateNextBurnoutQuestion({
   index,
-  thread,
   userName,
   demographics,
   personalityAnswers,
   personalityQuestions,
+  personality,
 }) {
-  const slot = burnoutSlot(index);
+  const anchors = await selectBurnoutAnchors();
+  const anchor = anchors[index % anchors.length] ?? anchors[0];
+
+  let personalityProfile = personality;
+  if (!personalityProfile?.typeCode && personalityAnswers && personalityQuestions) {
+    try {
+      const mbti = scoreMbti(personalityAnswers, personalityQuestions);
+      const profile = await getMbtiTypeProfile(mbti.typeCode).catch(() => null);
+      const type = formatMbtiType(profile ?? { code: mbti.typeCode });
+      personalityProfile = {
+        typeCode: mbti.typeCode,
+        type,
+        traits: mbti.traits,
+        summary: type.desc,
+      };
+    } catch {
+      personalityProfile = null;
+    }
+  }
+
+  if (!llmFeatures.burnoutQuestions) {
+    const { questions } = await getBurnoutBankQuestions();
+    return { question: questions[index] ?? questions[0], source: 'bank' };
+  }
+
   const userContext = buildQuestionPromptContext({ userName, demographics });
-  const conversation = conversationThreadPrompt(normalizeThread(thread), userName);
+  const { result, source } = await runAgentTask('rewriteBurnoutQuestion', {
+    anchor,
+    userContext,
+    userName,
+    personality: personalityProfile,
+  });
 
-  let personalitySummary = '';
-  try {
-    const mbti = scoreMbti(personalityAnswers, personalityQuestions);
-    personalitySummary = `Their personality: ${mbti.typeCode}. Let this colour your tone, not dominate it.`;
-  } catch {
-    personalitySummary = '';
-  }
+  const question = {
+    id: `agent-b${index + 1}`,
+    bankId: anchor.bankId,
+    text: result.text,
+    dimension: result.dimension ?? anchor.dimension,
+    reverseScored: Boolean(result.reverseScored ?? anchor.reverseScored),
+    scale: result.scale ?? anchor.scale,
+    options: anchor.options,
+  };
 
-  if (!llmFeatures.burnoutQuestions || !(await hasAnyLlmProvider())) {
-    const q = await bankBurnoutQuestion(index);
-    return { question: q, source: 'bank' };
-  }
-
-  const prompt = `You are continuing a private check-in about stress and energy (question ${index + 1} of ${TOTAL}).
-
-${userContext}
-${personalitySummary}
-
-${conversation}
-
-Dimension focus: ${slot.dimension}${slot.needsReverse ? ' — this final question should be positively worded (reverse-scored: feeling capable or accomplished)' : ''}.
-
-Write ONE burnout check-in question (number ${index + 1} of ${TOTAL}). Choose the scale that fits how you phrase it:
-- "I ..." statement → scale "agreement" (${PERSONALITY_OPTIONS_FORMAT})
-- "How often..." → scale "frequency" (${BURNOUT_OPTIONS_FORMAT})
-
-${BURNOUT_MIXED_SCALE_RULES}
-
-${COACH_VOICE_RULES}
-
-Return JSON only:
-{"text":"...","scale":"agreement","dimension":"${slot.dimension}","reverseScored":${slot.needsReverse},"options":[{"value":0,"label":"..."},{"value":1,"label":"..."},{"value":2,"label":"..."},{"value":3,"label":"..."},{"value":4,"label":"..."}]}`;
-
-  try {
-    const parsed = await generateJson(prompt);
-    const text = String(parsed.text);
-    const scale = resolveQuestionScale({ scale: parsed.scale, text }, 'burnout');
-    const question = {
-      id: `llm-b${index + 1}`,
-      text,
-      dimension: parsed.dimension ?? slot.dimension,
-      reverseScored: slot.needsReverse ? true : Boolean(parsed.reverseScored),
-      scale,
-      options: coerceOptionsToScale(parsed.options, scale),
-    };
-
-    return { question, source: llmSource() };
-  } catch (err) {
-    console.error(`Burnout Q${index + 1} LLM failed:`, err.message);
-    const q = await bankBurnoutQuestion(index);
-    return { question: q, source: 'bank' };
-  }
+  return { question, source };
 }
 
 export async function generateBurnoutQuestions(
@@ -130,7 +95,7 @@ export async function generateBurnoutQuestions(
       personalityQuestions,
     });
     questions.push(question);
-    if (s !== 'bank') source = s;
+    if (s !== 'bank' && s !== 'bank-fallback') source = s;
     thread.push({
       question: question.text,
       answer: optionLabelForValue(question.options, 2),

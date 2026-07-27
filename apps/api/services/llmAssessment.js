@@ -1,22 +1,24 @@
-import {
-  ASSESSMENT_QUESTION_MAX,
-  ASSESSMENT_QUESTION_MIN,
-} from '@recharge/shared/assessmentConstants';
-import { optionsForScale, resolveQuestionScale } from '@recharge/shared/questions';
-import { coerceOptionsToScale, optionLabelForValue } from '@recharge/shared/questionOptions';
-import { firstName } from '@recharge/shared/name';
+import { optionLabelForValue } from '@recharge/shared/questionOptions';
 import { scoreMbti, formatMbtiType } from '@recharge/shared/mbtiScoring';
-import { scoreBurnout } from '@recharge/shared/scoring';
+import {
+  calibrateBurnout,
+  scoreBurnoutByDimension,
+} from '@recharge/shared/burnoutCalibration';
 import { llmFeatures } from '../config/llm.js';
-import { hasAnyLlmProvider, generateJson, getLastLlmProvider } from './llmProvider.js';
-import { buildQuestionPromptContext, buildPersonalityInsightPromptContext, buildUserPromptContext } from './promptContext.js';
-import { BURNOUT_MIXED_SCALE_RULES } from '@recharge/shared/promptCoaching';
+import {
+  buildQuestionPromptContext,
+  buildPersonalityInsightPromptContext,
+  buildUserPromptContext,
+} from './promptContext.js';
 import { generateRecommendations } from './llm.js';
-import { getBurnoutBankQuestions, getMbtiTypeProfile, getPersonalityBankQuestions } from './questionBank.js';
-
-function llmSource() {
-  return getLastLlmProvider() ?? 'llm';
-}
+import {
+  getBurnoutBankQuestions,
+  getMbtiTypeProfile,
+  getPersonalityBankQuestions,
+  selectBurnoutAnchors,
+  selectPersonalityAnchors,
+} from './questionBank.js';
+import { personalizeAnchorBatch, runAgentTask } from './assessmentAgent.js';
 
 function bankFallbackEnabled() {
   const raw = process.env.LLM_ASSESSMENT_BANK_FALLBACK;
@@ -29,51 +31,6 @@ function questionsSupportMbtiScoring(questions) {
   return questions.every((q) => q.scoredPole ?? q.scored_pole);
 }
 
-async function scorePersonalityFromBank(questions, answers) {
-  const mbti = scoreMbti(answers, questions);
-  let profile = null;
-  try {
-    profile = await getMbtiTypeProfile(mbti.typeCode);
-  } catch (err) {
-    console.warn('MBTI profile load failed:', err.message);
-  }
-  const type = formatMbtiType(
-    profile ?? {
-      code: mbti.typeCode,
-      title: '',
-      archetype: '',
-      description: '',
-      strengths: '',
-      growth_areas: '',
-    },
-  );
-  const personality = normalizePersonalityResult({
-    typeCode: mbti.typeCode,
-    type: {
-      title: type.title,
-      archetype: type.archetype,
-      desc: type.desc,
-      strengths: type.strengths,
-      growthAreas: type.growthAreas,
-      icon: type.icon,
-    },
-    traits: mbti.traits,
-    summary: type.desc,
-  });
-  return { personality, source: profile ? 'bank' : 'scoring' };
-}
-
-function scoreBurnoutFromAnswers(questions, answers) {
-  const scored = scoreBurnout(answers, questions);
-  return {
-    burnout: {
-      ...scored,
-      summary: `Based on your check-in answers, your current burnout score is ${scored.pct}% (${scored.level}).`,
-    },
-    source: 'scoring',
-  };
-}
-
 function formatQaBlock(questions, answers) {
   return questions
     .map((q, i) => {
@@ -83,31 +40,30 @@ function formatQaBlock(questions, answers) {
     .join('\n\n');
 }
 
-function normalizeQuestions(raw, phase) {
-  const list = Array.isArray(raw) ? raw : raw?.questions;
-  if (!Array.isArray(list)) throw new Error('Invalid question list from LLM');
+function formatPersonalityQuestions(items) {
+  return items.map((item, i) => ({
+    id: `p${i + 1}`,
+    bankId: item.anchor?.bankId ?? null,
+    text: item.text,
+    scoredPole: item.scoredPole ?? item.anchor?.scoredPole,
+    dichotomy: item.dichotomy ?? item.anchor?.dichotomy,
+    scale: 'agreement',
+    options: item.anchor?.options ?? [],
+  }));
+}
 
-  const questions = list
-    .map((q, i) => {
-      const text = String(q.text ?? q.question ?? '').trim();
-      const scale =
-        phase === 'personality'
-          ? 'agreement'
-          : resolveQuestionScale({ scale: q.scale, text }, 'burnout');
-      return {
-        id: String(q.id ?? `${phase[0]}${i + 1}`),
-        text,
-        scale,
-        options: coerceOptionsToScale(q.options, scale),
-      };
-    })
-    .filter((q) => q.text.length > 8);
-
-  if (questions.length < ASSESSMENT_QUESTION_MIN) {
-    throw new Error(`LLM returned only ${questions.length} questions`);
-  }
-
-  return questions.slice(0, ASSESSMENT_QUESTION_MAX);
+function formatBurnoutQuestions(items) {
+  return items.map((item, i) => ({
+    id: `b${i + 1}`,
+    bankId: item.anchor?.bankId ?? null,
+    text: item.text,
+    dimension: item.dimension ?? item.anchor?.dimension,
+    dimensionName: item.anchor?.dimensionName ?? item.dimension,
+    reverseScored: Boolean(item.reverseScored ?? item.anchor?.reverseScored),
+    scale: item.scale ?? item.anchor?.scale,
+    response_scale: item.scale ?? item.anchor?.scale,
+    options: item.anchor?.options ?? [],
+  }));
 }
 
 export function normalizePersonalityResult(parsed) {
@@ -164,176 +120,221 @@ export function normalizeBurnoutResult(parsed) {
 
   return {
     pct,
+    rawPct: parsed?.rawPct != null ? Number(parsed.rawPct) : pct,
     level: parsed.level ?? levelMap[cls],
     cls,
     summary: parsed.summary ?? '',
+    calibrationNote: parsed.calibrationNote ?? null,
+    dimensions: parsed.dimensions ?? undefined,
   };
 }
 
-export async function generatePersonalityTest(userName, demographics) {
-  const useBank = () => getPersonalityBankQuestions();
+async function scorePersonalityFromBank(questions, answers) {
+  const mbti = scoreMbti(answers, questions);
+  let profile = null;
+  try {
+    profile = await getMbtiTypeProfile(mbti.typeCode);
+  } catch (err) {
+    console.warn('MBTI profile load failed:', err.message);
+  }
+  const type = formatMbtiType(
+    profile ?? {
+      code: mbti.typeCode,
+      title: '',
+      archetype: '',
+      description: '',
+      strengths: '',
+      growth_areas: '',
+    },
+  );
+  const personality = normalizePersonalityResult({
+    typeCode: mbti.typeCode,
+    type: {
+      title: type.title,
+      archetype: type.archetype,
+      desc: type.desc,
+      strengths: type.strengths,
+      growthAreas: type.growthAreas,
+      icon: type.icon,
+    },
+    traits: mbti.traits,
+    summary: type.desc,
+  });
+  return { personality, source: profile ? 'bank' : 'scoring' };
+}
 
+/** Anchored + agent-personalized personality questions (metadata locked). */
+export async function generatePersonalityTest(userName, demographics) {
   if (!llmFeatures.personalityQuestions) {
-    const { questions, source } = await useBank();
+    const { questions, source } = await getPersonalityBankQuestions();
     return { questions, count: questions.length, source };
   }
 
-  if (!(await hasAnyLlmProvider())) {
-    if (bankFallbackEnabled()) {
-      const { questions, source } = await useBank();
-      return { questions, count: questions.length, source };
-    }
-    throw new Error('No LLM provider available. Personality test requires a live connection.');
-  }
-
-  const ctx = buildQuestionPromptContext({ userName, demographics });
-  const name = firstName(userName);
-
-  const prompt = `Design a unique personality interview for ${name || 'this person'}.
-
-${ctx}
-
-Create exactly ${ASSESSMENT_QUESTION_MIN} to ${ASSESSMENT_QUESTION_MAX} questions that reveal how they gain energy, process information, make decisions, and organise life.
-- Each question: one clear "I ..." statement they can rate
-- Exactly 5 options per question (value 0–4, labels must fit THAT statement — not generic Likert text)
-- Personalise tone to their age and work context only — no place names
-- All questions must be answerable on a single 5-point scale
-
-Return JSON only:
-{"questions":[{"id":"p1","text":"I ...","options":[{"value":0,"label":"..."},{"value":1,"label":"..."},{"value":2,"label":"..."},{"value":3,"label":"..."},{"value":4,"label":"..."}]}]}`;
+  const anchors = await selectPersonalityAnchors();
+  const userContext = buildQuestionPromptContext({ userName, demographics });
 
   try {
-    const parsed = await generateJson(prompt);
-    const questions = normalizeQuestions(parsed, 'personality');
-    return { questions, count: questions.length, source: llmSource() };
+    const { items, source } = await personalizeAnchorBatch(
+      'rewritePersonalityQuestion',
+      anchors,
+      { userContext, userName },
+    );
+    const questions = formatPersonalityQuestions(items);
+    return { questions, count: questions.length, source };
   } catch (err) {
-    console.warn('Personality test LLM failed:', err.message);
+    console.warn('Personality test agent failed:', err.message);
     if (!bankFallbackEnabled()) throw err;
-    const { questions, source } = await useBank();
+    const { questions, source } = await getPersonalityBankQuestions();
     return { questions, count: questions.length, source };
   }
 }
 
+/**
+ * Always score with scoreMbti when poles exist.
+ * Agent writes narrative only around the locked type.
+ */
 export async function scorePersonalityTest(userName, demographics, questions, answers) {
-  const ctx = buildPersonalityInsightPromptContext({ userName, demographics });
-  const qa = formatQaBlock(questions, answers);
-
-  const prompt = `You are a skilled therapist listening to someone's personality interview. Reflect back what their answers reveal — with warmth, specificity, and zero geography.
-
-${ctx}
-
-Their interview:
-${qa}
-
-Infer their best-fit 4-letter type from the answers (MBTI-style). Trait percentages show lean toward poleA (0–100).
-
-Write copy they will read on screen right after the interview. It should feel heard, not categorised.
-
-Return JSON only:
-{"typeCode":"ENFP","type":{"title":"Campaigner","archetype":"short nickname e.g. The Encourager","desc":"2-3 sentences, second person, tied to their answers","strengths":"One gentle sentence — what seems to sustain them","growthAreas":"One gentle sentence — where they might need more compassion or space","icon":"🌟"},"traits":[{"name":"Extraversion / Introversion","pct":72,"poleA":"E","poleB":"I"},{"name":"Sensing / Intuition","pct":40,"poleA":"S","poleB":"N"},{"name":"Thinking / Feeling","pct":55,"poleA":"T","poleB":"F"},{"name":"Judging / Perceiving","pct":35,"poleA":"J","poleB":"P"}],"summary":"2-4 reflective sentences — themes from their answers, no type-code lecture, no places"}`;
-
-  if (await hasAnyLlmProvider()) {
-    try {
-      const parsed = await generateJson(prompt);
-      return { personality: normalizePersonalityResult(parsed), source: llmSource() };
-    } catch (err) {
-      console.warn('Personality score LLM failed:', err.message);
-      if (!bankFallbackEnabled() || !questionsSupportMbtiScoring(questions)) {
-        throw new Error(
-          err.message?.includes('429') || /quota|circuit/i.test(err.message ?? '')
-            ? 'Gemini is temporarily rate-limited. Wait a minute and try again, or retry later.'
-            : err.message,
-        );
-      }
+  if (!questionsSupportMbtiScoring(questions)) {
+    if (!bankFallbackEnabled()) {
+      throw new Error('Personality questions missing scoring metadata (scoredPole).');
     }
-  } else if (!bankFallbackEnabled() || !questionsSupportMbtiScoring(questions)) {
-    throw new Error('No LLM provider available.');
+    // Legacy LLM-invented questions without poles — cannot guarantee consistency
+    console.warn('Personality questions lack scoredPole — falling back to bank-style if possible');
+  }
+
+  if (questionsSupportMbtiScoring(questions)) {
+    const mbti = scoreMbti(answers, questions);
+    let profile = null;
+    try {
+      profile = await getMbtiTypeProfile(mbti.typeCode);
+    } catch (err) {
+      console.warn('MBTI profile load failed:', err.message);
+    }
+
+    const typeFormatted = formatMbtiType(
+      profile ?? {
+        code: mbti.typeCode,
+        title: '',
+        archetype: '',
+        description: '',
+        strengths: '',
+        growth_areas: '',
+      },
+    );
+
+    let narrative = {
+      type: {
+        title: typeFormatted.title,
+        archetype: typeFormatted.archetype,
+        desc: typeFormatted.desc,
+        strengths: typeFormatted.strengths,
+        growthAreas: typeFormatted.growthAreas,
+        icon: typeFormatted.icon,
+      },
+      summary: typeFormatted.desc,
+    };
+    let source = profile ? 'scoring' : 'scoring';
+
+    if (llmFeatures.personalityNarrative) {
+      const insightContext = buildPersonalityInsightPromptContext({
+        userName,
+        demographics,
+      });
+      const qaBlock = formatQaBlock(questions, answers);
+      const { result, source: narrativeSource } = await runAgentTask(
+        'writePersonalityNarrative',
+        {
+          insightContext,
+          qaBlock,
+          typeCode: mbti.typeCode,
+          traits: mbti.traits,
+          typeProfile: profile ?? { code: mbti.typeCode, title: typeFormatted.title },
+        },
+      );
+      narrative = result;
+      source = narrativeSource === 'bank-fallback' ? 'scoring' : narrativeSource;
+    }
+
+    const personality = normalizePersonalityResult({
+      typeCode: mbti.typeCode,
+      type: narrative.type,
+      traits: mbti.traits,
+      summary: narrative.summary,
+    });
+
+    return { personality, source };
   }
 
   return scorePersonalityFromBank(questions, answers);
 }
 
+/** Anchored burnout questions personalized with locked personality. */
 export async function generateBurnoutTest(userName, demographics, personality) {
-  const useBank = () => getBurnoutBankQuestions();
-
   if (!llmFeatures.burnoutQuestions) {
-    const { questions, source } = await useBank();
+    const { questions, source } = await getBurnoutBankQuestions();
     return { questions, count: questions.length, source };
   }
 
-  if (!(await hasAnyLlmProvider())) {
-    if (bankFallbackEnabled()) {
-      const { questions, source } = await useBank();
-      return { questions, count: questions.length, source };
-    }
-    throw new Error('No LLM provider available. Burnout test requires a live connection.');
-  }
-
-  const ctx = buildQuestionPromptContext({ userName, demographics });
-  const name = firstName(userName);
-  const p = personality ?? {};
-
-  const prompt = `Design a burnout and energy check-in for ${name || 'this person'}.
-
-${ctx}
-
-Their personality profile:
-- Type: ${p.typeCode ?? ''} — ${p.type?.title ?? ''}
-- Summary: ${p.summary ?? p.type?.desc ?? ''}
-
-Create ${ASSESSMENT_QUESTION_MIN} to ${ASSESSMENT_QUESTION_MAX} varied burnout check-in questions — mix "I ..." agreement statements and "How often..." frequency items as each topic needs.
-- Cover exhaustion, cynicism, overwhelm, recovery, and sense of accomplishment
-- Tailor to their work situation and age only — no place names
-- Build on their personality — e.g. social vs solo stress patterns
-
-${BURNOUT_MIXED_SCALE_RULES}
-
-Return JSON only:
-{"questions":[{"id":"b1","text":"...","scale":"agreement","options":[{"value":0,"label":"..."},{"value":1,"label":"..."},{"value":2,"label":"..."},{"value":3,"label":"..."},{"value":4,"label":"..."}]},{"id":"b2","text":"How often...","scale":"frequency","options":[{"value":0,"label":"..."},{"value":1,"label":"..."},{"value":2,"label":"..."},{"value":3,"label":"..."},{"value":4,"label":"..."}]}]}`;
+  const anchors = await selectBurnoutAnchors();
+  const userContext = buildQuestionPromptContext({ userName, demographics });
 
   try {
-    const parsed = await generateJson(prompt);
-    const questions = normalizeQuestions(parsed, 'burnout');
-    return { questions, count: questions.length, source: llmSource() };
+    const { items, source } = await personalizeAnchorBatch(
+      'rewriteBurnoutQuestion',
+      anchors,
+      { userContext, userName, personality },
+    );
+    const questions = formatBurnoutQuestions(items);
+    return { questions, count: questions.length, source };
   } catch (err) {
-    console.warn('Burnout test LLM failed:', err.message);
+    console.warn('Burnout test agent failed:', err.message);
     if (!bankFallbackEnabled()) throw err;
-    const { questions, source } = await useBank();
+    const { questions, source } = await getBurnoutBankQuestions();
     return { questions, count: questions.length, source };
   }
 }
 
-export async function scoreBurnoutTest(userName, demographics, personality, questions, answers) {
-  const ctx = buildUserPromptContext({ userName, demographics });
-  const qa = formatQaBlock(questions, answers);
+/**
+ * Deterministic raw + trait calibration, then agent narrative only.
+ */
+export async function scoreBurnoutTest(
+  userName,
+  demographics,
+  personality,
+  questions,
+  answers,
+) {
+  const raw = scoreBurnoutByDimension(answers, questions);
+  const calibrated = calibrateBurnout(raw, personality);
 
-  const prompt = `You are a burnout specialist. Assess burnout risk from these check-in responses.
+  let summary = `Based on your check-in answers, your current burnout score is ${calibrated.pct}% (${calibrated.level}).`;
+  let source = 'scoring';
 
-${ctx}
-
-Personality context: ${personality?.typeCode ?? ''} — ${personality?.summary ?? ''}
-
-${qa}
-
-Determine burnout level. pct is 0 (healthy) to 100 (severe depletion).
-cls must be one of: healthy, mild, moderate, severe
-
-Return JSON only:
-{"pct":42,"cls":"moderate","level":"Moderate Burnout","summary":"2-3 sentences explaining what you see and why"}`;
-
-  if (await hasAnyLlmProvider()) {
-    try {
-      const parsed = await generateJson(prompt);
-      return { burnout: normalizeBurnoutResult(parsed), source: llmSource() };
-    } catch (err) {
-      console.warn('Burnout score LLM failed:', err.message);
-      if (!bankFallbackEnabled()) throw err;
-    }
-  } else if (!bankFallbackEnabled()) {
-    throw new Error('No LLM provider available.');
+  if (llmFeatures.burnoutNarrative) {
+    const userContext = buildUserPromptContext({ userName, demographics });
+    const qaBlock = formatQaBlock(questions, answers);
+    const { result, source: narrativeSource } = await runAgentTask('writeBurnoutSummary', {
+      userContext,
+      qaBlock,
+      personality,
+      calibrated,
+    });
+    summary = result.summary;
+    source = narrativeSource === 'bank-fallback' ? 'scoring' : narrativeSource;
   }
 
-  return scoreBurnoutFromAnswers(questions, answers);
+  return {
+    burnout: normalizeBurnoutResult({
+      pct: calibrated.pct,
+      rawPct: calibrated.rawPct,
+      cls: calibrated.cls,
+      level: calibrated.level,
+      summary,
+      calibrationNote: calibrated.calibrationNote,
+      dimensions: calibrated.dimensions,
+    }),
+    source,
+  };
 }
 
 export async function completeAssessment({

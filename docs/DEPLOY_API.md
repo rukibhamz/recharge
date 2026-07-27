@@ -208,6 +208,23 @@ LLM_RECOMMENDATIONS=false
 
 Optional: keep `LLM_RECOMMENDATIONS=true` for **one** Gemini call at the end only (still has static fallback).
 
+### Assessment Agent (personalized language, deterministic scores)
+
+Personality and burnout questions are **anchored** to the Supabase banks. The Assessment Agent rewrites wording for the user; `scoreMbti` and trait-based `calibrateBurnout` own the numbers.
+
+```env
+# Skip agent rewrites — use bank seed text as-is
+LLM_PERSONALITY_QUESTIONS=false
+LLM_BURNOUT_QUESTIONS=false
+
+# Skip narrative copy (use DB type profile / template summary)
+LLM_PERSONALITY_NARRATIVE=false
+LLM_BURNOUT_NARRATIVE=false
+
+# Repair retries when LLM JSON fails validation (default 2)
+ASSESSMENT_AGENT_MAX_RETRIES=2
+```
+
 ### 4. Local dev with Ollama
 
 ```env

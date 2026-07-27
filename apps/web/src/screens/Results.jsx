@@ -91,6 +91,12 @@ export default function Results({ data, error, onRetake, showSaveSection = true 
         <section className="glass-card p-gutter text-center">
           <ScoreRing pct={burnout.pct} cls={burnout.cls} level={burnout.level} />
           <h2 className="mt-6 font-display text-headline-lg text-primary">{burnout.level}</h2>
+          {burnout.rawPct != null && burnout.rawPct !== burnout.pct ? (
+            <p className="mt-2 font-sans text-label-sm text-on-surface-variant">
+              Relative to your personality profile
+              {burnout.calibrationNote ? ` · ${burnout.calibrationNote}` : ''}
+            </p>
+          ) : null}
           <p className="mx-auto mt-4 max-w-md font-sans text-body-md text-on-surface-variant">
             {copy}
           </p>

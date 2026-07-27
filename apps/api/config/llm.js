@@ -17,7 +17,14 @@ export const llmFeatures = {
   personalityQuestions: featureFlag('LLM_PERSONALITY_QUESTIONS', 'GEMINI_PERSONALITY_QUESTIONS', true),
   burnoutQuestions: featureFlag('LLM_BURNOUT_QUESTIONS', 'GEMINI_BURNOUT_QUESTIONS', true),
   recommendations: featureFlag('LLM_RECOMMENDATIONS', 'GEMINI_RECOMMENDATIONS', true),
+  personalityNarrative: featureFlag('LLM_PERSONALITY_NARRATIVE', 'LLM_PERSONALITY_NARRATIVE', true),
+  burnoutNarrative: featureFlag('LLM_BURNOUT_NARRATIVE', 'LLM_BURNOUT_NARRATIVE', true),
 };
+
+export function assessmentAgentMaxRetries() {
+  const n = Number(process.env.ASSESSMENT_AGENT_MAX_RETRIES);
+  return Number.isFinite(n) && n >= 0 ? Math.min(5, Math.floor(n)) : 2;
+}
 
 /** Provider try order: gemini,ollama */
 export function llmProviderOrder() {

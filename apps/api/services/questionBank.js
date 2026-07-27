@@ -178,7 +178,7 @@ async function loadBurnoutBank() {
   const { data: questions, error: qErr } = await supabase
     .from('burnout_questions_full')
     .select(
-      'id, question_number, question_text, dimension_id, dimension, dimension_description',
+      'id, question_number, question_text, dimension_id, dimension, dimension_description, response_scale',
     );
 
   if (qErr) throw qErr;
@@ -256,6 +256,94 @@ export async function getBurnoutBankQuestions() {
   } catch (err) {
     console.error('Burnout question bank failed:', err.message);
     return { questions: buildFallbackBurnoutQuestions(), source: 'static-fallback' };
+  }
+}
+
+/**
+ * Anchor slots for Assessment Agent personalization.
+ * Immutable metadata (scoredPole / dimension / scale) is preserved across rewrites.
+ */
+export async function selectPersonalityAnchors() {
+  if (!isSupabaseConfigured()) {
+    return buildFallbackPersonalityQuestions().map((q, i) => ({
+      bankId: q.id ?? `fp-${i}`,
+      seedText: q.text,
+      scoredPole: q.scoredPole,
+      dichotomy: q.dichotomy,
+      scale: 'agreement',
+      options: q.options,
+    }));
+  }
+
+  try {
+    const { questions, options } = await loadPersonalityBank();
+    const picked = selectBalancedPersonalityQuestions(questions);
+    return picked.map((q) => ({
+      bankId: q.id,
+      seedText: q.question_text,
+      scoredPole: q.scored_pole,
+      dichotomy: q.dichotomy,
+      scale: 'agreement',
+      options: options.map((o) => ({ value: o.value, label: o.label })),
+    }));
+  } catch (err) {
+    console.error('Personality anchors failed:', err.message);
+    return buildFallbackPersonalityQuestions().map((q, i) => ({
+      bankId: q.id ?? `fp-${i}`,
+      seedText: q.text,
+      scoredPole: q.scoredPole,
+      dichotomy: q.dichotomy,
+      scale: 'agreement',
+      options: q.options,
+    }));
+  }
+}
+
+export async function selectBurnoutAnchors() {
+  if (!isSupabaseConfigured()) {
+    return buildFallbackBurnoutQuestions().map((q, i) => ({
+      bankId: q.id ?? `fb-${i}`,
+      seedText: q.text,
+      dimension: q.dimension,
+      dimensionName: q.dimension,
+      reverseScored: Boolean(q.reverseScored),
+      scale: q.scale,
+      options: q.options,
+    }));
+  }
+
+  try {
+    const { questions, options } = await loadBurnoutBank();
+    const picked = selectBalancedBurnoutQuestions(questions);
+    return picked.map((q) => {
+      const scale = resolveQuestionScale(
+        { response_scale: q.response_scale, text: q.question_text },
+        'burnout',
+      );
+      return {
+        bankId: q.id,
+        seedText: q.question_text,
+        dimension: DIMENSION_SLUGS[q.dimension] ?? q.dimension?.toLowerCase(),
+        dimensionName: q.dimension,
+        reverseScored: false,
+        scale,
+        options:
+          scale === 'frequency'
+            ? options.map((o) => ({ value: o.value, label: o.label }))
+            : optionsForScale('agreement'),
+      };
+    });
+  } catch (err) {
+    console.error('Burnout anchors failed:', err.message);
+    return buildFallbackBurnoutQuestions().map((q, i) => ({
+      bankId: q.id ?? `fb-${i}`,
+      seedText: q.text,
+      dimension: q.dimension,
+      dimensionName: q.dimension,
+      reverseScored: Boolean(q.reverseScored),
+      scale: q.scale,
+      options: q.options,
+    }));
   }
 }
 

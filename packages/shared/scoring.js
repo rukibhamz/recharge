@@ -53,12 +53,15 @@ export function scoreBurnout(answers, questions = null) {
     const score = reverse ? maxPerQ - val : val;
     return sum + score;
   }, 0);
-  const pct = Math.round((raw / MAX) * 100);
-
-  if (pct >= 70) return { pct, level: 'Severe Burnout', cls: 'severe' };
-  if (pct >= 45) return { pct, level: 'Moderate Burnout', cls: 'moderate' };
-  if (pct >= 25) return { pct, level: 'Mild Burnout', cls: 'mild' };
-  return { pct, level: 'Healthy Range', cls: 'healthy' };
+  const pct = MAX > 0 ? Math.round((raw / MAX) * 100) : 0;
+  const cls = pct >= 70 ? 'severe' : pct >= 45 ? 'moderate' : pct >= 25 ? 'mild' : 'healthy';
+  const levelMap = {
+    healthy: 'Healthy Range',
+    mild: 'Mild Burnout',
+    moderate: 'Moderate Burnout',
+    severe: 'Severe Burnout',
+  };
+  return { pct, level: levelMap[cls], cls, rawPct: pct };
 }
 
 export function scorePersonality(answers, questions = null) {

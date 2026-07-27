@@ -27,6 +27,20 @@ describe('scoreMbti', () => {
     assert.equal(result.typeCode.charAt(0), 'I');
     assert.equal(result.traits.length, 4);
   });
+
+  it('keeps same typeCode when question text differs but poles match', () => {
+    const poles = ['E', 'E', 'E', 'S', 'S', 'S', 'T', 'T', 'T', 'J', 'J', 'J'];
+    const answers = [4, 3, 4, 1, 0, 1, 4, 3, 4, 4, 3, 4];
+    const setA = poles.map((scoredPole, i) => ({
+      text: `Statement A ${i}`,
+      scoredPole,
+    }));
+    const setB = poles.map((scoredPole, i) => ({
+      text: `Paraphrased statement B ${i} for the same pole`,
+      scoredPole,
+    }));
+    assert.equal(scoreMbti(answers, setA).typeCode, scoreMbti(answers, setB).typeCode);
+  });
 });
 
 describe('formatMbtiType', () => {
