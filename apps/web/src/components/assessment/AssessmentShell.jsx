@@ -1,6 +1,7 @@
 import Header from '../shared/Header.jsx';
 import Footer from '../shared/Footer.jsx';
 import Logo from '../shared/Logo.jsx';
+import EditorialArtwork from '../shared/EditorialArtwork.jsx';
 
 import AssessmentFlowBar from './AssessmentFlowBar.jsx';
 import { phaseLabel } from '../../lib/assessmentFlow.js';
@@ -51,7 +52,7 @@ export default function AssessmentShell({
         </div>
       </div>
 
-      <div className="mx-auto flex w-full max-w-container flex-1 flex-col justify-center px-margin-mobile pb-12 pt-5 sm:px-gutter lg:max-w-assess lg:px-8 lg:pb-20 lg:pt-8">
+      <div className="mx-auto flex w-full max-w-container flex-1 flex-col justify-center px-margin-mobile pb-12 pt-5 sm:px-gutter lg:max-w-landing lg:px-8 lg:pb-20 lg:pt-8">
         <div className="mb-6 lg:hidden">
           <div className="mb-2 flex items-center justify-between font-sans text-label-sm text-on-surface-variant">
             <span>
@@ -70,7 +71,25 @@ export default function AssessmentShell({
           </p>
         </div>
 
-        <div className="surface-card rounded-xl p-6 lg:rounded-xl lg:p-12">{children}</div>
+        <div className="lg:grid lg:grid-cols-[0.95fr_0.85fr] lg:items-center lg:gap-8">
+          <div className="surface-card rounded-xl p-6 lg:rounded-xl lg:p-12">{children}</div>
+
+          <aside className="hidden lg:block">
+            <div className="glass-card p-5">
+              <EditorialArtwork variant="reflection" className="aspect-[4/4.4] w-full" />
+              <div className="px-1 pb-1 pt-5">
+                <p className="font-sans text-label-sm uppercase tracking-[0.08em] text-primary/70">
+                  Take your time
+                </p>
+                <p className="mt-2 font-display text-headline-md text-primary">{partLabel}</p>
+                <p className="mt-3 font-sans text-body-md leading-relaxed text-on-surface-variant">
+                  There are no right answers here. Choose the option that feels most true to how you
+                  naturally move through work, people, pressure, and recovery.
+                </p>
+              </div>
+            </div>
+          </aside>
+        </div>
 
         <p className="mt-6 flex items-center justify-center gap-2 font-sans text-body-md text-on-surface-variant/80 lg:mt-8">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">

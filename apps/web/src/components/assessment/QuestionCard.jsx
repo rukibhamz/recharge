@@ -3,6 +3,9 @@ import OptionButton from './OptionButton.jsx';
 export default function QuestionCard({ question, options, selected, onSelect, isExiting }) {
   return (
     <div className={isExiting ? 'question-exit' : 'question-enter'}>
+      <p className="text-center font-sans text-label-sm uppercase tracking-[0.14em] text-primary/65">
+        Answer instinctively
+      </p>
       <h2 className="text-center font-display text-headline-lg-mobile leading-snug text-on-surface lg:text-[1.75rem] lg:font-medium">
         {question}
       </h2>

@@ -56,6 +56,11 @@
     @apply inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 font-sans text-ai-badge uppercase tracking-widest text-on-primary;
   }
 
+  .editorial-frame {
+    @apply overflow-hidden rounded-xl border border-white/50 bg-white/65 backdrop-blur-glass;
+    box-shadow: 0 12px 34px rgba(0, 52, 65, 0.05);
+  }
+
   .personality-chip {
     @apply rounded-full bg-secondary-container px-3 py-1 font-sans text-label-sm text-primary;
   }

@@ -8,6 +8,7 @@ import RecommendationCard from '../components/results/RecommendationCard.jsx';
 import ShareCard from '../components/results/ShareCard.jsx';
 import { useShareCard } from '../hooks/useShareCard.js';
 import SaveResultsSection from '../components/results/SaveResultsSection.jsx';
+import EditorialArtwork from '../components/shared/EditorialArtwork.jsx';
 
 export default function Results({ data, error, onRetake, showSaveSection = true }) {
   const shareToken = data?.shareToken ?? null;
@@ -88,6 +89,22 @@ export default function Results({ data, error, onRetake, showSaveSection = true 
           </div>
         ) : null}
 
+        <section className="relative overflow-hidden rounded-xl border border-outline-variant/20 bg-white/70 p-6 backdrop-blur-glass">
+          <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
+            <div>
+              <span className="hero-badge">Your reset portrait</span>
+              <h1 className="mt-5 font-display text-headline-lg text-primary">
+                {displayName ? `${displayName}, here is what your energy looks like right now.` : 'Here is what your energy looks like right now.'}
+              </h1>
+              <p className="mt-4 max-w-xl font-sans text-body-md text-on-surface-variant">
+                Your burnout pattern, personality profile, and recovery plan are shown together so the
+                advice feels more personal and easier to act on.
+              </p>
+            </div>
+            <EditorialArtwork variant="recovery" className="aspect-[4/3] lg:aspect-[1.1/1]" />
+          </div>
+        </section>
+
         <section className="glass-card p-gutter text-center">
           <ScoreRing pct={burnout.pct} cls={burnout.cls} level={burnout.level} />
           <h2 className="mt-6 font-display text-headline-lg text-primary">{burnout.level}</h2>
@@ -102,22 +119,37 @@ export default function Results({ data, error, onRetake, showSaveSection = true 
           </p>
         </section>
 
-        <section className="glass-card p-gutter">
-          <div className="mb-6 flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary-container text-2xl text-primary">
-              {personality.type?.icon ?? '✨'}
+        <section className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
+          <div className="glass-card p-gutter">
+            <div className="mb-6 flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary-container text-2xl text-primary">
+                {personality.type?.icon ?? '✨'}
+              </div>
+              <div>
+                <h3 className="font-display text-headline-md text-primary">{personalityTitle}</h3>
+                <span className="font-sans text-label-sm text-on-surface-variant">
+                  {personalitySubtitle}
+                </span>
+              </div>
             </div>
-            <div>
-              <h3 className="font-display text-headline-md text-primary">{personalityTitle}</h3>
-              <span className="font-sans text-label-sm text-on-surface-variant">
-                {personalitySubtitle}
-              </span>
+            <p className="mb-8 font-sans text-body-md text-on-surface-variant">
+              {personality.summary || personality.type?.desc}
+            </p>
+            <TraitBars traits={personality.traits} />
+          </div>
+
+          <div className="glass-card p-4 sm:p-5">
+            <EditorialArtwork variant="reflection" className="aspect-[4/3] w-full" />
+            <div className="px-2 pb-2 pt-5">
+              <p className="font-sans text-label-sm uppercase tracking-[0.08em] text-primary/70">
+                Profile moodboard
+              </p>
+              <p className="mt-2 font-sans text-body-md text-on-surface-variant">
+                A visual layer for your result: reflective, calm, and shaped around how you process
+                energy, people, pressure, and recovery.
+              </p>
             </div>
           </div>
-          <p className="mb-8 font-sans text-body-md text-on-surface-variant">
-            {personality.summary || personality.type?.desc}
-          </p>
-          <TraitBars traits={personality.traits} />
         </section>
 
         <section className="space-y-gutter">

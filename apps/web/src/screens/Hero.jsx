@@ -1,6 +1,7 @@
 import Header from '../components/shared/Header.jsx';
 import Footer from '../components/shared/Footer.jsx';
 import Button from '../components/shared/Button.jsx';
+import EditorialArtwork from '../components/shared/EditorialArtwork.jsx';
 import { useTenant } from '../context/TenantContext.jsx';
 
 const DESKTOP_FEATURES = [
@@ -112,44 +113,57 @@ export default function Hero({ onStart }) {
 
       <main className="flex-1">
         {/* Hero */}
-        <section className="mx-auto max-w-landing px-margin-mobile pb-10 pt-2 text-center sm:px-8 lg:px-12 lg:pb-16 lg:pt-4">
-          <span className="hero-badge">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M12 3l1.2 3.6L17 8l-3.8 1.2L12 13l-1.2-3.8L7 8l3.8-1.2L12 3z" fill="currentColor" />
-            </svg>
-            <span className="hidden sm:inline">{content.badge}</span>
-            <span className="sm:hidden">{content.badgeMobile}</span>
-          </span>
+        <section className="mx-auto grid max-w-landing gap-8 px-margin-mobile pb-10 pt-2 sm:px-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:gap-12 lg:px-12 lg:pb-16 lg:pt-6">
+          <div className="text-center lg:text-left">
+            <span className="hero-badge">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 3l1.2 3.6L17 8l-3.8 1.2L12 13l-1.2-3.8L7 8l3.8-1.2L12 3z" fill="currentColor" />
+              </svg>
+              <span className="hidden sm:inline">{content.badge}</span>
+              <span className="sm:hidden">{content.badgeMobile}</span>
+            </span>
 
-          <h1 className="mx-auto mt-8 max-w-3xl font-display text-headline-lg-mobile text-primary sm:text-display-lg">
-            <span className="lg:hidden">{content.headline}</span>
-            <span className="hidden lg:inline">{content.headlineDesktop}</span>
-          </h1>
+            <h1 className="mx-auto mt-8 max-w-3xl font-display text-headline-lg-mobile text-primary sm:text-display-lg lg:mx-0">
+              <span className="lg:hidden">{content.headline}</span>
+              <span className="hidden lg:inline">{content.headlineDesktop}</span>
+            </h1>
 
-          <p className="mx-auto mt-6 max-w-2xl font-sans text-body-md text-on-surface-variant lg:text-body-lg">
-            <span className="lg:hidden">{content.supporting}</span>
-            <span className="hidden lg:inline">{content.supportingDesktop}</span>
-          </p>
+            <p className="mx-auto mt-6 max-w-2xl font-sans text-body-md text-on-surface-variant lg:mx-0 lg:text-body-lg">
+              <span className="lg:hidden">{content.supporting}</span>
+              <span className="hidden lg:inline">{content.supportingDesktop}</span>
+            </p>
 
-          <div className="mt-10 hidden justify-center lg:flex">
-            <Button size="lg" onClick={onStart} className="min-w-[220px]">
-              {content.cta}
-            </Button>
-          </div>
-        </section>
-
-        {/* Desktop feature cards */}
-        <section className="mx-auto hidden max-w-4xl grid-cols-3 gap-6 px-8 lg:grid lg:px-12">
-          {DESKTOP_FEATURES.map((card) => (
-            <div key={card.title} className="surface-card flex flex-col items-center px-6 py-10">
-              <div
-                className={`flex h-14 w-14 items-center justify-center rounded-2xl ${card.tint}`}
-              >
-                {card.icon}
-              </div>
-              <p className="mt-5 font-display text-body-lg font-medium text-primary">{card.title}</p>
+            <div className="mt-10 flex justify-center lg:justify-start">
+              <Button size="lg" onClick={onStart} className="min-w-[220px]">
+                {content.cta}
+              </Button>
             </div>
-          ))}
+
+            <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3 lg:max-w-2xl">
+              {DESKTOP_FEATURES.map((card) => (
+                <div key={card.title} className="glass-card px-4 py-4 text-left lg:bg-white/70">
+                  <div
+                    className={`flex h-11 w-11 items-center justify-center rounded-2xl ${card.tint}`}
+                  >
+                    {card.icon}
+                  </div>
+                  <p className="mt-3 font-sans text-body-md font-semibold text-primary">{card.title}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="relative">
+            <EditorialArtwork variant="hero" className="aspect-[4/4.2] lg:aspect-[4/4.5]" />
+            <div className="glass-panel absolute bottom-4 left-4 right-4 p-5 lg:bottom-6 lg:left-auto lg:right-6 lg:max-w-xs">
+              <p className="font-sans text-label-sm uppercase tracking-[0.08em] text-primary/70">
+                Private and personal
+              </p>
+              <p className="mt-2 font-display text-headline-md text-primary">
+                A softer, more human way to understand your energy.
+              </p>
+            </div>
+          </div>
         </section>
 
         {/* Mobile stat cards */}
@@ -170,17 +184,28 @@ export default function Hero({ onStart }) {
 
         {/* Sanctuary visual */}
         <section className="mx-auto mt-12 max-w-landing px-margin-mobile sm:px-8 lg:mt-20 lg:px-12">
-          <div className="relative overflow-hidden rounded-xl lg:rounded-xl">
-            <div
-              className="sanctuary-gradient aspect-[4/3] lg:aspect-[21/9]"
-              role="img"
-              aria-label="Abstract calming landscape"
-            />
-            <div className="glass-panel absolute bottom-5 left-5 right-5 max-w-sm p-6 lg:bottom-8 lg:left-8 lg:right-auto lg:max-w-md">
-              <h2 className="font-display text-headline-md text-primary">Designed for your Sanctuary</h2>
-              <p className="mt-2 font-sans text-body-md leading-relaxed text-on-surface-variant">
-                Our interface is a gentle companion, built to reduce cognitive load and provide space
-                for self-discovery.
+          <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
+            <div className="relative overflow-hidden rounded-xl">
+              <EditorialArtwork variant="reflection" className="aspect-[4/3] lg:aspect-[5/4]" />
+              <div className="glass-panel absolute bottom-5 left-5 right-5 max-w-sm p-6 lg:bottom-8 lg:left-8 lg:max-w-md">
+                <h2 className="font-display text-headline-md text-primary">Designed for your Sanctuary</h2>
+                <p className="mt-2 font-sans text-body-md leading-relaxed text-on-surface-variant">
+                  Our interface is a gentle companion, built to reduce cognitive load and provide space
+                  for self-discovery.
+                </p>
+              </div>
+            </div>
+
+            <div className="glass-card p-6 lg:p-8">
+              <p className="font-sans text-label-sm uppercase tracking-[0.08em] text-primary/70">
+                A finer feel
+              </p>
+              <h3 className="mt-3 font-display text-headline-md text-primary">
+                Editorial calm instead of a generic wellness dashboard.
+              </h3>
+              <p className="mt-3 font-sans text-body-md leading-relaxed text-on-surface-variant">
+                Softer visuals, layered surfaces, and more breathing room make the experience feel
+                premium while keeping the focus on clarity and emotional safety.
               </p>
             </div>
           </div>
