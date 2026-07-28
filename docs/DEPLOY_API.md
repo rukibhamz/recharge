@@ -30,10 +30,14 @@ Set these in Render or Railway (not on Vercel):
 
 ### AI connectors (admin)
 
-1. Run migration `012_llm_connectors.sql` in Supabase.
+1. Run migrations `012_llm_connectors.sql` and `014_llm_connectors_expand_providers.sql` in Supabase.
 2. Open `/admin` → **AI connectors**.
-3. Add Gemini, OpenAI, Anthropic, OpenRouter, and/or Ollama with model + API key.
-4. Set **priority** (lower = tried first). Use **Test** to verify.
+3. Add one or more providers (priority = try order):
+   - **Cloud:** Mistral, Gemini, OpenAI, Anthropic
+   - **Open models:** Groq, Together, DeepSeek, Fireworks
+   - **Gateway:** OpenRouter (one key → many models)
+   - **Self-hosted:** Ollama, or **OpenAI-compatible (custom)** for LM Studio / vLLM / LocalAI
+4. Paste the API key (and Base URL for local/custom). Use **Test** to verify.
 5. If no DB connectors exist, the API still uses `GEMINI_API_KEY` / Ollama env vars.
 
 ### AI monitoring

@@ -18,6 +18,6 @@
     "./llmConnectors": "./llmConnectors.js"
   },
   "scripts": {
-    "test": "node --test scoring.test.js mbtiScoring.test.js demographics.test.js questionOptions.test.js questions.test.js burnoutCalibration.test.js"
+    "test": "node --test scoring.test.js mbtiScoring.test.js demographics.test.js questionOptions.test.js questions.test.js burnoutCalibration.test.js llmConnectors.test.js"
   }
 }

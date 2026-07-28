@@ -6,6 +6,7 @@ import {
 } from './openaiCompatClient.js';
 import { getRuntimeConnectors } from './connectors.js';
 import { recordLlmCall } from './llmMonitor.js';
+import { isOpenAiCompatible, providerMeta } from '@recharge/shared/llmConnectors';
 
 export const llmStats = {
   totalCalls: 0,
@@ -21,6 +22,7 @@ export function getLastLlmProvider() {
 
 async function callConnector(connector, prompt) {
   const { provider, model, apiKey, baseUrl, name } = connector;
+  const meta = providerMeta(provider);
 
   if (provider === 'gemini') {
     if (isCircuitOpen() && !apiKey) {
@@ -35,19 +37,21 @@ async function callConnector(connector, prompt) {
     return { data, provider: `ollama:${model}`, label: name };
   }
 
-  if (provider === 'openai' || provider === 'openrouter') {
-    const data = await generateOpenAiCompatibleJson(prompt, {
-      apiKey,
-      model,
-      baseUrl,
-      providerLabel: provider,
-    });
-    return { data, provider: `${provider}:${model}`, label: name };
-  }
-
   if (provider === 'anthropic') {
     const data = await generateAnthropicJson(prompt, { apiKey, model, baseUrl });
     return { data, provider: `anthropic:${model}`, label: name };
+  }
+
+  if (isOpenAiCompatible(provider)) {
+    const data = await generateOpenAiCompatibleJson(prompt, {
+      apiKey,
+      model,
+      baseUrl: baseUrl || meta?.defaultBaseUrl,
+      providerLabel: provider,
+      supportsJsonMode: meta?.supportsJsonMode !== false,
+      requireApiKey: meta?.needsApiKey !== false,
+    });
+    return { data, provider: `${provider}:${model}`, label: name };
   }
 
   throw new Error(`Unknown LLM provider: ${provider}`);

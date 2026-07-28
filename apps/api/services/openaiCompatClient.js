@@ -14,51 +14,91 @@ function extractJson(text) {
   }
 }
 
-/**
- * OpenAI Chat Completions compatible (OpenAI, OpenRouter, many proxies).
- */
-export async function generateOpenAiCompatibleJson(prompt, { apiKey, model, baseUrl, providerLabel }) {
-  if (!apiKey) throw new Error(`${providerLabel || 'OpenAI'} API key not configured`);
-  if (!model) throw new Error('Model is required');
-
+function chatCompletionsUrl(baseUrl) {
   const root = (baseUrl || 'https://api.openai.com/v1').replace(/\/$/, '');
-  const url = root.endsWith('/v1') ? `${root}/chat/completions` : `${root}/v1/chat/completions`;
+  if (root.endsWith('/chat/completions')) return root;
+  if (root.endsWith('/v1')) return `${root}/chat/completions`;
+  return `${root}/v1/chat/completions`;
+}
+
+/**
+ * OpenAI Chat Completions compatible
+ * (OpenAI, Mistral, Groq, Together, DeepSeek, Fireworks, OpenRouter, LM Studio, vLLM, …).
+ */
+export async function generateOpenAiCompatibleJson(
+  prompt,
+  {
+    apiKey,
+    model,
+    baseUrl,
+    providerLabel,
+    supportsJsonMode = true,
+    requireApiKey = true,
+  } = {},
+) {
+  if (requireApiKey && !apiKey) {
+    throw new Error(`${providerLabel || 'OpenAI-compatible'} API key not configured`);
+  }
+  if (!model) throw new Error('Model is required');
+  if (!baseUrl && providerLabel === 'openai-compat') {
+    throw new Error('Base URL is required for custom OpenAI-compatible providers');
+  }
+
+  const url = chatCompletionsUrl(baseUrl);
+  const headers = {
+    'Content-Type': 'application/json',
+  };
+  if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
+  if (providerLabel === 'openrouter') {
+    headers['HTTP-Referer'] = process.env.OPENROUTER_SITE_URL || 'https://recharge.app';
+    headers['X-Title'] = process.env.OPENROUTER_APP_NAME || 'Recharge';
+  }
+
+  const body = {
+    model,
+    temperature: 0.4,
+    messages: [
+      {
+        role: 'system',
+        content: 'You are a precise JSON API. Respond with valid JSON only — no markdown.',
+      },
+      { role: 'user', content: prompt },
+    ],
+  };
+  if (supportsJsonMode) {
+    body.response_format = { type: 'json_object' };
+  }
 
   const res = await fetch(url, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-      ...(providerLabel === 'openrouter'
-        ? {
-            'HTTP-Referer': process.env.OPENROUTER_SITE_URL || 'https://recharge.app',
-            'X-Title': process.env.OPENROUTER_APP_NAME || 'Recharge',
-          }
-        : {}),
-    },
-    body: JSON.stringify({
-      model,
-      temperature: 0.4,
-      response_format: { type: 'json_object' },
-      messages: [
-        {
-          role: 'system',
-          content: 'You are a precise JSON API. Respond with valid JSON only — no markdown.',
-        },
-        { role: 'user', content: prompt },
-      ],
-    }),
+    headers,
+    body: JSON.stringify(body),
     signal: AbortSignal.timeout(Number(process.env.OPENAI_TIMEOUT_MS) || 120_000),
   });
 
   if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`${providerLabel || 'OpenAI'} ${res.status}: ${body.slice(0, 300)}`);
+    const errBody = await res.text();
+    // Retry without json_object if the host rejects response_format
+    if (
+      supportsJsonMode &&
+      res.status === 400 &&
+      /response_format|json_object|not supported/i.test(errBody)
+    ) {
+      return generateOpenAiCompatibleJson(prompt, {
+        apiKey,
+        model,
+        baseUrl,
+        providerLabel,
+        supportsJsonMode: false,
+        requireApiKey,
+      });
+    }
+    throw new Error(`${providerLabel || 'OpenAI-compatible'} ${res.status}: ${errBody.slice(0, 300)}`);
   }
 
   const data = await res.json();
   const text = data.choices?.[0]?.message?.content;
-  if (!text) throw new Error(`${providerLabel || 'OpenAI'} returned empty content`);
+  if (!text) throw new Error(`${providerLabel || 'OpenAI-compatible'} returned empty content`);
   return extractJson(text);
 }
 

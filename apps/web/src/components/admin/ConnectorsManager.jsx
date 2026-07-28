@@ -24,7 +24,7 @@ function emptyForm(providers) {
   const first = providers[0];
   return {
     name: first?.label || '',
-    provider: first?.id || 'gemini',
+    provider: first?.id || 'mistral',
     model: first?.defaultModel || '',
     baseUrl: first?.defaultBaseUrl || '',
     apiKey: '',
@@ -32,6 +32,16 @@ function emptyForm(providers) {
     priority: 10,
     notes: '',
   };
+}
+
+function groupProviders(providers) {
+  const map = new Map();
+  for (const p of providers) {
+    const cat = p.category || 'Other';
+    if (!map.has(cat)) map.set(cat, []);
+    map.get(cat).push(p);
+  }
+  return [...map.entries()];
 }
 
 export default function ConnectorsManager({ getAccessToken }) {
@@ -182,9 +192,9 @@ export default function ConnectorsManager({ getAccessToken }) {
           <p className="card-eyebrow">Providers</p>
           <h2 className="font-display text-headline-md font-normal text-ink">AI connectors</h2>
           <p className="mt-1 max-w-2xl font-sans text-body-md text-ink-soft">
-            Connect Gemini, OpenAI, Anthropic, OpenRouter, or Ollama for personality and burnout
-            generation. Lower priority number is tried first. If none are saved, the API falls back
-            to environment variables.
+            Connect Mistral, Gemini, Groq, Together, DeepSeek, OpenAI, Anthropic, OpenRouter,
+            Ollama, or any OpenAI-compatible open-source host. Lower priority number is tried first.
+            If none are saved, the API falls back to environment variables.
           </p>
         </div>
         <Button onClick={openCreate} disabled={!providers.length && !loading}>
@@ -271,16 +281,23 @@ export default function ConnectorsManager({ getAccessToken }) {
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
               />
             </Field>
-            <Field label="Provider">
+            <Field
+              label="Provider"
+              hint={selectedMeta?.docsHint}
+            >
               <select
                 className={inputClass}
                 value={form.provider}
                 onChange={(e) => onProviderChange(e.target.value)}
               >
-                {providers.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.label}
-                  </option>
+                {groupProviders(providers).map(([category, items]) => (
+                  <optgroup key={category} label={category}>
+                    {items.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.label}
+                      </option>
+                    ))}
+                  </optgroup>
                 ))}
               </select>
             </Field>
@@ -306,29 +323,37 @@ export default function ConnectorsManager({ getAccessToken }) {
                 onChange={(e) => setForm({ ...form, priority: e.target.value })}
               />
             </Field>
-            {(selectedMeta?.needsBaseUrl ||
-              form.provider === 'openai' ||
-              form.provider === 'openrouter' ||
-              form.provider === 'ollama') && (
+            {(selectedMeta?.needsBaseUrl || selectedMeta?.allowBaseUrlOverride) && (
               <Field
                 label="Base URL"
                 hint={
-                  form.provider === 'ollama'
-                    ? 'e.g. http://localhost:11434'
-                    : 'Leave blank for provider default'
+                  selectedMeta?.needsBaseUrl
+                    ? 'Required — e.g. http://localhost:1234/v1 for LM Studio'
+                    : `Optional override (default: ${selectedMeta?.defaultBaseUrl || 'provider default'})`
                 }
               >
                 <input
                   className={inputClass}
                   value={form.baseUrl}
+                  placeholder={selectedMeta?.defaultBaseUrl || 'https://…/v1'}
                   onChange={(e) => setForm({ ...form, baseUrl: e.target.value })}
                 />
               </Field>
             )}
-            {selectedMeta?.needsApiKey !== false && form.provider !== 'ollama' ? (
+            {selectedMeta?.needsApiKey !== false || form.provider === 'openai-compat' ? (
               <Field
-                label={editingId ? 'API key (leave blank to keep)' : 'API key'}
-                hint="Stored on the server only; never shown in full again."
+                label={
+                  editingId
+                    ? 'API key (leave blank to keep)'
+                    : selectedMeta?.needsApiKey === false
+                      ? 'API key (optional)'
+                      : 'API key'
+                }
+                hint={
+                  selectedMeta?.needsApiKey === false
+                    ? 'Optional — many local servers need no key. Stored on the server only.'
+                    : 'Stored on the server only; never shown in full again.'
+                }
               >
                 <input
                   type="password"
