@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { LLM_PROVIDERS } from '@recharge/shared/llmConnectors';
 import {
   createAdminConnector,
   deleteAdminConnector,
@@ -20,7 +21,7 @@ function Field({ label, hint, children }) {
   );
 }
 
-function emptyForm(providers) {
+function emptyForm(providers = LLM_PROVIDERS) {
   const first = providers[0];
   return {
     name: first?.label || '',
@@ -44,9 +45,18 @@ function groupProviders(providers) {
   return [...map.entries()];
 }
 
+/** Prefer the shared catalog so the UI is not stuck on a stale API process. */
+function mergeProviderCatalog(apiProviders) {
+  const byId = new Map(LLM_PROVIDERS.map((p) => [p.id, p]));
+  for (const p of apiProviders || []) {
+    if (!byId.has(p.id)) byId.set(p.id, p);
+  }
+  return [...byId.values()];
+}
+
 export default function ConnectorsManager({ getAccessToken }) {
   const [connectors, setConnectors] = useState([]);
-  const [providers, setProviders] = useState([]);
+  const [providers, setProviders] = useState(LLM_PROVIDERS);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -54,10 +64,10 @@ export default function ConnectorsManager({ getAccessToken }) {
   const [testMessage, setTestMessage] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState(() => emptyForm([]));
+  const [form, setForm] = useState(() => emptyForm(LLM_PROVIDERS));
 
   const selectedMeta = useMemo(
-    () => providers.find((p) => p.id === form.provider),
+    () => providers.find((p) => p.id === form.provider) ?? LLM_PROVIDERS.find((p) => p.id === form.provider),
     [providers, form.provider],
   );
 
@@ -68,9 +78,10 @@ export default function ConnectorsManager({ getAccessToken }) {
       const token = await getAccessToken();
       const data = await fetchAdminConnectors(token);
       setConnectors(data.connectors ?? []);
-      setProviders(data.providers ?? []);
+      setProviders(mergeProviderCatalog(data.providers));
     } catch (err) {
       setError(err.message);
+      setProviders(LLM_PROVIDERS);
     } finally {
       setLoading(false);
     }
@@ -219,8 +230,8 @@ export default function ConnectorsManager({ getAccessToken }) {
         <div className="overflow-hidden rounded-md border border-linen-sunken bg-linen-raised shadow-soft">
           {connectors.length === 0 ? (
             <p className="p-6 font-sans text-body-md text-ink-soft">
-              No connectors yet. Add Gemini or another provider, or keep using{' '}
-              <code className="font-mono text-canopy">GEMINI_API_KEY</code> from the API host env.
+              No connectors yet. Add Mistral, Gemini, Groq, or any OpenAI-compatible host — or keep
+              using <code className="font-mono text-canopy">GEMINI_API_KEY</code> from the API env.
             </p>
           ) : (
             <ul className="divide-y divide-linen-sunken">
