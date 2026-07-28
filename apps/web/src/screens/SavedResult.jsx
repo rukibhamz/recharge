@@ -3,9 +3,9 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { fetchSavedSession } from '../services/api.js';
 import Results from './Results.jsx';
 import Header from '../components/shared/Header.jsx';
-import LoadingDots from '../components/shared/LoadingDots.jsx';
 import Button from '../components/shared/Button.jsx';
 import Footer from '../components/shared/Footer.jsx';
+import PageLoadingState from '../components/shared/PageLoadingState.jsx';
 
 export default function SavedResult({ sessionId }) {
   const { user, loading: authLoading, getAccessToken } = useAuth();
@@ -54,10 +54,8 @@ export default function SavedResult({ sessionId }) {
     return (
       <div className="flex min-h-screen flex-col bg-warm">
         <Header variant="account" />
-        <div className="flex flex-1 flex-col items-center justify-center gap-4">
-          <LoadingDots />
-          <p className="font-sans text-body-md text-on-surface-variant">Loading your result…</p>
-        </div>
+        <PageLoadingState message="Loading your result…" artworkVariant="recovery" />
+        <Footer compact />
       </div>
     );
   }

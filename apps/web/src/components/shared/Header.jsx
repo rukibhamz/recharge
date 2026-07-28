@@ -27,7 +27,7 @@ function AccountNav() {
         </a>
         <a
           href="/account"
-          className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-secondary-container text-primary"
+          className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-fern-tint text-canopy"
           aria-label="Account settings"
         >
           <span className="font-display text-body-md font-semibold">
@@ -48,12 +48,12 @@ function AccountNav() {
 export default function Header({ variant = 'landing', onBack, onClose }) {
   if (variant === 'assessment-mobile') {
     return (
-      <header className="border-b border-outline-variant/30 bg-warm lg:hidden">
+      <header className="border-b border-linen-sunken bg-linen lg:hidden">
         <div className="mx-auto flex max-w-container items-center justify-between px-margin-mobile py-4">
           <button
             type="button"
             onClick={onBack}
-            className="btn-interactive flex h-10 w-10 items-center justify-center rounded-full text-primary hover:bg-primary/5 active:scale-95"
+            className="btn-interactive flex h-10 w-10 items-center justify-center rounded-full text-canopy-600 hover:bg-fern-tint active:scale-95"
             aria-label="Go back"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -70,7 +70,7 @@ export default function Header({ variant = 'landing', onBack, onClose }) {
           <button
             type="button"
             onClick={onClose}
-            className="btn-interactive flex h-10 w-10 items-center justify-center rounded-full text-primary hover:bg-primary/5 active:scale-95"
+            className="btn-interactive flex h-10 w-10 items-center justify-center rounded-full text-canopy-600 hover:bg-fern-tint active:scale-95"
             aria-label="Close assessment"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">

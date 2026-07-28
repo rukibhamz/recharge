@@ -6,7 +6,7 @@ const TenantContext = createContext({
   workspace: null,
   loading: true,
   brandName: 'Recharge',
-  primaryColor: '#003441',
+  primaryColor: '#2D6A4F',
   content: DEFAULT_WORKSPACE_CONTENT,
   isWhiteLabel: false,
 });

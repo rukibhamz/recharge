@@ -3,6 +3,7 @@ import AssessmentFlowBar from '../components/assessment/AssessmentFlowBar.jsx';
 import Header from '../components/shared/Header.jsx';
 import Footer from '../components/shared/Footer.jsx';
 import EditorialArtwork from '../components/shared/EditorialArtwork.jsx';
+import EditorialMobileBand from '../components/shared/EditorialMobileBand.jsx';
 
 const DEFAULT_MESSAGES = [
   'Creating your personal recovery map.',
@@ -26,23 +27,23 @@ function ProcessingIcon() {
           cy="80"
           r="70"
           fill="none"
-          stroke="#003441"
+          stroke="#2D6A4F"
           strokeWidth="3"
           strokeLinecap="round"
           strokeDasharray="90 350"
         />
       </svg>
-      <div className="relative flex h-[5.5rem] w-[5.5rem] items-center justify-center rounded-full bg-white shadow-card">
+      <div className="relative flex h-[5.5rem] w-[5.5rem] items-center justify-center rounded-full bg-linen-raised shadow-card">
         <svg width="44" height="44" viewBox="0 0 48 48" fill="none" aria-hidden="true">
-          <circle cx="24" cy="20" r="10" stroke="#003441" strokeWidth="2" />
+          <circle cx="24" cy="20" r="10" stroke="#2D6A4F" strokeWidth="2" />
           <path
             d="M10 42c2-8 8-12 14-12s12 4 14 12"
-            stroke="#003441"
+            stroke="#2D6A4F"
             strokeWidth="2"
             strokeLinecap="round"
           />
-          <circle cx="30" cy="18" r="5" stroke="#003441" strokeWidth="1.5" />
-          <circle cx="30" cy="18" r="2" fill="#003441" />
+          <circle cx="30" cy="18" r="5" stroke="#2D6A4F" strokeWidth="1.5" />
+          <circle cx="30" cy="18" r="2" fill="#2D6A4F" />
         </svg>
       </div>
     </div>
@@ -87,6 +88,14 @@ export default function Processing({ phase, messages = DEFAULT_MESSAGES }) {
       <section className="mx-auto flex max-w-landing flex-1 items-center px-margin-mobile py-12 sm:px-8 lg:px-12 lg:py-16">
         <div className="grid w-full gap-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
           <div className="text-center lg:text-left">
+            <EditorialMobileBand
+              variant="recovery"
+              badge="Personal synthesis"
+              title="Creating your recovery map"
+              text="Combining personality, burnout signals, and tailored recommendations."
+              compact
+              className="text-left"
+            />
             <ProcessingIcon />
 
             <h1

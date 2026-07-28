@@ -1,12 +1,13 @@
 import { normalizeShareCardContent } from '../../lib/shareCardContent.js';
 
 const C = {
-  warm: '#FAF9F6',
-  primary: '#003441',
-  onSurface: '#191c1d',
-  onSurfaceVariant: '#40484b',
-  white: '#ffffff',
-  shadow: '0 8px 30px rgba(0, 52, 65, 0.06)',
+  linen: '#F6F2E9',
+  canopy: '#2D6A4F',
+  ink: '#16231C',
+  inkSoft: '#4A554D',
+  white: '#FFFFFF',
+  sunken: '#EDE7D9',
+  shadow: '0 1px 3px rgba(22, 35, 28, 0.08)',
 };
 
 export default function ShareCard({ displayName, burnout, personality }) {
@@ -23,21 +24,21 @@ export default function ShareCard({ displayName, burnout, personality }) {
         width: 400,
         boxSizing: 'border-box',
         overflow: 'hidden',
-        borderRadius: 16,
-        backgroundColor: C.warm,
-        color: C.onSurface,
+        borderRadius: 14,
+        backgroundColor: C.linen,
+        color: C.ink,
         padding: 32,
-        fontFamily: 'Inter, system-ui, sans-serif',
+        fontFamily: '"Public Sans", system-ui, sans-serif',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <p
           style={{
             margin: 0,
-            fontFamily: 'Outfit, system-ui, sans-serif',
-            fontSize: 18,
-            fontWeight: 600,
-            color: C.primary,
+            fontFamily: 'Fraunces, Georgia, serif',
+            fontSize: 20,
+            fontWeight: 400,
+            color: C.ink,
           }}
         >
           Recharge
@@ -45,10 +46,11 @@ export default function ShareCard({ displayName, burnout, personality }) {
         <p
           style={{
             margin: 0,
+            fontFamily: '"IBM Plex Mono", monospace',
             fontSize: 11,
-            letterSpacing: '0.14em',
+            letterSpacing: '0.08em',
             textTransform: 'uppercase',
-            color: C.onSurfaceVariant,
+            color: C.inkSoft,
           }}
         >
           Profile
@@ -56,7 +58,7 @@ export default function ShareCard({ displayName, burnout, personality }) {
       </div>
 
       {first ? (
-        <p style={{ margin: '24px 0 0', fontSize: 16, color: C.onSurfaceVariant }}>
+        <p style={{ margin: '24px 0 0', fontSize: 16, color: C.inkSoft }}>
           {first}&apos;s snapshot
         </p>
       ) : null}
@@ -64,7 +66,8 @@ export default function ShareCard({ displayName, burnout, personality }) {
       <div
         style={{
           marginTop: 16,
-          borderRadius: 12,
+          borderRadius: 14,
+          border: `1px solid ${C.sunken}`,
           backgroundColor: C.white,
           padding: 20,
           boxShadow: C.shadow,
@@ -74,10 +77,11 @@ export default function ShareCard({ displayName, burnout, personality }) {
           style={{
             margin: 0,
             textAlign: 'center',
-            fontSize: 13,
-            letterSpacing: '0.05em',
+            fontFamily: '"IBM Plex Mono", monospace',
+            fontSize: 11,
+            letterSpacing: '0.06em',
             textTransform: 'uppercase',
-            color: C.onSurfaceVariant,
+            color: C.inkSoft,
           }}
         >
           Burnout check
@@ -86,9 +90,10 @@ export default function ShareCard({ displayName, burnout, personality }) {
           style={{
             margin: '8px 0 0',
             textAlign: 'center',
-            fontFamily: 'Outfit, system-ui, sans-serif',
-            fontSize: 20,
-            color: C.primary,
+            fontFamily: 'Fraunces, Georgia, serif',
+            fontSize: 22,
+            fontWeight: 400,
+            color: C.canopy,
           }}
         >
           {burnoutLevel}
@@ -98,7 +103,8 @@ export default function ShareCard({ displayName, burnout, personality }) {
       <div
         style={{
           marginTop: 16,
-          borderRadius: 12,
+          borderRadius: 14,
+          border: `1px solid ${C.sunken}`,
           backgroundColor: C.white,
           padding: 20,
           boxShadow: C.shadow,
@@ -112,9 +118,10 @@ export default function ShareCard({ displayName, burnout, personality }) {
             <p
               style={{
                 margin: 0,
-                fontFamily: 'Outfit, system-ui, sans-serif',
+                fontFamily: 'Fraunces, Georgia, serif',
                 fontSize: 18,
-                color: C.onSurface,
+                fontWeight: 400,
+                color: C.ink,
               }}
             >
               {typeName}
@@ -125,7 +132,7 @@ export default function ShareCard({ displayName, burnout, personality }) {
                   margin: '4px 0 0',
                   fontSize: 14,
                   lineHeight: 1.5,
-                  color: C.onSurfaceVariant,
+                  color: C.inkSoft,
                 }}
               >
                 {typeDesc}
@@ -139,8 +146,9 @@ export default function ShareCard({ displayName, burnout, personality }) {
         style={{
           margin: '24px 0 0',
           textAlign: 'center',
+          fontFamily: '"IBM Plex Mono", monospace',
           fontSize: 11,
-          color: C.onSurfaceVariant,
+          color: C.inkSoft,
         }}
       >
         recharge.app · Not medical advice

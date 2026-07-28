@@ -2,105 +2,36 @@ import Header from '../components/shared/Header.jsx';
 import Footer from '../components/shared/Footer.jsx';
 import Button from '../components/shared/Button.jsx';
 import EditorialArtwork from '../components/shared/EditorialArtwork.jsx';
+import ArcIcon, { ArcDivider } from '../components/shared/Arc.jsx';
 import { useTenant } from '../context/TenantContext.jsx';
 
-const DESKTOP_FEATURES = [
+const FEATURES = [
   {
-    icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <rect x="5" y="4" width="14" height="16" rx="2" stroke="currentColor" strokeWidth="1.75" />
-        <path d="M9 9h6M9 13h4" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
-      </svg>
-    ),
     title: 'Tailored interviews',
-    tint: 'bg-badge-sky text-primary',
+    text: 'Questions shaped around your context — not a generic form.',
   },
   {
-    icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.75" />
-        <path d="M12 8v4l3 2" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
-      </svg>
-    ),
-    title: 'Two smart phases',
-    tint: 'bg-secondary-container text-primary',
+    title: 'Two calm phases',
+    text: 'Personality first, then a burnout check-in calibrated to you.',
   },
   {
-    icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path
-          d="M12 3l1.4 4.2L17.5 9l-4.1 1.4L12 14.5 10.6 10.4 6.5 9l4.1-1.4L12 3z"
-          stroke="currentColor"
-          strokeWidth="1.5"
-        />
-      </svg>
-    ),
-    title: 'Tailored recovery plan',
-    tint: 'bg-tertiary-fixed/70 text-tertiary-container',
-  },
-];
-
-const MOBILE_STATS = [
-  {
-    stat: '74%',
-    text: 'of professionals experience burnout without early detection.',
-    tint: 'bg-badge-sky text-primary',
-    icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-        <path d="M4 18l4-8 4 4 4-10 4 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      </svg>
-    ),
-  },
-  {
-    stat: '5 min',
-    text: 'is all it takes to gain personalised, clinical-grade insights.',
-    tint: 'bg-secondary-container text-primary',
-    icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-        <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="2" />
-        <path d="M12 8v4l3 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      </svg>
-    ),
-  },
-  {
-    stat: '10k+',
-    text: 'users found their sanctuary with Recharge this year.',
-    tint: 'bg-tertiary-fixed/80 text-tertiary-container',
-    icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-        <path d="M17 20a4 4 0 00-8 0M12 14a4 4 0 100-8 4 4 0 000 8z" stroke="currentColor" strokeWidth="2" />
-      </svg>
-    ),
+    title: 'Recovery plan',
+    text: 'Clear next steps framed as information, never a verdict.',
   },
 ];
 
 const STEPS = [
   {
     title: 'Share your context',
-    text: 'Name, location, age, and work — we use this to write interviews that fit your life.',
+    text: 'Name, location, age, and work — used only to personalize questions and tips.',
   },
   {
     title: 'Personality interview',
-    text: 'Answer 10–15 tailored questions. We read your responses and build your personality profile.',
-  },
-  {
-    title: 'Burnout check-in',
-    text: 'A second interview shaped by your personality — then a personalised recovery plan.',
-  },
-];
-
-const MOBILE_STEPS = [
-  {
-    title: 'Your context',
-    text: 'Tell us where you are and what you do — we build custom interviews from this.',
-  },
-  {
-    title: 'Personality read',
-    text: 'Complete your personality interview, then see what we learned about you.',
+    text: 'Answer tailored questions. We build a consistent profile from your responses.',
   },
   {
     title: 'Burnout & recovery',
-    text: 'A tailored burnout check-in leads to recommendations matched to your type and location.',
+    text: 'A second interview shaped by your personality, then a personalised recovery plan.',
   },
 ];
 
@@ -108,27 +39,40 @@ export default function Hero({ onStart }) {
   const { content } = useTenant();
 
   return (
-    <div className="flex min-h-screen flex-col bg-warm">
+    <div className="flex min-h-screen flex-col bg-linen">
       <Header />
 
       <main className="flex-1">
-        {/* Hero */}
         <section className="mx-auto grid max-w-landing gap-8 px-margin-mobile pb-10 pt-2 sm:px-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:gap-12 lg:px-12 lg:pb-16 lg:pt-6">
           <div className="text-center lg:text-left">
             <span className="hero-badge">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M12 3l1.2 3.6L17 8l-3.8 1.2L12 13l-1.2-3.8L7 8l3.8-1.2L12 3z" fill="currentColor" />
-              </svg>
+              <ArcIcon className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">{content.badge}</span>
               <span className="sm:hidden">{content.badgeMobile}</span>
             </span>
 
-            <h1 className="mx-auto mt-8 max-w-3xl font-display text-headline-lg-mobile text-primary sm:text-display-lg lg:mx-0">
+            <h1 className="mx-auto mt-8 max-w-3xl font-display text-headline-lg-mobile font-light text-ink sm:text-display-lg lg:mx-0">
               <span className="lg:hidden">{content.headline}</span>
-              <span className="hidden lg:inline">{content.headlineDesktop}</span>
+              <span className="hidden lg:inline">
+                {content.headlineDesktop?.includes('?') ? (
+                  <>
+                    {content.headlineDesktop.split('?')[0]}?
+                    {content.headlineDesktop.split('?')[1] ? (
+                      <>
+                        <br />
+                        <em className="not-italic text-canopy-600">
+                          {content.headlineDesktop.split('?').slice(1).join('?').trim()}
+                        </em>
+                      </>
+                    ) : null}
+                  </>
+                ) : (
+                  content.headlineDesktop
+                )}
+              </span>
             </h1>
 
-            <p className="mx-auto mt-6 max-w-2xl font-sans text-body-md text-on-surface-variant lg:mx-0 lg:text-body-lg">
+            <p className="mx-auto mt-6 max-w-xl font-sans text-[17px] leading-relaxed text-ink-soft lg:mx-0 lg:text-[19px] lg:leading-[1.65]">
               <span className="lg:hidden">{content.supporting}</span>
               <span className="hidden lg:inline">{content.supportingDesktop}</span>
             </p>
@@ -139,103 +83,90 @@ export default function Hero({ onStart }) {
               </Button>
             </div>
 
-            <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3 lg:max-w-2xl">
-              {DESKTOP_FEATURES.map((card) => (
-                <div key={card.title} className="glass-card px-4 py-4 text-left lg:bg-white/70">
-                  <div
-                    className={`flex h-11 w-11 items-center justify-center rounded-2xl ${card.tint}`}
-                  >
-                    {card.icon}
-                  </div>
-                  <p className="mt-3 font-sans text-body-md font-semibold text-primary">{card.title}</p>
+            <div className="mt-10 grid grid-cols-1 gap-3 sm:grid-cols-3 lg:max-w-2xl">
+              {FEATURES.map((card) => (
+                <div key={card.title} className="demo-card p-4 text-left">
+                  <p className="card-eyebrow relative z-[1]">Step</p>
+                  <p className="relative z-[1] font-display text-[1.05rem] font-normal text-ink">
+                    {card.title}
+                  </p>
+                  <p className="relative z-[1] mt-1 font-sans text-[13px] leading-relaxed text-ink-soft">
+                    {card.text}
+                  </p>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="relative">
+          <div className="relative editorial-frame">
             <EditorialArtwork variant="hero" className="aspect-[4/4.2] lg:aspect-[4/4.5]" />
             <div className="glass-panel absolute bottom-4 left-4 right-4 p-5 lg:bottom-6 lg:left-auto lg:right-6 lg:max-w-xs">
-              <p className="font-sans text-label-sm uppercase tracking-[0.08em] text-primary/70">
-                Private and personal
-              </p>
-              <p className="mt-2 font-display text-headline-md text-primary">
-                A softer, more human way to understand your energy.
+              <p className="card-eyebrow">Private and personal</p>
+              <p className="font-display text-[1.25rem] font-normal leading-snug text-ink">
+                A calmer way to understand your capacity.
               </p>
             </div>
           </div>
         </section>
 
-        {/* Mobile stat cards */}
-        <section className="mx-auto max-w-container space-y-4 px-margin-mobile sm:px-gutter lg:hidden">
-          {MOBILE_STATS.map((item) => (
-            <div key={item.stat} className="surface-card flex items-center gap-4 p-5">
-              <div
-                className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${item.tint}`}
-              >
-                {item.icon}
-              </div>
-              <p className="text-left font-sans text-body-md leading-relaxed text-on-surface-variant">
-                <strong className="text-primary">{item.stat}</strong> {item.text}
-              </p>
-            </div>
-          ))}
-        </section>
+        <div className="mx-auto max-w-landing px-margin-mobile sm:px-8 lg:px-12">
+          <ArcDivider />
+        </div>
 
-        {/* Sanctuary visual */}
-        <section className="mx-auto mt-12 max-w-landing px-margin-mobile sm:px-8 lg:mt-20 lg:px-12">
+        <section className="mx-auto mt-10 max-w-landing px-margin-mobile sm:px-8 lg:mt-14 lg:px-12">
           <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
-            <div className="relative overflow-hidden rounded-xl">
+            <div className="relative overflow-hidden rounded-md">
               <EditorialArtwork variant="reflection" className="aspect-[4/3] lg:aspect-[5/4]" />
-              <div className="glass-panel absolute bottom-5 left-5 right-5 max-w-sm p-6 lg:bottom-8 lg:left-8 lg:max-w-md">
-                <h2 className="font-display text-headline-md text-primary">Designed for your Sanctuary</h2>
-                <p className="mt-2 font-sans text-body-md leading-relaxed text-on-surface-variant">
-                  Our interface is a gentle companion, built to reduce cognitive load and provide space
-                  for self-discovery.
+              <div className="glass-panel absolute bottom-5 left-5 right-5 max-w-sm p-5 lg:bottom-8 lg:left-8 lg:max-w-md">
+                <h2 className="font-display text-headline-md font-normal text-ink">
+                  Designed as a calm room
+                </h2>
+                <p className="mt-2 font-sans text-[14px] leading-relaxed text-ink-soft">
+                  Warm linen surfaces, unhurried motion, and plain language — built for someone who
+                  may already feel tired.
                 </p>
               </div>
             </div>
 
-            <div className="glass-card p-6 lg:p-8">
-              <p className="font-sans text-label-sm uppercase tracking-[0.08em] text-primary/70">
-                A finer feel
-              </p>
-              <h3 className="mt-3 font-display text-headline-md text-primary">
-                Editorial calm instead of a generic wellness dashboard.
+            <div className="demo-card">
+              <p className="card-eyebrow relative z-[1]">Foundation</p>
+              <h3 className="relative z-[1] font-display text-headline-md font-normal text-ink">
+                Plain, never clinical
               </h3>
-              <p className="mt-3 font-sans text-body-md leading-relaxed text-on-surface-variant">
-                Softer visuals, layered surfaces, and more breathing room make the experience feel
-                premium while keeping the focus on clarity and emotional safety.
+              <p className="relative z-[1] mt-3 font-sans text-[14px] leading-relaxed text-ink-soft">
+                Results are framed as information, not verdicts — even at the most severe burnout
+                level. Green carries the brand; amber and red stay reserved for severity only.
               </p>
             </div>
           </div>
-
-          <div className="mt-8 lg:hidden">
-            <h2 className="font-display text-headline-md text-primary">Designed for your Sanctuary</h2>
-            <p className="mt-3 font-sans text-body-md leading-relaxed text-on-surface-variant">
-              Our interface is more than just a tool; it&apos;s a digital breathing space crafted with
-              soft minimalism and science-informed empathy.
-            </p>
-          </div>
         </section>
 
-        {/* Steps */}
         <section
           id="about"
           className="mx-auto mt-16 max-w-landing px-margin-mobile pb-12 sm:px-8 lg:mt-24 lg:px-12 lg:pb-16"
         >
-          <h2 className="mb-10 text-center font-display text-headline-md text-primary lg:hidden">
+          <h2 className="mb-10 text-center font-display text-headline-md font-normal text-ink">
             Your path to recovery
           </h2>
 
-          <div className="mx-auto max-w-2xl space-y-10 lg:hidden">
-            {MOBILE_STEPS.map((step, i) => (
-              <StepItem key={step.title} step={step} index={i} isLast={i === MOBILE_STEPS.length - 1} />
-            ))}
-          </div>
-          <div className="mx-auto hidden max-w-3xl space-y-12 lg:block">
+          <div className="mx-auto max-w-2xl space-y-10">
             {STEPS.map((step, i) => (
-              <StepItem key={step.title} step={step} index={i} isLast={i === STEPS.length - 1} />
+              <div key={step.title} className="flex gap-5">
+                <div className="flex flex-col items-center">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-canopy-600 font-mono text-[12px] font-medium text-white">
+                    {i + 1}
+                  </span>
+                  {i < STEPS.length - 1 ? (
+                    <span className="mt-3 h-12 w-px bg-linen-sunken" aria-hidden="true" />
+                  ) : null}
+                </div>
+                <div className="pb-2 pt-1">
+                  <h3 className="font-display text-[1.25rem] font-normal text-ink">{step.title}</h3>
+                  <p className="mt-2 font-sans text-body-md leading-relaxed text-ink-soft">
+                    {step.text}
+                  </p>
+                </div>
+              </div>
             ))}
           </div>
         </section>
@@ -245,43 +176,14 @@ export default function Hero({ onStart }) {
         </section>
       </main>
 
-      <div className="sticky bottom-0 border-t border-outline-variant/40 bg-warm/95 p-5 backdrop-blur-glass lg:hidden">
+      <div className="sticky bottom-0 border-t border-linen-sunken bg-linen/95 p-5 backdrop-blur-sm lg:hidden">
         <Button size="lg" className="w-full" onClick={onStart}>
           {content.cta}
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path
-              d="M5 12h14M13 6l6 6-6 6"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+          <span aria-hidden="true">→</span>
         </Button>
       </div>
 
       <Footer />
-    </div>
-  );
-}
-
-function StepItem({ step, index, isLast }) {
-  return (
-    <div className="flex gap-5 lg:gap-6">
-      <div className="flex flex-col items-center">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary font-sans text-label-sm text-on-primary lg:h-11 lg:w-11">
-          {index + 1}
-        </span>
-        {!isLast && (
-          <span className="mt-3 hidden h-16 w-px bg-outline-variant/60 lg:block" aria-hidden="true" />
-        )}
-      </div>
-      <div className="pb-2 pt-1">
-        <h3 className="font-display text-headline-md text-primary lg:text-[1.35rem]">{step.title}</h3>
-        <p className="mt-2 font-sans text-body-md leading-relaxed text-on-surface-variant">
-          {step.text}
-        </p>
-      </div>
     </div>
   );
 }

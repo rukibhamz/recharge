@@ -3,6 +3,7 @@ import Header from '../components/shared/Header.jsx';
 import Footer from '../components/shared/Footer.jsx';
 import LoadingDots from '../components/shared/LoadingDots.jsx';
 import EditorialArtwork from '../components/shared/EditorialArtwork.jsx';
+import EditorialMobileBand from '../components/shared/EditorialMobileBand.jsx';
 
 export default function QuestionLoading({ phase, messages, badge = 'Crafting your questions' }) {
   return (
@@ -21,6 +22,14 @@ export default function QuestionLoading({ phase, messages, badge = 'Crafting you
       <section className="mx-auto flex max-w-landing flex-1 items-center px-margin-mobile py-12 sm:px-8 lg:px-12 lg:py-16">
         <div className="grid w-full gap-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
           <div className="text-center lg:text-left">
+            <EditorialMobileBand
+              variant="hero"
+              badge={badge}
+              title="Building your interview"
+              text="We're shaping questions around your context and goals."
+              compact
+              className="text-left"
+            />
             <LoadingDots />
             <h1 className="mt-10 max-w-lg font-display text-headline-lg-mobile text-primary lg:text-headline-lg">
               {messages[0]}

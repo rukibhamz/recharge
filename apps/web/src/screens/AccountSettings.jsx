@@ -6,6 +6,8 @@ import Footer from '../components/shared/Footer.jsx';
 import Button from '../components/shared/Button.jsx';
 import { formatDate, relativeAssessmentTime, burnoutMoodIcon } from '../lib/formatDate.js';
 import { firstName } from '@recharge/shared/name';
+import SplitEditorialLayout from '../components/shared/SplitEditorialLayout.jsx';
+import PageLoadingState from '../components/shared/PageLoadingState.jsx';
 
 const REMINDER_KEY = 'recharge-reminder-days';
 
@@ -110,9 +112,8 @@ export default function AccountSettings() {
     return (
       <div className="flex min-h-screen flex-col bg-warm">
         <Header variant="account" />
-        <p className="flex flex-1 items-center justify-center font-sans text-body-md text-on-surface-variant">
-          Loading your account…
-        </p>
+        <PageLoadingState message="Loading your account…" artworkVariant="reflection" />
+        <Footer compact />
       </div>
     );
   }
@@ -121,7 +122,7 @@ export default function AccountSettings() {
     <div className="flex min-h-screen flex-col bg-warm">
       <Header variant="account" />
 
-      <main className="mx-auto w-full max-w-container flex-1 space-y-stack-gap px-margin-mobile pb-32 pt-8 sm:px-gutter">
+      <main className="mx-auto w-full max-w-landing flex-1 space-y-stack-gap px-margin-mobile pb-32 pt-8 sm:px-gutter">
         {linkError ? (
           <div className="rounded-xl border border-severe/30 bg-severe/5 px-4 py-3 font-sans text-body-md text-on-surface-variant">
             Could not link your latest result: {linkError}. Complete a new assessment and try
@@ -135,7 +136,13 @@ export default function AccountSettings() {
           </p>
         ) : null}
 
-        <section className="glass-card p-gutter">
+        <SplitEditorialLayout
+          artworkVariant="recovery"
+          asideBadge="Your sanctuary"
+          asideTitle="Wellness, on your terms"
+          asideText="Manage reminders, export your data, and revisit assessments in a space designed to feel calm — not clinical."
+        >
+        <section className="glass-card p-gutter w-full">
           <div className="flex flex-col items-center gap-6 md:flex-row">
             <div className="flex h-24 w-24 items-center justify-center rounded-full border-4 border-white bg-secondary-container text-primary shadow-sm">
               <span className="font-display text-headline-lg">{displayName.charAt(0).toUpperCase()}</span>
@@ -156,6 +163,7 @@ export default function AccountSettings() {
             </div>
           </div>
         </section>
+        </SplitEditorialLayout>
 
         <section className="space-y-4">
           <div className="flex items-end justify-between">

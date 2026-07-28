@@ -8,17 +8,14 @@ import {
 } from '../../services/api.js';
 import Button from '../shared/Button.jsx';
 
-const inputClass =
-  'w-full rounded-xl border border-outline-variant/40 bg-white px-4 py-3 font-sans text-body-md text-on-surface outline-none focus:border-primary';
+const inputClass = 'field';
 
 function Field({ label, hint, children }) {
   return (
     <label className="block">
-      <span className="font-sans text-label-sm text-on-surface-variant">{label}</span>
-      <div className="mt-1.5">{children}</div>
-      {hint ? (
-        <p className="mt-1 font-sans text-[12px] text-on-surface-variant/80">{hint}</p>
-      ) : null}
+      <span className="field-label">{label}</span>
+      <div>{children}</div>
+      {hint ? <p className="mt-1 font-sans text-[12px] text-ink-faint">{hint}</p> : null}
     </label>
   );
 }
@@ -182,8 +179,9 @@ export default function ConnectorsManager({ getAccessToken }) {
     <section className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h2 className="font-display text-headline-md text-primary">AI connectors</h2>
-          <p className="mt-1 max-w-2xl font-sans text-body-md text-on-surface-variant">
+          <p className="card-eyebrow">Providers</p>
+          <h2 className="font-display text-headline-md font-normal text-ink">AI connectors</h2>
+          <p className="mt-1 max-w-2xl font-sans text-body-md text-ink-soft">
             Connect Gemini, OpenAI, Anthropic, OpenRouter, or Ollama for personality and burnout
             generation. Lower priority number is tried first. If none are saved, the API falls back
             to environment variables.
@@ -195,42 +193,40 @@ export default function ConnectorsManager({ getAccessToken }) {
       </div>
 
       {error ? (
-        <p className="rounded-xl border border-status-severe/30 bg-status-severe/5 px-4 py-3 font-sans text-body-md text-on-surface">
+        <p className="rounded-md border border-signal-red/30 bg-signal-red-tint px-4 py-3 font-sans text-body-md text-ink">
           {error}
         </p>
       ) : null}
       {testMessage ? (
-        <p className="rounded-xl border border-status-healthy/30 bg-status-healthy/10 px-4 py-3 font-sans text-body-md text-on-surface">
+        <p className="rounded-md border border-fern/30 bg-fern-tint px-4 py-3 font-sans text-body-md text-ink">
           {testMessage}
         </p>
       ) : null}
 
       {loading ? (
-        <p className="font-sans text-body-md text-on-surface-variant">Loading connectors…</p>
+        <p className="font-sans text-body-md text-ink-soft">Loading connectors…</p>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-outline-variant/30 bg-white shadow-soft">
+        <div className="overflow-hidden rounded-md border border-linen-sunken bg-linen-raised shadow-soft">
           {connectors.length === 0 ? (
-            <p className="p-6 font-sans text-body-md text-on-surface-variant">
+            <p className="p-6 font-sans text-body-md text-ink-soft">
               No connectors yet. Add Gemini or another provider, or keep using{' '}
-              <code className="text-primary">GEMINI_API_KEY</code> from the API host env.
+              <code className="font-mono text-canopy">GEMINI_API_KEY</code> from the API host env.
             </p>
           ) : (
-            <ul className="divide-y divide-outline-variant/20">
+            <ul className="divide-y divide-linen-sunken">
               {connectors.map((c) => (
                 <li
                   key={c.id}
                   className="flex flex-wrap items-center justify-between gap-3 px-5 py-4"
                 >
                   <div>
-                    <p className="font-sans text-body-md font-medium text-on-surface">
+                    <p className="font-sans text-[15px] font-semibold text-ink">
                       {c.name}
                       {!c.enabled ? (
-                        <span className="ml-2 font-sans text-label-sm text-on-surface-variant">
-                          (disabled)
-                        </span>
+                        <span className="ml-2 font-mono text-[11px] text-ink-faint">(disabled)</span>
                       ) : null}
                     </p>
-                    <p className="mt-1 font-sans text-label-sm text-on-surface-variant">
+                    <p className="mt-1 font-mono text-[12px] text-ink-faint">
                       {c.provider} · {c.model} · priority {c.priority}
                       {c.apiKeyMasked ? ` · key ${c.apiKeyMasked}` : ''}
                     </p>
@@ -238,18 +234,19 @@ export default function ConnectorsManager({ getAccessToken }) {
                   <div className="flex flex-wrap gap-2">
                     <Button
                       variant="ghost"
+                      size="sm"
                       onClick={() => handleTest(c.id)}
                       disabled={testingId === c.id}
                     >
                       {testingId === c.id ? 'Testing…' : 'Test'}
                     </Button>
-                    <Button variant="ghost" onClick={() => handleToggle(c)}>
+                    <Button variant="secondary" size="sm" onClick={() => handleToggle(c)}>
                       {c.enabled ? 'Disable' : 'Enable'}
                     </Button>
-                    <Button variant="ghost" onClick={() => openEdit(c)}>
+                    <Button variant="secondary" size="sm" onClick={() => openEdit(c)}>
                       Edit
                     </Button>
-                    <Button variant="ghost" onClick={() => handleDelete(c.id)}>
+                    <Button variant="ghost" size="sm" onClick={() => handleDelete(c.id)}>
                       Delete
                     </Button>
                   </div>
@@ -261,8 +258,8 @@ export default function ConnectorsManager({ getAccessToken }) {
       )}
 
       {showForm ? (
-        <div className="rounded-xl border border-outline-variant/30 bg-white p-6 shadow-soft">
-          <h3 className="font-display text-headline-md text-primary">
+        <div className="surface-card p-6">
+          <h3 className="font-display text-headline-md font-normal text-ink">
             {editingId ? 'Edit connector' : 'New AI connector'}
           </h3>
 

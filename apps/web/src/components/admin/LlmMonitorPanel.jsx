@@ -3,18 +3,18 @@ import { fetchAdminLlmMonitor, probeAdminLlmMonitor } from '../../services/api.j
 import Button from '../shared/Button.jsx';
 import { formatDate } from '../../lib/formatDate.js';
 
-function statusStyles(status) {
-  if (status === 'up') return 'bg-status-healthy/15 text-status-healthy';
-  if (status === 'degraded') return 'bg-status-warning/15 text-status-warning';
-  if (status === 'down') return 'bg-status-severe/15 text-status-severe';
-  return 'bg-surface-soft text-on-surface-variant';
+function statusBadge(status) {
+  if (status === 'up') return 'badge-healthy';
+  if (status === 'degraded') return 'badge-mild';
+  if (status === 'down') return 'badge-severe';
+  return 'badge bg-linen-sunken text-ink-soft';
 }
 
 function StatPill({ label, value }) {
   return (
-    <div className="rounded-xl border border-outline-variant/30 bg-white p-4 shadow-soft">
-      <p className="font-sans text-label-sm uppercase tracking-wide text-on-surface-variant">{label}</p>
-      <p className="mt-1 font-display text-headline-md text-primary">{value}</p>
+    <div className="surface-card p-4">
+      <p className="card-eyebrow">{label}</p>
+      <p className="font-mono text-[1.35rem] font-medium tabular-nums text-ink">{value}</p>
     </div>
   );
 }
@@ -73,36 +73,39 @@ export default function LlmMonitorPanel({ getAccessToken }) {
   };
 
   if (loading && !monitor) {
-    return <p className="font-sans text-body-md text-on-surface-variant">Loading AI monitoring…</p>;
+    return <p className="font-sans text-body-md text-ink-soft">Loading AI monitoring…</p>;
   }
 
   return (
     <section className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h2 className="font-display text-headline-md text-primary">AI usage & availability</h2>
-          <p className="mt-1 max-w-2xl font-sans text-body-md text-on-surface-variant">
+          <p className="card-eyebrow">Live health</p>
+          <h2 className="font-display text-headline-md font-normal text-ink">
+            AI usage & availability
+          </h2>
+          <p className="mt-1 max-w-2xl font-sans text-body-md text-ink-soft">
             Per-model call volume, success rate (uptime), latency, and live health. Assessment
             traffic is logged automatically; use Probe to check every enabled connector now.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="ghost" onClick={load} disabled={loading}>
+          <Button variant="secondary" size="sm" onClick={load} disabled={loading}>
             Refresh
           </Button>
-          <Button onClick={runProbe} disabled={probing}>
+          <Button size="sm" onClick={runProbe} disabled={probing}>
             {probing ? 'Probing…' : 'Probe all models'}
           </Button>
         </div>
       </div>
 
       {error ? (
-        <p className="rounded-xl border border-status-severe/30 bg-status-severe/5 px-4 py-3 font-sans text-body-md text-on-surface">
+        <p className="rounded-md border border-signal-red/30 bg-signal-red-tint px-4 py-3 font-sans text-body-md text-ink">
           {error}
         </p>
       ) : null}
       {probeNote ? (
-        <p className="rounded-xl border border-status-healthy/30 bg-status-healthy/10 px-4 py-3 font-sans text-body-md text-on-surface">
+        <p className="rounded-md border border-fern/30 bg-fern-tint px-4 py-3 font-sans text-body-md text-ink">
           {probeNote}
         </p>
       ) : null}
@@ -111,10 +114,7 @@ export default function LlmMonitorPanel({ getAccessToken }) {
         <>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <StatPill label="Calls (24h)" value={monitor.totals.last24h.calls} />
-            <StatPill
-              label="Uptime (24h)"
-              value={formatPct(monitor.totals.last24h.uptimePct)}
-            />
+            <StatPill label="Uptime (24h)" value={formatPct(monitor.totals.last24h.uptimePct)} />
             <StatPill label="Calls (7d)" value={monitor.totals.last7d.calls} />
             <StatPill
               label="Avg latency (24h)"
@@ -122,10 +122,13 @@ export default function LlmMonitorPanel({ getAccessToken }) {
             />
           </div>
 
-          <div className="rounded-xl border border-outline-variant/30 bg-white p-4 font-sans text-body-md text-on-surface-variant shadow-soft">
+          <div className="surface-card p-4 font-sans text-[14px] text-ink-soft">
             <p>
-              API process uptime: {Math.floor(monitor.processUptimeSec / 60)} min · Snapshot{' '}
-              {formatDate(monitor.generatedAt)}
+              API process uptime:{' '}
+              <span className="font-mono text-ink">
+                {Math.floor(monitor.processUptimeSec / 60)} min
+              </span>{' '}
+              · Snapshot <span className="font-mono">{formatDate(monitor.generatedAt)}</span>
               {monitor.geminiCircuitOpen ? ' · Gemini circuit open' : ''}
               {!monitor.logPersistence
                 ? ' · Usage history not persisted (run migration 013)'
@@ -133,61 +136,69 @@ export default function LlmMonitorPanel({ getAccessToken }) {
             </p>
           </div>
 
-          <div className="overflow-hidden rounded-xl border border-outline-variant/30 bg-white shadow-soft">
+          <div className="overflow-hidden rounded-md border border-linen-sunken bg-linen-raised shadow-soft">
             {monitor.models.length === 0 ? (
-              <p className="p-6 font-sans text-body-md text-on-surface-variant">
+              <p className="p-6 font-sans text-body-md text-ink-soft">
                 No model activity yet. Add connectors and run an assessment or Probe all models.
               </p>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[720px] text-left font-sans text-body-md">
-                  <thead className="border-b border-outline-variant/30 bg-surface-soft/80 text-label-sm uppercase tracking-wide text-on-surface-variant">
+                <table className="w-full min-w-[720px] text-left">
+                  <thead className="border-b border-linen-sunken bg-linen-sunken/50">
                     <tr>
-                      <th className="px-4 py-3 font-medium">Model</th>
-                      <th className="px-4 py-3 font-medium">Status</th>
-                      <th className="px-4 py-3 font-medium">24h calls</th>
-                      <th className="px-4 py-3 font-medium">24h uptime</th>
-                      <th className="px-4 py-3 font-medium">Avg latency</th>
-                      <th className="px-4 py-3 font-medium">Process</th>
-                      <th className="px-4 py-3 font-medium">Last error</th>
+                      {[
+                        'Model',
+                        'Status',
+                        '24h calls',
+                        '24h uptime',
+                        'Avg latency',
+                        'Process',
+                        'Last error',
+                      ].map((h) => (
+                        <th
+                          key={h}
+                          className="px-4 py-3 font-mono text-[11px] font-medium uppercase tracking-[0.06em] text-ink-faint"
+                        >
+                          {h}
+                        </th>
+                      ))}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-outline-variant/20">
+                  <tbody className="divide-y divide-linen-sunken">
                     {monitor.models.map((m) => (
                       <tr key={m.key}>
                         <td className="px-4 py-3">
-                          <p className="font-medium text-on-surface">{m.name}</p>
-                          <p className="text-label-sm text-on-surface-variant">
+                          <p className="font-sans text-[14px] font-semibold text-ink">{m.name}</p>
+                          <p className="font-mono text-[11px] text-ink-faint">
                             {m.provider} · {m.model}
                             {m.enabled === false ? ' · disabled' : ''}
                           </p>
                         </td>
                         <td className="px-4 py-3">
-                          <span
-                            className={`inline-flex rounded-full px-2.5 py-1 text-label-sm font-medium capitalize ${statusStyles(m.status)}`}
-                          >
-                            {m.status}
-                          </span>
+                          <span className={`${statusBadge(m.status)} capitalize`}>{m.status}</span>
                         </td>
-                        <td className="px-4 py-3 text-on-surface">
+                        <td className="px-4 py-3 font-mono text-[13px] text-ink">
                           {m.last24h.calls}
-                          <span className="text-on-surface-variant">
+                          <span className="text-ink-faint">
                             {' '}
                             ({m.last24h.successes}/{m.last24h.failures})
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-on-surface">
+                        <td className="px-4 py-3 font-mono text-[13px] text-ink">
                           {formatPct(m.last24h.uptimePct)}
                         </td>
-                        <td className="px-4 py-3 text-on-surface">
+                        <td className="px-4 py-3 font-mono text-[13px] text-ink">
                           {formatMs(m.last24h.avgLatencyMs ?? m.process?.avgLatencyMs)}
                         </td>
-                        <td className="px-4 py-3 text-on-surface-variant">
+                        <td className="px-4 py-3 font-mono text-[12px] text-ink-soft">
                           {m.process
                             ? `${m.process.calls} calls · ${formatPct(m.process.successRatePct)} ok`
                             : '—'}
                         </td>
-                        <td className="max-w-[220px] truncate px-4 py-3 text-on-surface-variant" title={m.process?.lastError || ''}>
+                        <td
+                          className="max-w-[220px] truncate px-4 py-3 font-sans text-[13px] text-ink-soft"
+                          title={m.process?.lastError || ''}
+                        >
                           {m.process?.lastError || '—'}
                         </td>
                       </tr>

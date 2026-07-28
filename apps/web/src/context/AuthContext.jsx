@@ -46,7 +46,12 @@ export function AuthProvider({ children }) {
       email: email.trim(),
       options: { emailRedirectTo: redirectTo },
     });
-    if (error) throw error;
+    if (error) {
+      if (error.message?.toLowerCase().includes('rate limit') || error.status === 429) {
+        throw new Error('Too many sign-in emails. Wait about a minute, then try again.');
+      }
+      throw error;
+    }
   }, []);
 
   const signOut = useCallback(async () => {

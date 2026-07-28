@@ -4,7 +4,8 @@ import { fetchAdminStats } from '../services/api.js';
 import Header from '../components/shared/Header.jsx';
 import Footer from '../components/shared/Footer.jsx';
 import Button from '../components/shared/Button.jsx';
-import LoadingDots from '../components/shared/LoadingDots.jsx';
+import PageLoadingState from '../components/shared/PageLoadingState.jsx';
+import { ArcDivider } from '../components/shared/Arc.jsx';
 import WorkspaceManager from '../components/admin/WorkspaceManager.jsx';
 import ConnectorsManager from '../components/admin/ConnectorsManager.jsx';
 import LlmMonitorPanel from '../components/admin/LlmMonitorPanel.jsx';
@@ -12,28 +13,35 @@ import { formatDate } from '../lib/formatDate.js';
 
 function StatCard({ label, value, hint }) {
   return (
-    <div className="rounded-xl border border-outline-variant/30 bg-white p-5 shadow-soft">
-      <p className="font-sans text-label-sm uppercase tracking-wide text-on-surface-variant">{label}</p>
-      <p className="mt-2 font-display text-headline-lg text-primary">{value}</p>
-      {hint ? (
-        <p className="mt-1 font-sans text-body-md text-on-surface-variant">{hint}</p>
-      ) : null}
+    <div className="surface-card p-5">
+      <p className="card-eyebrow">{label}</p>
+      <p className="font-mono text-[1.75rem] font-medium tabular-nums text-ink">{value}</p>
+      {hint ? <p className="mt-1 font-sans text-[13px] text-ink-soft">{hint}</p> : null}
     </div>
   );
 }
 
-function DistributionBar({ label, count, total, tone }) {
+function Panel({ title, children }) {
+  return (
+    <div className="surface-card p-6">
+      <h2 className="font-display text-headline-md font-normal text-ink">{title}</h2>
+      <div className="mt-5">{children}</div>
+    </div>
+  );
+}
+
+function DistributionBar({ label, count, total, tone, badgeClass }) {
   const pct = total > 0 ? Math.round((count / total) * 100) : 0;
   return (
     <div>
-      <div className="mb-1 flex justify-between font-sans text-body-md">
-        <span className="text-on-surface">{label}</span>
-        <span className="text-on-surface-variant">
+      <div className="mb-1.5 flex items-center justify-between gap-3">
+        <span className={badgeClass}>● {label}</span>
+        <span className="font-mono text-[12px] text-ink-faint">
           {count} · {pct}%
         </span>
       </div>
-      <div className="h-2 overflow-hidden rounded-full bg-surface-soft">
-        <div className={`h-full rounded-full ${tone}`} style={{ width: `${pct}%` }} />
+      <div className="h-1.5 overflow-hidden rounded-pill bg-linen-sunken">
+        <div className={`h-full rounded-pill ${tone}`} style={{ width: `${pct}%` }} />
       </div>
     </div>
   );
@@ -84,30 +92,28 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div className="flex min-h-screen flex-col bg-warm">
+    <div className="flex min-h-screen flex-col bg-linen">
       <Header variant="account" />
 
       <main className="mx-auto w-full max-w-landing flex-1 px-margin-mobile py-10 sm:px-8 lg:px-12">
-        <header className="mb-6">
-          <p className="font-sans text-label-sm uppercase tracking-[0.14em] text-primary">
-            Platform admin
-          </p>
-          <h1 className="mt-2 font-display text-headline-lg text-primary">Operations</h1>
-          <p className="mt-2 font-sans text-body-md text-on-surface-variant">
+        <header className="mb-8">
+          <p className="hero-badge">Platform admin</p>
+          <h1 className="mt-3 font-display text-headline-lg font-light text-ink">Operations</h1>
+          <p className="mt-2 max-w-xl font-sans text-body-md text-ink-soft">
             Monitor usage and deploy white-label workspaces for business clients.
           </p>
         </header>
 
-        <nav className="mb-8 flex gap-2 border-b border-outline-variant/30 pb-1">
+        <nav className="mb-8 flex flex-wrap gap-2 border-b border-linen-sunken">
           {tabs.map((t) => (
             <button
               key={t.id}
               type="button"
               onClick={() => setTab(t.id)}
-              className={`rounded-t-lg px-4 py-2 font-sans text-body-md transition ${
+              className={`btn-interactive -mb-px border-b-2 px-4 py-2.5 font-sans text-[15px] font-semibold transition-colors ${
                 tab === t.id
-                  ? 'bg-white text-primary shadow-soft'
-                  : 'text-on-surface-variant hover:text-primary'
+                  ? 'border-canopy-600 text-canopy-600'
+                  : 'border-transparent text-ink-soft hover:text-ink'
               }`}
             >
               {t.label}
@@ -116,11 +122,11 @@ export default function AdminDashboard() {
         </nav>
 
         {error ? (
-          <div className="rounded-xl border border-status-severe/30 bg-status-severe/5 p-6 text-center">
-            <p className="font-sans text-body-md text-on-surface">{error}</p>
-            <p className="mt-2 font-sans text-body-md text-on-surface-variant">
-              Sign in with an email listed in <code className="text-primary">ADMIN_EMAILS</code> on
-              the API host.
+          <div className="surface-card border-signal-red/30 bg-signal-red-tint p-8 text-center">
+            <p className="font-sans text-body-md text-ink">{error}</p>
+            <p className="mt-2 font-sans text-body-md text-ink-soft">
+              Sign in with an email listed in <code className="font-mono text-canopy">ADMIN_EMAILS</code>{' '}
+              on the API host.
             </p>
             <Button className="mt-6" onClick={() => { window.location.href = '/account'; }}>
               Back to account
@@ -139,15 +145,13 @@ export default function AdminDashboard() {
         {!error && tab === 'stats' ? (
           <>
             {loading ? (
-              <div className="flex justify-center py-20">
-                <LoadingDots />
-              </div>
+              <PageLoadingState message="Loading statistics…" artworkVariant="reflection" />
             ) : null}
 
             {stats ? (
-              <div className="space-y-10">
+              <div className="space-y-8">
                 <div className="flex justify-end">
-                  <p className="font-sans text-label-sm text-on-surface-variant">
+                  <p className="font-mono text-[11px] uppercase tracking-[0.06em] text-ink-faint">
                     Updated {formatDate(stats.generatedAt)}
                   </p>
                 </div>
@@ -175,86 +179,92 @@ export default function AdminDashboard() {
                   />
                 </section>
 
+                <ArcDivider />
+
                 <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                  <div className="rounded-xl border border-outline-variant/30 bg-white p-6 shadow-soft">
-                    <h2 className="font-display text-headline-md text-primary">Burnout mix</h2>
-                    <div className="mt-6 space-y-4">
+                  <Panel title="Burnout mix">
+                    <div className="space-y-4">
                       <DistributionBar
                         label="Healthy"
                         count={stats.burnoutDistribution.healthy}
                         total={burnoutTotal}
-                        tone="bg-status-healthy"
+                        tone="bg-fern"
+                        badgeClass="badge-healthy"
                       />
                       <DistributionBar
                         label="Mild"
                         count={stats.burnoutDistribution.mild}
                         total={burnoutTotal}
-                        tone="bg-status-warning"
+                        tone="bg-signal-amber"
+                        badgeClass="badge-mild"
                       />
                       <DistributionBar
                         label="Moderate"
                         count={stats.burnoutDistribution.moderate}
                         total={burnoutTotal}
-                        tone="bg-tertiary-fixed"
+                        tone="bg-ember"
+                        badgeClass="badge-moderate"
                       />
                       <DistributionBar
                         label="Severe"
                         count={stats.burnoutDistribution.severe}
                         total={burnoutTotal}
-                        tone="bg-status-severe"
+                        tone="bg-signal-red"
+                        badgeClass="badge-severe"
                       />
                     </div>
-                  </div>
+                  </Panel>
 
-                  <div className="rounded-xl border border-outline-variant/30 bg-white p-6 shadow-soft">
-                    <h2 className="font-display text-headline-md text-primary">Top personality types</h2>
-                    <ul className="mt-6 space-y-3">
+                  <Panel title="Top personality types">
+                    <ul className="space-y-3">
                       {stats.personalityTop.length === 0 ? (
-                        <li className="font-sans text-body-md text-on-surface-variant">No data yet</li>
+                        <li className="font-sans text-body-md text-ink-soft">No data yet</li>
                       ) : (
                         stats.personalityTop.map((row) => (
                           <li
                             key={row.key}
-                            className="flex items-center justify-between border-b border-outline-variant/20 pb-2 font-sans text-body-md last:border-0"
+                            className="flex items-center justify-between border-b border-linen-sunken pb-2 last:border-0"
                           >
-                            <span className="font-medium text-on-surface">{row.key}</span>
-                            <span className="text-on-surface-variant">{row.count}</span>
+                            <span className="font-sans text-[15px] font-semibold text-ink">
+                              {row.key}
+                            </span>
+                            <span className="font-mono text-[13px] text-ink-faint">{row.count}</span>
                           </li>
                         ))
                       )}
                     </ul>
-                  </div>
+                  </Panel>
                 </section>
 
                 <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                  <div className="rounded-xl border border-outline-variant/30 bg-white p-6 shadow-soft">
-                    <h2 className="font-display text-headline-md text-primary">Recent sign-ups</h2>
-                    <ul className="mt-4 divide-y divide-outline-variant/20">
+                  <Panel title="Recent sign-ups">
+                    <ul className="divide-y divide-linen-sunken">
                       {stats.recentSignups.map((row) => (
-                        <li key={row.id} className="flex justify-between gap-4 py-3 font-sans text-body-md">
-                          <span className="truncate text-on-surface">{row.email ?? '—'}</span>
-                          <span className="shrink-0 text-on-surface-variant">
+                        <li key={row.id} className="flex justify-between gap-4 py-3">
+                          <span className="truncate font-sans text-[14px] text-ink">
+                            {row.email ?? '—'}
+                          </span>
+                          <span className="shrink-0 font-mono text-[12px] text-ink-faint">
                             {formatDate(row.createdAt)}
                           </span>
                         </li>
                       ))}
                     </ul>
-                  </div>
+                  </Panel>
 
-                  <div className="rounded-xl border border-outline-variant/30 bg-white p-6 shadow-soft">
-                    <h2 className="font-display text-headline-md text-primary">Recent assessments</h2>
-                    <ul className="mt-4 divide-y divide-outline-variant/20">
+                  <Panel title="Recent assessments">
+                    <ul className="divide-y divide-linen-sunken">
                       {stats.recentAssessments.map((row) => (
-                        <li key={row.id} className="py-3 font-sans text-body-md">
+                        <li key={row.id} className="py-3">
                           <div className="flex justify-between gap-2">
-                            <span className="font-medium text-on-surface">
+                            <span className="font-sans text-[15px] font-semibold text-ink">
                               {row.displayName || 'Anonymous'}
                             </span>
-                            <span className="shrink-0 text-on-surface-variant">
+                            <span className="shrink-0 font-mono text-[12px] text-ink-faint">
                               {formatDate(row.createdAt)}
                             </span>
                           </div>
-                          <p className="mt-1 text-on-surface-variant">
+                          <p className="mt-1 font-mono text-[12px] text-ink-soft">
                             {row.burnoutLevel}
                             {row.burnoutPct != null ? ` · ${row.burnoutPct}%` : ''}
                             {row.personalityType ? ` · ${row.personalityType}` : ''}
@@ -262,7 +272,7 @@ export default function AdminDashboard() {
                         </li>
                       ))}
                     </ul>
-                  </div>
+                  </Panel>
                 </section>
               </div>
             ) : null}

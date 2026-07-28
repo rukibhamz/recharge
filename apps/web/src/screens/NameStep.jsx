@@ -4,6 +4,7 @@ import Footer from '../components/shared/Footer.jsx';
 import Button from '../components/shared/Button.jsx';
 import AssessmentFlowBar from '../components/assessment/AssessmentFlowBar.jsx';
 import { isValidName, sanitizeName } from '@recharge/shared/name';
+import SplitEditorialLayout from '../components/shared/SplitEditorialLayout.jsx';
 
 export default function NameStep({ phase, initialName = '', onBack, onClose, onContinue }) {
   const [name, setName] = useState(initialName);
@@ -21,16 +22,22 @@ export default function NameStep({ phase, initialName = '', onBack, onClose, onC
     <div className="flex min-h-screen flex-col bg-warm">
       <Header variant="assessment-mobile" onBack={onBack} onClose={onClose} />
 
-      <div className="mx-auto flex w-full max-w-container flex-1 flex-col justify-center px-margin-mobile pb-12 pt-6 sm:px-gutter lg:max-w-assess lg:px-8">
+      <div className="mx-auto flex w-full max-w-landing flex-1 flex-col justify-center px-margin-mobile pb-12 pt-6 sm:px-gutter lg:px-8">
         {phase ? <AssessmentFlowBar phase={phase} className="mb-8" /> : null}
-        <div className="surface-card rounded-xl p-6 lg:p-12">
-          <p className="text-center font-sans text-label-sm uppercase tracking-[0.14em] text-primary">
+        <SplitEditorialLayout
+          artworkVariant="hero"
+          asideBadge="Step 1"
+          asideTitle="A name makes it personal"
+          asideText="We use your first name to shape the tone of your interviews — warm, direct, and specific to you."
+        >
+        <div className="surface-card p-6 lg:p-12">
+          <p className="text-center font-mono text-[11px] uppercase tracking-[0.08em] text-fern">
             Step 1 of 5
           </p>
-          <h1 className="mt-4 text-center font-display text-headline-lg-mobile text-on-surface lg:text-headline-lg">
+          <h1 className="mt-4 text-center font-display text-headline-lg-mobile font-light text-ink lg:text-headline-lg">
             What is your name?
           </h1>
-          <p className="mt-3 text-center font-sans text-body-md text-on-surface-variant">
+          <p className="mt-3 text-center font-sans text-body-md text-ink-soft">
             We&apos;ll use this to personalise your personality and burnout interviews.
           </p>
 
@@ -47,10 +54,10 @@ export default function NameStep({ phase, initialName = '', onBack, onClose, onC
               onChange={(e) => setName(e.target.value)}
               onBlur={() => setTouched(true)}
               placeholder="e.g. Alex"
-              className="w-full rounded-xl border border-outline-variant/50 bg-white px-5 py-4 text-center font-sans text-body-lg text-on-surface outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+              className="field text-center text-body-lg"
             />
             {touched && !valid && (
-              <p className="mt-2 text-center font-sans text-body-md text-error" role="alert">
+              <p className="mt-2 text-center font-sans text-body-md text-signal-red" role="alert">
                 Please enter your name to continue.
               </p>
             )}
@@ -60,9 +67,10 @@ export default function NameStep({ phase, initialName = '', onBack, onClose, onC
           </form>
         </div>
 
-        <p className="mt-6 text-center font-sans text-[13px] text-on-surface-variant/70">
-          Your name stays private and is never shared on public links.
+        <p className="mt-6 text-center font-sans text-[13px] text-ink-faint lg:text-left">
+          Your name stays private and is never shared on public share links.
         </p>
+        </SplitEditorialLayout>
       </div>
 
       <Footer compact />

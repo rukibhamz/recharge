@@ -12,9 +12,9 @@ import AssessmentFlowBar from '../components/assessment/AssessmentFlowBar.jsx';
 import Header from '../components/shared/Header.jsx';
 import Footer from '../components/shared/Footer.jsx';
 import Button from '../components/shared/Button.jsx';
+import SplitEditorialLayout from '../components/shared/SplitEditorialLayout.jsx';
 
-const fieldClass =
-  'w-full rounded-xl border border-outline-variant/50 bg-white px-4 py-3.5 font-sans text-body-md text-on-surface outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20';
+const fieldClass = 'field';
 
 export default function ProfileStep({ phase, initialProfile = {}, onBack, onClose, onContinue }) {
   const [country, setCountry] = useState(initialProfile.country ?? '');
@@ -45,22 +45,28 @@ export default function ProfileStep({ phase, initialProfile = {}, onBack, onClos
     <div className="flex min-h-screen flex-col bg-warm">
       <Header variant="assessment-mobile" onBack={onBack} onClose={onClose} />
 
-      <div className="mx-auto flex w-full max-w-container flex-1 flex-col justify-center px-margin-mobile pb-12 pt-6 sm:px-gutter lg:max-w-assess lg:px-8">
+      <div className="mx-auto flex w-full max-w-landing flex-1 flex-col justify-center px-margin-mobile pb-12 pt-6 sm:px-gutter lg:px-8">
         {phase ? <AssessmentFlowBar phase={phase} className="mb-8" /> : null}
-        <div className="surface-card rounded-xl p-6 lg:p-12">
-          <p className="text-center font-sans text-label-sm uppercase tracking-[0.14em] text-primary">
+        <SplitEditorialLayout
+          artworkVariant="reflection"
+          asideBadge="Your context"
+          asideTitle="Better questions start here"
+          asideText="Age, work, and where you live help us write interviews that feel relevant — without naming your city in the questions themselves."
+        >
+        <div className="surface-card p-6 lg:p-12">
+          <p className="text-center font-mono text-[11px] uppercase tracking-[0.08em] text-fern">
             About you
           </p>
-          <h1 className="mt-4 text-center font-display text-headline-lg-mobile text-on-surface lg:text-headline-lg">
+          <h1 className="mt-4 text-center font-display text-headline-lg-mobile font-light text-ink lg:text-headline-lg">
             Help us understand your context
           </h1>
-          <p className="mt-3 text-center font-sans text-body-md text-on-surface-variant">
+          <p className="mt-3 text-center font-sans text-body-md text-ink-soft">
             Location, age, and work shape your custom interviews and final recommendations.
           </p>
 
           <form onSubmit={handleSubmit} className="mt-8 space-y-5 lg:mt-10">
             <div>
-              <label htmlFor="country" className="mb-1.5 block font-sans text-body-md text-on-surface">
+              <label htmlFor="country" className="field-label">
                 Country
               </label>
               <select
@@ -80,8 +86,8 @@ export default function ProfileStep({ phase, initialProfile = {}, onBack, onClos
             </div>
 
             <div>
-              <label htmlFor="city" className="mb-1.5 block font-sans text-body-md text-on-surface">
-                City <span className="text-on-surface-variant">(recommended)</span>
+              <label htmlFor="city" className="field-label">
+                City <span className="normal-case tracking-normal text-ink-faint">(recommended)</span>
               </label>
               <input
                 id="city"
@@ -92,13 +98,13 @@ export default function ProfileStep({ phase, initialProfile = {}, onBack, onClos
                 className={fieldClass}
                 autoComplete="address-level2"
               />
-              <p className="mt-1.5 font-sans text-[13px] text-on-surface-variant/80">
+              <p className="mt-1.5 font-sans text-[13px] text-ink-faint">
                 Helps tailor examples to your area — we only use the city you enter here.
               </p>
             </div>
 
             <div>
-              <label htmlFor="age-band" className="mb-1.5 block font-sans text-body-md text-on-surface">
+              <label htmlFor="age-band" className="field-label">
                 Age band
               </label>
               <select
@@ -118,10 +124,7 @@ export default function ProfileStep({ phase, initialProfile = {}, onBack, onClos
             </div>
 
             <div>
-              <label
-                htmlFor="work-context"
-                className="mb-1.5 block font-sans text-body-md text-on-surface"
-              >
+              <label htmlFor="work-context" className="field-label">
                 Current work situation
               </label>
               <select
@@ -141,11 +144,9 @@ export default function ProfileStep({ phase, initialProfile = {}, onBack, onClos
             </div>
 
             <div>
-              <label
-                htmlFor="work-sector"
-                className="mb-1.5 block font-sans text-body-md text-on-surface"
-              >
-                Industry / sector <span className="text-on-surface-variant">(optional)</span>
+              <label htmlFor="work-sector" className="field-label">
+                Industry / sector{' '}
+                <span className="normal-case tracking-normal text-ink-faint">(optional)</span>
               </label>
               <select
                 id="work-sector"
@@ -163,7 +164,7 @@ export default function ProfileStep({ phase, initialProfile = {}, onBack, onClos
             </div>
 
             {touched && !valid && (
-              <p className="text-center font-sans text-body-md text-error" role="alert">
+              <p className="text-center font-sans text-body-md text-signal-red" role="alert">
                 Please complete country, age, and work situation to continue.
               </p>
             )}
@@ -174,10 +175,11 @@ export default function ProfileStep({ phase, initialProfile = {}, onBack, onClos
           </form>
         </div>
 
-        <p className="mt-6 text-center font-sans text-[13px] text-on-surface-variant/70">
+        <p className="mt-6 text-center font-sans text-[13px] text-ink-faint lg:text-left">
           Demographics are used only to personalize questions and tips. They are never shown on
           public share links.
         </p>
+        </SplitEditorialLayout>
       </div>
 
       <Footer compact />

@@ -5,6 +5,8 @@ import Header from '../components/shared/Header.jsx';
 import Footer from '../components/shared/Footer.jsx';
 import Button from '../components/shared/Button.jsx';
 import { BURNOUT_LEVEL_COPY } from '@recharge/shared/questions';
+import SplitEditorialLayout from '../components/shared/SplitEditorialLayout.jsx';
+import PageLoadingState from '../components/shared/PageLoadingState.jsx';
 
 function formatDate(iso) {
   if (!iso) return '';
@@ -65,9 +67,8 @@ export default function HistoryPage() {
     return (
       <div className="flex min-h-screen flex-col bg-warm">
         <Header variant="account" />
-        <p className="flex flex-1 items-center justify-center font-sans text-body-md text-on-surface-variant">
-          Loading your results…
-        </p>
+        <PageLoadingState message="Loading your results…" artworkVariant="reflection" />
+        <Footer compact />
       </div>
     );
   }
@@ -76,13 +77,20 @@ export default function HistoryPage() {
     <div className="flex min-h-screen flex-col bg-warm">
       <Header variant="account" />
 
-      <section className="mx-auto w-full max-w-container flex-1 px-margin-mobile py-12 sm:px-gutter">
-        <header>
-          <h1 className="font-display text-headline-lg text-primary">Your saved results</h1>
-          <p className="mt-2 font-sans text-body-md text-on-surface-variant">
-            Signed in as {user.email}
-          </p>
-        </header>
+      <section className="mx-auto w-full max-w-landing flex-1 px-margin-mobile py-12 sm:px-gutter">
+        <SplitEditorialLayout
+          artworkVariant="hero"
+          asideBadge="Your timeline"
+          asideTitle="Every check-in tells a story"
+          asideText="Revisit past assessments to notice how your energy, personality patterns, and recovery needs shift over time."
+        >
+          <header>
+            <span className="hero-badge">History</span>
+            <h1 className="mt-6 font-display text-headline-lg text-primary">Your saved results</h1>
+            <p className="mt-2 font-sans text-body-md text-on-surface-variant">
+              Signed in as {user.email}
+            </p>
+          </header>
 
         {error ? (
           <p className="mt-8 font-sans text-body-md text-severe" role="alert">
@@ -91,7 +99,7 @@ export default function HistoryPage() {
         ) : null}
 
         {sessions.length === 0 && !error ? (
-          <div className="surface-card mt-10 p-8 text-center">
+          <div className="glass-card mt-10 p-8 text-center lg:text-left">
             <p className="font-sans text-body-md text-on-surface-variant">
               No saved assessments yet. Complete the assessment and save your results to build
               history.
@@ -133,11 +141,12 @@ export default function HistoryPage() {
           </ul>
         )}
 
-        <div className="mt-10 text-center">
+        <div className="mt-10 text-center lg:text-left">
           <Button variant="secondary" onClick={() => { window.location.href = '/'; }}>
             New assessment
           </Button>
         </div>
+        </SplitEditorialLayout>
       </section>
 
       <Footer />

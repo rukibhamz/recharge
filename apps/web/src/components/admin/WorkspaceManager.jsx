@@ -13,7 +13,7 @@ const emptyForm = () => ({
   slug: '',
   brandName: '',
   customDomain: '',
-  primaryColor: '#003441',
+  primaryColor: '#2D6A4F',
   contactEmail: '',
   status: 'draft',
   content: { ...DEFAULT_WORKSPACE_CONTENT },
@@ -22,14 +22,13 @@ const emptyForm = () => ({
 function Field({ label, children }) {
   return (
     <label className="block">
-      <span className="font-sans text-label-sm text-on-surface-variant">{label}</span>
-      <div className="mt-1.5">{children}</div>
+      <span className="field-label">{label}</span>
+      <div>{children}</div>
     </label>
   );
 }
 
-const inputClass =
-  'w-full rounded-xl border border-outline-variant/40 bg-white px-4 py-3 font-sans text-body-md text-on-surface outline-none focus:border-primary';
+const inputClass = 'field';
 
 export default function WorkspaceManager({ getAccessToken }) {
   const [workspaces, setWorkspaces] = useState([]);
@@ -72,7 +71,7 @@ export default function WorkspaceManager({ getAccessToken }) {
       slug: ws.slug || '',
       brandName: ws.brandName || '',
       customDomain: ws.customDomain || '',
-      primaryColor: ws.primaryColor || '#003441',
+      primaryColor: ws.primaryColor || '#2D6A4F',
       contactEmail: ws.contactEmail || '',
       status: ws.status || 'draft',
       content: { ...DEFAULT_WORKSPACE_CONTENT, ...(ws.content || {}) },
@@ -130,8 +129,9 @@ export default function WorkspaceManager({ getAccessToken }) {
     <section className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h2 className="font-display text-headline-md text-primary">Business workspaces</h2>
-          <p className="mt-1 max-w-2xl font-sans text-body-md text-on-surface-variant">
+          <p className="card-eyebrow">White-label</p>
+          <h2 className="font-display text-headline-md font-normal text-ink">Business workspaces</h2>
+          <p className="mt-1 max-w-2xl font-sans text-body-md text-ink-soft">
             Deploy Recharge as white-label SaaS: set a custom domain, brand colour, and landing
             copy. Attach the domain in Vercel, set status to Active, then visitors on that host see
             their branding.
@@ -141,40 +141,40 @@ export default function WorkspaceManager({ getAccessToken }) {
       </div>
 
       {error ? (
-        <p className="rounded-xl border border-status-severe/30 bg-status-severe/5 px-4 py-3 font-sans text-body-md text-on-surface">
+        <p className="rounded-md border border-signal-red/30 bg-signal-red-tint px-4 py-3 font-sans text-body-md text-ink">
           {error}
         </p>
       ) : null}
 
       {loading ? (
-        <p className="font-sans text-body-md text-on-surface-variant">Loading workspaces…</p>
+        <p className="font-sans text-body-md text-ink-soft">Loading workspaces…</p>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-outline-variant/30 bg-white shadow-soft">
+        <div className="overflow-hidden rounded-md border border-linen-sunken bg-linen-raised shadow-soft">
           {workspaces.length === 0 ? (
-            <p className="p-6 font-sans text-body-md text-on-surface-variant">
+            <p className="p-6 font-sans text-body-md text-ink-soft">
               No business workspaces yet. Create one to sell Recharge under a client domain.
             </p>
           ) : (
-            <ul className="divide-y divide-outline-variant/20">
+            <ul className="divide-y divide-linen-sunken">
               {workspaces.map((ws) => (
                 <li
                   key={ws.id}
                   className="flex flex-wrap items-center justify-between gap-3 px-5 py-4"
                 >
                   <div>
-                    <p className="font-sans text-body-md font-medium text-on-surface">
+                    <p className="font-sans text-[15px] font-semibold text-ink">
                       {ws.brandName || ws.name}
                     </p>
-                    <p className="mt-1 font-sans text-label-sm text-on-surface-variant">
+                    <p className="mt-1 font-mono text-[12px] text-ink-faint">
                       /{ws.slug}
                       {ws.customDomain ? ` · ${ws.customDomain}` : ''} · {ws.status}
                     </p>
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="ghost" onClick={() => openEdit(ws)}>
+                    <Button variant="secondary" size="sm" onClick={() => openEdit(ws)}>
                       Edit
                     </Button>
-                    <Button variant="ghost" onClick={() => handleDelete(ws.id)}>
+                    <Button variant="ghost" size="sm" onClick={() => handleDelete(ws.id)}>
                       Delete
                     </Button>
                   </div>
@@ -186,8 +186,8 @@ export default function WorkspaceManager({ getAccessToken }) {
       )}
 
       {showForm ? (
-        <div className="rounded-xl border border-outline-variant/30 bg-white p-6 shadow-soft">
-          <h3 className="font-display text-headline-md text-primary">
+        <div className="surface-card p-6">
+          <h3 className="font-display text-headline-md font-normal text-ink">
             {editingId ? 'Edit workspace' : 'New business workspace'}
           </h3>
 
@@ -225,7 +225,7 @@ export default function WorkspaceManager({ getAccessToken }) {
             <Field label="Primary colour">
               <input
                 type="color"
-                className="h-12 w-full cursor-pointer rounded-xl border border-outline-variant/40 bg-white p-1"
+                className="h-12 w-full cursor-pointer rounded-md border-[1.5px] border-linen-sunken bg-linen-raised p-1"
                 value={form.primaryColor}
                 onChange={(e) => setForm({ ...form, primaryColor: e.target.value })}
               />
@@ -251,7 +251,7 @@ export default function WorkspaceManager({ getAccessToken }) {
             </Field>
           </div>
 
-          <h4 className="mt-8 font-display text-headline-md text-primary">Landing content</h4>
+          <h4 className="mt-8 font-display text-headline-md font-normal text-ink">Landing content</h4>
           <div className="mt-4 grid grid-cols-1 gap-4">
             {[
               ['badge', 'Badge (desktop)'],
@@ -290,7 +290,7 @@ export default function WorkspaceManager({ getAccessToken }) {
             </Button>
           </div>
 
-          <p className="mt-6 font-sans text-label-sm text-on-surface-variant">
+          <p className="mt-6 font-sans text-[13px] text-ink-faint">
             After setting a custom domain: add it in Vercel → Domains, point DNS to Vercel, then set
             status to Active.
           </p>

@@ -3,17 +3,17 @@ export default function TraitBars({ traits }) {
     <div className="space-y-4">
       {traits.map((trait) => (
         <div key={trait.name}>
-          <div className="mb-1 flex justify-between font-sans text-body-md">
-            <span className="text-on-surface-variant">{trait.name}</span>
-            <span className="personality-chip">
+          <div className="mb-1.5 flex justify-between gap-3">
+            <span className="font-sans text-[14px] text-ink-soft">{trait.name}</span>
+            <span className="font-mono text-[12px] font-medium text-canopy">
               {trait.poleA && trait.poleB
                 ? `${trait.pct}% ${trait.poleA}`
                 : `${trait.pct}%`}
             </span>
           </div>
-          <div className="h-2 overflow-hidden rounded-full bg-surface-soft">
+          <div className="h-1.5 overflow-hidden rounded-pill bg-linen-sunken">
             <div
-              className="h-full rounded-full bg-primary/70 transition-all duration-500"
+              className="h-full rounded-pill bg-fern transition-all duration-base ease-calm"
               style={{ width: `${trait.pct}%` }}
             />
           </div>

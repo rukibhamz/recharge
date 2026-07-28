@@ -8,6 +8,8 @@ import PersonalityCard from '../components/results/PersonalityCard.jsx';
 import TraitBars from '../components/results/TraitBars.jsx';
 import RecommendationCard from '../components/results/RecommendationCard.jsx';
 import { BURNOUT_LEVEL_COPY } from '@recharge/shared/questions';
+import EditorialArtwork from '../components/shared/EditorialArtwork.jsx';
+import PageLoadingState from '../components/shared/PageLoadingState.jsx';
 
 export default function SharePage({ shareToken }) {
   const [data, setData] = useState(null);
@@ -25,9 +27,8 @@ export default function SharePage({ shareToken }) {
     return (
       <div className="flex min-h-screen flex-col bg-warm">
         <Header />
-        <p className="flex flex-1 items-center justify-center font-sans text-body-md text-on-surface-variant">
-          Loading shared profile…
-        </p>
+        <PageLoadingState message="Loading shared profile…" artworkVariant="recovery" />
+        <Footer compact />
       </div>
     );
   }
@@ -57,11 +58,20 @@ export default function SharePage({ shareToken }) {
       <Header />
 
       <main className="mx-auto w-full max-w-container flex-1 space-y-stack-gap px-margin-mobile py-stack-gap sm:px-gutter">
-        <header className="text-center">
-          <p className="font-sans text-label-sm uppercase tracking-[0.14em] text-primary">
-            Shared Recharge profile
-          </p>
-        </header>
+        <section className="relative overflow-hidden rounded-xl border border-outline-variant/20 bg-white/70 p-6 backdrop-blur-glass">
+          <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
+            <header className="text-center lg:text-left">
+              <span className="hero-badge">Shared profile</span>
+              <h1 className="mt-5 font-display text-headline-lg text-primary">
+                A snapshot of someone&apos;s energy and recovery fit.
+              </h1>
+              <p className="mt-3 font-sans text-body-md text-on-surface-variant">
+                Burnout level, personality pattern, and recovery ideas — shared with care.
+              </p>
+            </header>
+            <EditorialArtwork variant="recovery" className="aspect-[4/3] lg:aspect-[1.1/1]" />
+          </div>
+        </section>
 
         <section className="glass-card p-gutter text-center">
           <ScoreRing pct={burnout.pct ?? 0} cls={burnout.cls} level={burnout.level} />

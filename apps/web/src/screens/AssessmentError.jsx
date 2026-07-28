@@ -1,6 +1,7 @@
 import Header from '../components/shared/Header.jsx';
 import Footer from '../components/shared/Footer.jsx';
 import Button from '../components/shared/Button.jsx';
+import EditorialArtwork from '../components/shared/EditorialArtwork.jsx';
 
 const RETRY_HINTS = {
   'loading-personality-test': 'We could not build your personality interview. Check your connection and try again.',
@@ -16,6 +17,9 @@ export default function AssessmentError({ error, errorPhase, onRetry, onStartOve
     <div className="flex min-h-screen flex-col bg-warm">
       <Header />
       <section className="mx-auto flex max-w-lg flex-1 flex-col justify-center px-margin-mobile py-16 text-center sm:px-gutter">
+        <div className="editorial-frame mx-auto mb-8 w-full max-w-xs">
+          <EditorialArtwork variant="reflection" />
+        </div>
         <div className="surface-card p-8">
           <h2 className="font-display text-headline-lg text-primary">Let&apos;s try that again</h2>
           <p className="mt-4 font-sans text-body-md text-on-surface-variant">{hint}</p>
