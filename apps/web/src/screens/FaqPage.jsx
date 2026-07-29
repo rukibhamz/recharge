@@ -32,7 +32,7 @@ const FAQS = [
 export default function FaqPage() {
   return (
     <div className="flex min-h-screen flex-col bg-warm">
-      <Header variant="account" />
+      <Header variant="landing" />
 
       <main className="mx-auto w-full max-w-landing flex-1 px-margin-mobile py-10 sm:px-8 lg:px-12">
         <h1 className="font-display text-headline-lg text-primary">Frequently Asked Questions</h1>

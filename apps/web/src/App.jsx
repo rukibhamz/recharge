@@ -1,4 +1,5 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { normalizePath, parsePathRoute } from './lib/navigation.js';
 import { useAssessmentStore } from './store/assessment.js';
 import {
   completeAssessment,
@@ -30,32 +31,18 @@ import AdminDashboard from './screens/AdminDashboard.jsx';
 import AboutPage from './screens/AboutPage.jsx';
 import FaqPage from './screens/FaqPage.jsx';
 
-const SHARE_PATH = /^\/share\/([a-f0-9]{32})$/i;
-const HISTORY_DETAIL_PATH = /^\/history\/([0-9a-f-]{36})$/i;
-
 function usePathRoute() {
-  if (typeof window === 'undefined') return { kind: 'app' };
+  const [path, setPath] = useState(() =>
+    typeof window === 'undefined' ? '/' : normalizePath(window.location.pathname),
+  );
 
-  const path = window.location.pathname;
+  useEffect(() => {
+    const syncPath = () => setPath(normalizePath(window.location.pathname));
+    window.addEventListener('popstate', syncPath);
+    return () => window.removeEventListener('popstate', syncPath);
+  }, []);
 
-  if (path === '/auth/callback') return { kind: 'auth-callback' };
-  if (path === '/login') return { kind: 'login' };
-  if (path === '/account') return { kind: 'account' };
-  if (path === '/admin') return { kind: 'admin' };
-  if (path === '/history') return { kind: 'history' };
-  if (path === '/about') return { kind: 'about' };
-  if (path === '/faq') return { kind: 'faq' };
-  if (path === '/privacy') return { kind: 'legal', legal: 'privacy' };
-  if (path === '/terms') return { kind: 'legal', legal: 'terms' };
-  if (path === '/security') return { kind: 'legal', legal: 'security' };
-
-  const historyMatch = path.match(HISTORY_DETAIL_PATH);
-  if (historyMatch) return { kind: 'history-detail', sessionId: historyMatch[1] };
-
-  const shareMatch = path.match(SHARE_PATH);
-  if (shareMatch) return { kind: 'share', shareToken: shareMatch[1] };
-
-  return { kind: 'app' };
+  return parsePathRoute(path);
 }
 
 export default function App() {

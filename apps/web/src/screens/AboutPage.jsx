@@ -21,7 +21,7 @@ const STEPS = [
 export default function AboutPage() {
   return (
     <div className="flex min-h-screen flex-col bg-linen">
-      <Header variant="account" />
+      <Header variant="landing" />
 
       <main className="mx-auto w-full max-w-landing flex-1 px-margin-mobile py-10 sm:px-8 lg:px-12">
         <section className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">

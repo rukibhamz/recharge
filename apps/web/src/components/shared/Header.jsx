@@ -1,4 +1,5 @@
 import Logo from './Logo.jsx';
+import NavLink from './NavLink.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useIsAdmin } from '../../hooks/useIsAdmin.js';
 
@@ -12,20 +13,20 @@ function AccountNav() {
     return (
       <nav className="flex items-center gap-4">
         {isAdmin ? (
-          <a
+          <NavLink
             href="/admin"
             className="hidden font-sans text-body-md text-on-surface-variant btn-interactive hover:text-primary sm:inline"
           >
             Admin
-          </a>
+          </NavLink>
         ) : null}
-        <a
+        <NavLink
           href="/account"
           className="hidden font-sans text-body-md text-on-surface-variant btn-interactive hover:text-primary sm:inline"
         >
           Account
-        </a>
-        <a
+        </NavLink>
+        <NavLink
           href="/account"
           className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-fern-tint text-canopy"
           aria-label="Account settings"
@@ -33,15 +34,15 @@ function AccountNav() {
           <span className="font-display text-body-md font-semibold">
             {(user.email?.[0] ?? '?').toUpperCase()}
           </span>
-        </a>
+        </NavLink>
       </nav>
     );
   }
 
   return (
-    <a href="/login" className="btn-interactive font-sans text-body-md text-primary hover:underline">
+    <NavLink href="/login" className="btn-interactive font-sans text-body-md text-primary hover:underline">
       Sign in
-    </a>
+    </NavLink>
   );
 }
 
@@ -97,26 +98,28 @@ export default function Header({ variant = 'landing', onBack, onClose }) {
 
   return (
     <header className="mx-auto flex w-full max-w-landing items-center justify-between px-margin-mobile py-6 sm:px-8 lg:px-12">
-      <Logo />
+      <NavLink href="/" className="btn-interactive">
+        <Logo />
+      </NavLink>
       {variant === 'landing' || variant === 'account' || variant === 'share' ? (
         <nav className="flex items-center gap-4 font-sans text-body-md text-on-surface-variant sm:gap-8">
           {variant === 'landing' ? (
             <>
-              <a href="/about" className="hidden btn-interactive hover:text-primary sm:inline">
+              <NavLink href="/about" className="btn-interactive hover:text-primary">
                 About
-              </a>
-              <a href="/faq" className="hidden btn-interactive hover:text-primary sm:inline">
+              </NavLink>
+              <NavLink href="/faq" className="btn-interactive hover:text-primary">
                 FAQ
-              </a>
+              </NavLink>
             </>
           ) : variant === 'share' ? (
-            <a href="/" className="btn-interactive text-body-md hover:text-primary">
+            <NavLink href="/" className="btn-interactive text-body-md hover:text-primary">
               Take assessment
-            </a>
+            </NavLink>
           ) : (
-            <a href="/" className="btn-interactive hover:text-primary">
+            <NavLink href="/" className="btn-interactive hover:text-primary">
               Assessment
-            </a>
+            </NavLink>
           )}
           <AccountNav />
         </nav>
