@@ -39,7 +39,9 @@ export async function generateOmaReply({ session, history, userMessage }) {
     };
   }
 
-  const system = buildOmaSystemPrompt(session);
+  const system = buildOmaSystemPrompt(session, {
+    userTurnCount: history.filter((m) => m.role === 'user').length + 1,
+  });
   const messages = [
     ...history
       .filter((m) => m.role === 'user' || m.role === 'assistant')

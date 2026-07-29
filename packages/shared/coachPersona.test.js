@@ -6,6 +6,7 @@ import {
   CRISIS_RESPONSE,
   OMA_PERSONA,
   sanitizeOmaReply,
+  omaTurnGuidance,
 } from './coachPersona.js';
 
 describe('coachPersona', () => {
@@ -38,5 +39,12 @@ describe('coachPersona', () => {
   it('forbids AI formatting in persona rules', () => {
     assert.match(OMA_PERSONA, /Never use asterisks/i);
     assert.match(OMA_PERSONA, /Never use em dashes/i);
+  });
+
+  it('prioritizes probing before advice', () => {
+    assert.match(OMA_PERSONA, /inquisitive/i);
+    assert.match(OMA_PERSONA, /Do NOT jump to advice/i);
+    assert.match(omaTurnGuidance(1), /Do not give advice yet/i);
+    assert.match(omaTurnGuidance(4), /small suggestion/i);
   });
 });

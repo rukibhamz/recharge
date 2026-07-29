@@ -5,6 +5,7 @@ import { recoveryPreferencesPromptContext } from '@recharge/shared/recoveryPrefe
 import {
   COACH_NAME,
   OMA_PERSONA,
+  omaTurnGuidance,
 } from '@recharge/shared/coachPersona';
 import { normalizeRecommendationsList } from '@recharge/shared/recommendations';
 import { getSessionForUser, getSessionsForUser } from './sessions.js';
@@ -53,7 +54,7 @@ function formatTraits(traits) {
 }
 
 /** Build Oma's system prompt from a saved assessment. */
-export function buildOmaSystemPrompt(session) {
+export function buildOmaSystemPrompt(session, { userTurnCount = 0 } = {}) {
   const name = firstName(session?.displayName) || 'there';
   const demographics = session?.demographics ?? {};
   const recoveryPreferences =
@@ -65,9 +66,11 @@ export function buildOmaSystemPrompt(session) {
   const lines = [
     OMA_PERSONA,
     '',
+    omaTurnGuidance(userTurnCount),
+    '',
     `You are speaking privately with ${name}.`,
     '',
-    'Saved check-in context (use naturally — do not recite as a report):',
+    'Saved check-in context (use lightly to ask better questions, not to lecture):',
   ];
 
   if (burnout) {
@@ -111,10 +114,10 @@ export function buildOmaSystemPrompt(session) {
   const unwind = recoveryPreferencesPromptContext(recoveryPreferences);
   if (unwind) lines.push(unwind);
 
-  lines.push(`- Their recovery roadmap:\n${formatRecommendations(session?.recommendations)}`);
+  lines.push(`- Their recovery roadmap (only offer when they want advice):\n${formatRecommendations(session?.recommendations)}`);
   lines.push('');
   lines.push(
-    `Sign replies as yourself (${COACH_NAME}) in tone only — do not end every message with a signature.`,
+    `Sign replies as yourself (${COACH_NAME}) in tone only. Do not end every message with a signature.`,
   );
 
   return lines.join('\n');
