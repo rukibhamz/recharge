@@ -54,6 +54,24 @@ describe('recommendations', () => {
     assert.equal(list[0].tip, FALLBACK[0].tip);
   });
 
+  it('parses stringified JSON recommendation objects', () => {
+    const raw =
+      '{"icon":"🧘‍♀️","title":"Morning stretch at home","tip":"Start your day with 10 minutes of gentle yoga."}';
+    const item = normalizeRecommendationItem(raw);
+    assert.equal(item.title, 'Morning stretch at home');
+    assert.equal(item.tip, 'Start your day with 10 minutes of gentle yoga.');
+    assert.equal(item.icon, '🧘‍♀️');
+  });
+
+  it('parses arrays of stringified recommendation objects', () => {
+    const list = normalizeRecommendationsList([
+      '{"icon":"🚶‍♂️","title":"Evening walks","tip":"Take a quiet 20-minute walk."}',
+      '{"icon":"📖","title":"Cosy solo time","tip":"Set aside an hour to read."}',
+    ]);
+    assert.equal(list[0].title, 'Evening walks');
+    assert.equal(list[1].tip, 'Set aside an hour to read.');
+  });
+
   it('detects displayable recommendations', () => {
     assert.equal(hasDisplayableRecommendations([{ heading: 'Rest', body: 'Sleep early.' }]), true);
     assert.equal(hasDisplayableRecommendations([{}, {}]), false);

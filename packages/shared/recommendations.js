@@ -30,19 +30,42 @@ function pickFirst(obj, keys) {
   return '';
 }
 
-function flattenRecommendationSource(item) {
-  if (!item || typeof item !== 'object') return item;
-  const nested = item.recommendation ?? item.recovery ?? item.item;
-  if (nested && typeof nested === 'object' && !Array.isArray(nested)) {
-    return { ...item, ...nested };
+function tryParseJson(value) {
+  if (typeof value !== 'string') return value;
+  const trimmed = value.trim();
+  if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) return value;
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    return value;
   }
-  return item;
+}
+
+/** Unwrap stringified JSON objects/arrays (including double-encoded values). */
+export function coerceRecommendationInput(item) {
+  let value = tryParseJson(item);
+  if (typeof value === 'string') {
+    value = tryParseJson(value);
+  }
+  return value;
+}
+
+function flattenRecommendationSource(item) {
+  const coerced = coerceRecommendationInput(item);
+  if (!coerced || typeof coerced !== 'object') return coerced;
+  const nested = coerced.recommendation ?? coerced.recovery ?? coerced.item;
+  if (nested && typeof nested === 'object' && !Array.isArray(nested)) {
+    return { ...coerced, ...coerceRecommendationInput(nested) };
+  }
+  return coerced;
 }
 
 /** Normalize one recommendation object to { icon, title, tip }. */
 export function normalizeRecommendationItem(item, fallback = null) {
-  if (typeof item === 'string') {
-    const tip = item.trim();
+  const source = flattenRecommendationSource(item);
+
+  if (typeof source === 'string') {
+    const tip = source.trim();
     if (!tip) return fallback ? { ...fallback } : null;
     return {
       icon: fallback?.icon ?? '💡',
@@ -51,8 +74,7 @@ export function normalizeRecommendationItem(item, fallback = null) {
     };
   }
 
-  const source = flattenRecommendationSource(item);
-  if (!source || typeof source !== 'object') {
+  if (!source || typeof source !== 'object' || Array.isArray(source)) {
     return fallback ? { ...fallback } : null;
   }
 
@@ -72,15 +94,22 @@ export function normalizeRecommendationItem(item, fallback = null) {
 }
 
 function extractRecommendationArray(parsed) {
-  if (Array.isArray(parsed)) return parsed;
-  if (!parsed || typeof parsed !== 'object') return null;
+  const input = coerceRecommendationInput(parsed);
+  if (Array.isArray(input)) return input.map(coerceRecommendationInput);
+  if (!input || typeof input !== 'object') return null;
 
   for (const key of ['recommendations', 'items', 'recovery_recommendations', 'tips', 'data']) {
-    if (Array.isArray(parsed[key])) return parsed[key];
+    if (Array.isArray(input[key])) {
+      return input[key].map(coerceRecommendationInput);
+    }
+    if (typeof input[key] === 'string') {
+      const nested = coerceRecommendationInput(input[key]);
+      if (Array.isArray(nested)) return nested.map(coerceRecommendationInput);
+    }
   }
 
-  if (pickFirst(parsed, TITLE_KEYS) || pickFirst(parsed, TIP_KEYS)) {
-    return [parsed];
+  if (pickFirst(input, TITLE_KEYS) || pickFirst(input, TIP_KEYS)) {
+    return [input];
   }
 
   return null;
@@ -116,10 +145,13 @@ export function normalizeRecommendationsList(parsed, fallbackList = []) {
 
 /** True when at least one item has displayable title or tip text. */
 export function hasDisplayableRecommendations(recommendations) {
-  if (!Array.isArray(recommendations) || recommendations.length === 0) return false;
-  return recommendations.some(
-    (item) =>
-      pickFirst(flattenRecommendationSource(item), TITLE_KEYS) ||
-      pickFirst(flattenRecommendationSource(item), TIP_KEYS),
-  );
+  const list = extractRecommendationArray(recommendations);
+  if (!list?.length) return false;
+  return list.some((item) => {
+    const source = flattenRecommendationSource(item);
+    if (typeof source === 'object' && source) {
+      return pickFirst(source, TITLE_KEYS) || pickFirst(source, TIP_KEYS);
+    }
+    return typeof source === 'string' && source.trim().length > 0;
+  });
 }
