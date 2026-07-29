@@ -5,6 +5,7 @@ import {
   detectsCrisisLanguage,
   CRISIS_RESPONSE,
   OMA_PERSONA,
+  sanitizeOmaReply,
 } from './coachPersona.js';
 
 describe('coachPersona', () => {
@@ -21,5 +22,21 @@ describe('coachPersona', () => {
   it('has a crisis response with help guidance', () => {
     assert.match(CRISIS_RESPONSE, /crisis/i);
     assert.match(CRISIS_RESPONSE, /emergency/i);
+  });
+
+  it('strips asterisks and em dashes from replies', () => {
+    const cleaned = sanitizeOmaReply(
+      'That wall is real — and it is your body saying *enough*. Aim for the *smallest* version of a good day.',
+    );
+    assert.equal(cleaned.includes('*'), false);
+    assert.equal(cleaned.includes('—'), false);
+    assert.match(cleaned, /enough/);
+    assert.match(cleaned, /smallest/);
+    assert.match(cleaned, /That wall is real,/);
+  });
+
+  it('forbids AI formatting in persona rules', () => {
+    assert.match(OMA_PERSONA, /Never use asterisks/i);
+    assert.match(OMA_PERSONA, /Never use em dashes/i);
   });
 });

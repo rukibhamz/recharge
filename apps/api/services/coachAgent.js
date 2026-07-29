@@ -3,6 +3,7 @@ import {
   CRISIS_RESPONSE,
   detectsCrisisLanguage,
   OMA_OPENING,
+  sanitizeOmaReply,
 } from '@recharge/shared/coachPersona';
 import { llmFeatures } from '../config/llm.js';
 import { generateChat, hasAnyLlmProvider } from './llmProvider.js';
@@ -11,7 +12,7 @@ import { buildOmaSystemPrompt } from './coachContext.js';
 const MAX_HISTORY = 20;
 
 const FALLBACK_REPLY =
-  "I am here with you. I am having trouble reaching my full coaching tools right now, but we can still keep it simple: what is one thing draining you most today, and what would a tiny recovery step look like in the next hour?";
+  "I'm here with you. I'm having trouble reaching my full coaching tools right now, but we can still keep it simple. What is one thing draining you most today, and what would a tiny recovery step look like in the next hour?";
 
 export function getOmaOpening() {
   return OMA_OPENING;
@@ -20,11 +21,11 @@ export function getOmaOpening() {
 export async function generateOmaReply({ session, history, userMessage }) {
   const trimmed = String(userMessage ?? '').trim();
   if (!trimmed) {
-    return { reply: 'Take your time — what would you like to talk about?', source: 'validation' };
+    return { reply: 'Take your time. What would you like to talk about?', source: 'validation' };
   }
 
   if (detectsCrisisLanguage(trimmed)) {
-    return { reply: CRISIS_RESPONSE, source: 'crisis' };
+    return { reply: sanitizeOmaReply(CRISIS_RESPONSE), source: 'crisis' };
   }
 
   if (!llmFeatures.coachChat || !(await hasAnyLlmProvider())) {
@@ -33,7 +34,7 @@ export async function generateOmaReply({ session, history, userMessage }) {
 
   if (!session) {
     return {
-      reply: `I am ${COACH_NAME}. Once you save an assessment to your account, I can tailor our conversation to your profile. For now — what is weighing on you?`,
+      reply: `I'm ${COACH_NAME}. Once you save an assessment to your account, I can tailor our conversation to your profile. For now, what is weighing on you?`,
       source: 'no-session',
     };
   }
@@ -49,7 +50,7 @@ export async function generateOmaReply({ session, history, userMessage }) {
 
   try {
     const { text, provider } = await generateChat({ system, messages }, { source: 'coach' });
-    return { reply: text.trim(), source: provider ?? 'llm' };
+    return { reply: sanitizeOmaReply(text), source: provider ?? 'llm' };
   } catch (err) {
     console.error('[oma] chat failed:', err.message);
     return { reply: FALLBACK_REPLY, source: 'static' };
