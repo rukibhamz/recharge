@@ -74,4 +74,27 @@ describe('assessmentAgentTasks validators', () => {
     );
     assert.equal(check.ok, false);
   });
+
+  it('rejects employer timeline language for job seekers', () => {
+    const task = getAssessmentTask('rewriteBurnoutQuestion');
+    const input = {
+      anchor: {
+        seedText: 'I feel my manager sets unrealistic deadlines.',
+        scale: 'agreement',
+        dimension: 'autonomy',
+        reverseScored: false,
+      },
+      workContext: 'between_roles',
+    };
+    const check = task.validate(
+      {
+        text: "I feel that the timelines I'm given during this job search don't account for my own pace.",
+        scale: 'agreement',
+        dimension: 'autonomy',
+        reverseScored: false,
+      },
+      input,
+    );
+    assert.equal(check.ok, false);
+  });
 });

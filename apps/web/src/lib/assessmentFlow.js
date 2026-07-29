@@ -10,7 +10,6 @@ export function flowStepIndex(phase) {
   switch (phase) {
     case 'name':
     case 'profile':
-    case 'recovery-preferences':
       return 0;
     case 'loading-personality-test':
     case 'personality':
@@ -20,6 +19,7 @@ export function flowStepIndex(phase) {
       return 2;
     case 'loading-burnout-test':
     case 'burnout':
+    case 'recovery-preferences':
       return 3;
     case 'processing':
     case 'results':

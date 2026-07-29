@@ -67,6 +67,7 @@ export const useAssessmentStore = create(
         }),
       nextBurnout: () => set((s) => ({ burnoutIndex: s.burnoutIndex + 1 })),
       prevBurnout: () => set((s) => ({ burnoutIndex: Math.max(0, s.burnoutIndex - 1) })),
+      setBurnoutIndex: (burnoutIndex) => set({ burnoutIndex }),
       nextPersonality: () => set((s) => ({ personalityIndex: s.personalityIndex + 1 })),
       prevPersonality: () =>
         set((s) => ({ personalityIndex: Math.max(0, s.personalityIndex - 1) })),
@@ -122,7 +123,7 @@ export const useAssessmentStore = create(
       },
     }),
     {
-      name: 'recharge-assessment-v15',
+      name: 'recharge-assessment-v16',
       partialize: (s) => {
         const base = {
           userName: s.userName,
@@ -153,7 +154,14 @@ export const useAssessmentStore = create(
           };
         }
 
-        const merged = { ...current, ...persisted };
+        const merged = {
+          ...current,
+          ...persisted,
+          recoveryPreferences: {
+            ...emptyRecoveryPreferences(),
+            ...(persisted?.recoveryPreferences ?? {}),
+          },
+        };
         const hasName = Boolean(merged.userName?.trim());
         const hasProfile = isValidDemographics(merged.demographics);
         const hasRecoveryPreferences = isValidRecoveryPreferences(merged.recoveryPreferences);
@@ -170,7 +178,9 @@ export const useAssessmentStore = create(
           merged.burnoutAnswers?.length === merged.burnoutQuestions?.length &&
           merged.burnoutAnswers?.every((a) => a !== null);
 
-        if (personalityDone && burnoutDone) {
+        if (personalityDone && burnoutDone && !hasRecoveryPreferences) {
+          merged.phase = 'recovery-preferences';
+        } else if (personalityDone && burnoutDone) {
           merged.phase = 'processing';
         } else if (burnoutStarted || (hasPersonalityResult && hasBurnoutTest)) {
           merged.phase = 'burnout';
@@ -180,10 +190,8 @@ export const useAssessmentStore = create(
           merged.phase = 'scoring-personality';
         } else if (hasPersonalityTest) {
           merged.phase = 'personality';
-        } else if (hasName && hasProfile && hasRecoveryPreferences) {
-          merged.phase = 'loading-personality-test';
         } else if (hasName && hasProfile) {
-          merged.phase = 'recovery-preferences';
+          merged.phase = 'loading-personality-test';
         } else if (hasName) {
           merged.phase = 'profile';
         } else {

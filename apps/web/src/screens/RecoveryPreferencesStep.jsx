@@ -71,7 +71,7 @@ export default function RecoveryPreferencesStep({
               Let&apos;s tailor how you recover
             </h1>
             <p className="mt-3 text-center font-sans text-body-md text-ink-soft">
-              Pick what feels most true on most days. You can still change your answers later.
+              Almost done — tell us what helps you recharge so your recovery plan feels personal.
             </p>
 
             <form onSubmit={handleSubmit} className="mt-8 space-y-6 lg:mt-10">
@@ -103,7 +103,7 @@ export default function RecoveryPreferencesStep({
               ) : null}
 
               <Button type="submit" className="w-full" disabled={!valid}>
-                Continue to interview
+                Build my recovery plan
               </Button>
             </form>
           </div>

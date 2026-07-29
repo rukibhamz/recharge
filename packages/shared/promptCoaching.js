@@ -57,8 +57,18 @@ export const LOCATION_RULES = `Location accuracy (critical):
 export const QUESTION_NO_LOCATION_RULES = `Question wording (critical):
 - Do NOT mention cities, countries, neighbourhoods, landmarks, or commute routes in question text
 - Do NOT reference "where you live", "your area", or named places
-- Personalise questions using age band and work situation only (e.g. meetings, deadlines, remote work)
+- Personalise questions using age band and work situation only
+- Match stressors to their ACTUAL work situation (see work context block) — never default to generic office/employer language
+- Job seekers: no manager, assigned timelines, performance reviews, or "timelines I'm given"
+- Students: academic deadlines, not corporate HR language
+- Caregivers/retired: no implied full-time employer unless clearly relevant
 - Keep questions universally answerable wherever they are`;
+
+export const WORK_CONTEXT_REWRITE_RULES = `Work-context rewrite (critical):
+- Read the work situation block before rewriting
+- Replace employer-centric seed wording with stressors that fit THIS person's reality
+- Preserve the seed's measurement intent (dimension + scale) — only change the life context
+- Example (job seeker, autonomy): NOT "timelines I'm given at work" → YES "pressure to move faster in my job search than my own pace allows"`;
 
 /** Personality read after the interview — human mirror, not a clinical report. */
 export const PERSONALITY_INSIGHT_RULES = `Personality read (critical):

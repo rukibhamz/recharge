@@ -60,6 +60,7 @@ export async function generateNextBurnoutQuestion({
     userContext,
     userName,
     personality: personalityProfile,
+    workContext: demographics?.workContext,
   });
 
   const question = {

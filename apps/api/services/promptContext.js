@@ -3,6 +3,7 @@ import {
   demographicsQuestionContext,
   demographicsLabels,
 } from '@recharge/shared/demographics';
+import { workContextQuestionCoaching } from '@recharge/shared/workContextCoaching';
 import {
   COACH_VOICE_RULES,
   LOCATION_RULES,
@@ -48,6 +49,8 @@ export function buildQuestionPromptContext({ userName, demographics }) {
 
   if (name) parts.push(`Name: ${name}`);
   parts.push(demographicsQuestionContext(demographics));
+  const workCoaching = workContextQuestionCoaching(demographics?.workContext);
+  if (workCoaching) parts.push(workCoaching);
   parts.push(COACH_VOICE_RULES);
   parts.push(QUESTION_NO_LOCATION_RULES);
 

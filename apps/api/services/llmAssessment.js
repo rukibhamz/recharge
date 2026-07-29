@@ -177,7 +177,7 @@ export async function generatePersonalityTest(userName, demographics) {
     const { items, source } = await personalizeAnchorBatch(
       'rewritePersonalityQuestion',
       anchors,
-      { userContext, userName },
+      { userContext, userName, workContext: demographics?.workContext },
     );
     const questions = formatPersonalityQuestions(items);
     return { questions, count: questions.length, source };
@@ -282,7 +282,7 @@ export async function generateBurnoutTest(userName, demographics, personality) {
     const { items, source } = await personalizeAnchorBatch(
       'rewriteBurnoutQuestion',
       anchors,
-      { userContext, userName, personality },
+      { userContext, userName, personality, workContext: demographics?.workContext },
     );
     const questions = formatBurnoutQuestions(items);
     return { questions, count: questions.length, source };

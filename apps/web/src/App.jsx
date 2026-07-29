@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { isValidRecoveryPreferences } from '@recharge/shared/recoveryPreferences';
 import { normalizePath, parsePathRoute } from './lib/navigation.js';
 import { useAssessmentStore } from './store/assessment.js';
 import {
@@ -91,6 +92,7 @@ function AssessmentFlow() {
     setPersonalityAnswer,
     nextBurnout,
     prevBurnout,
+    setBurnoutIndex,
     nextPersonality,
     prevPersonality,
     setResults,
@@ -102,6 +104,11 @@ function AssessmentFlow() {
   } = useAssessmentStore();
 
   const firstName = userName?.trim().split(/\s+/)[0] ?? '';
+  const hasRecoveryPreferences = isValidRecoveryPreferences(recoveryPreferences);
+  const burnoutDone =
+    burnoutQuestions.length >= 10 &&
+    burnoutAnswers.length === burnoutQuestions.length &&
+    burnoutAnswers.every((answer) => answer !== null);
 
   // Recover from stale persisted state that would otherwise render a blank screen
   useEffect(() => {
@@ -111,12 +118,17 @@ function AssessmentFlow() {
       setPhase('loading-burnout-test');
     } else if (phase === 'personality-insight' && !personalityResult) {
       setPhase(personalityQuestions.length >= 10 ? 'personality' : 'loading-personality-test');
+    } else if (phase === 'processing' && burnoutDone && !hasRecoveryPreferences) {
+      setPhase('recovery-preferences');
     }
   }, [
     phase,
     personalityQuestions.length,
     burnoutQuestions.length,
+    burnoutAnswers,
     personalityResult,
+    burnoutDone,
+    hasRecoveryPreferences,
     setPhase,
   ]);
 
@@ -291,19 +303,6 @@ function AssessmentFlow() {
           onClose={handleClose}
           onContinue={(profile) => {
             setDemographics(profile);
-            setPhase('recovery-preferences');
-          }}
-        />
-      )}
-
-      {activePhase === 'recovery-preferences' && (
-        <RecoveryPreferencesStep
-          phase="recovery-preferences"
-          initialPreferences={recoveryPreferences}
-          onBack={() => setPhase('profile')}
-          onClose={handleClose}
-          onContinue={(preferences) => {
-            setRecoveryPreferences(preferences);
             setPhase('loading-personality-test');
           }}
         />
@@ -331,7 +330,7 @@ function AssessmentFlow() {
           onAnswer={(value) => setPersonalityAnswer(personalityIndex, value)}
           onNext={nextPersonality}
           onBack={() => {
-            if (personalityIndex === 0) setPhase('recovery-preferences');
+            if (personalityIndex === 0) setPhase('profile');
             else prevPersonality();
           }}
           onClose={handleClose}
@@ -388,7 +387,33 @@ function AssessmentFlow() {
             else prevBurnout();
           }}
           onClose={handleClose}
-          onComplete={() => setPhase('processing')}
+          onComplete={() => {
+            if (!hasRecoveryPreferences) {
+              setPhase('recovery-preferences');
+              return;
+            }
+            setPhase('processing');
+          }}
+        />
+      )}
+
+      {activePhase === 'recovery-preferences' && (
+        <RecoveryPreferencesStep
+          phase="recovery-preferences"
+          initialPreferences={recoveryPreferences}
+          onBack={() => {
+            if (burnoutQuestions.length >= 10) {
+              setBurnoutIndex(burnoutQuestions.length - 1);
+              setPhase('burnout');
+              return;
+            }
+            setPhase('profile');
+          }}
+          onClose={handleClose}
+          onContinue={(preferences) => {
+            setRecoveryPreferences(preferences);
+            setPhase('processing');
+          }}
         />
       )}
 
