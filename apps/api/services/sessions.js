@@ -1,5 +1,6 @@
 import { randomBytes, randomUUID } from 'crypto';
 import { formatMbtiType } from '@recharge/shared/mbtiScoring';
+import { normalizeRecommendationsList } from '@recharge/shared/recommendations';
 import { supabase, isSupabaseConfigured } from '../lib/supabase.js';
 import { getMbtiTypeProfile } from './questionBank.js';
 
@@ -52,7 +53,7 @@ function sanitizePersonalityForDb(personality) {
 }
 
 function sanitizeRecommendationsForDb(recommendations) {
-  return Array.isArray(recommendations) ? recommendations : [];
+  return normalizeRecommendationsList(recommendations, []);
 }
 
 export async function ensureProfile(userId, email) {
@@ -136,7 +137,7 @@ export async function buildSessionResponse(row) {
       summary: row.burnout_summary ?? null,
     },
     personality,
-    recommendations: row.recommendations ?? [],
+    recommendations: sanitizeRecommendationsForDb(row.recommendations ?? []),
   };
 }
 

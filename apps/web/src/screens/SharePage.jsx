@@ -8,6 +8,10 @@ import PersonalityCard from '../components/results/PersonalityCard.jsx';
 import TraitBars from '../components/results/TraitBars.jsx';
 import RecommendationCard from '../components/results/RecommendationCard.jsx';
 import { BURNOUT_LEVEL_COPY } from '@recharge/shared/questions';
+import {
+  DEFAULT_RECOVERY_TIPS,
+  normalizeRecommendationsList,
+} from '@recharge/shared/recommendations';
 import EditorialArtwork from '../components/shared/EditorialArtwork.jsx';
 import PageLoadingState from '../components/shared/PageLoadingState.jsx';
 
@@ -55,7 +59,8 @@ export default function SharePage({ shareToken }) {
     );
   }
 
-  const { burnout, personality, recommendations } = data;
+  const { burnout, personality, recommendations: rawRecommendations } = data;
+  const recommendations = normalizeRecommendationsList(rawRecommendations ?? [], DEFAULT_RECOVERY_TIPS);
   const burnoutCopy = burnout.summary || BURNOUT_LEVEL_COPY[burnout.cls];
   const personalitySummary = personality.summary || personality.type?.desc;
 

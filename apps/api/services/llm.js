@@ -1,6 +1,10 @@
 import { llmFeatures } from '../config/llm.js';
 import { personalityRecoveryProfile } from '@recharge/shared/promptCoaching';
 import { recoveryPreferencesPromptContext } from '@recharge/shared/recoveryPreferences';
+import {
+  hasDisplayableRecommendations,
+  normalizeRecommendationsList,
+} from '@recharge/shared/recommendations';
 import { generateJson, getLastLlmProvider, hasAnyLlmProvider } from './llmProvider.js';
 import { buildUserPromptContext } from './promptContext.js';
 import { COACH_VOICE_RULES, LOCATION_RULES } from '@recharge/shared/promptCoaching';
@@ -47,7 +51,7 @@ ${explicitRecoveryStyle}
 
 Burnout level: ${burnoutLevel}
 
-Write exactly 4 recovery recommendations as JSON array.
+Write exactly 4 recovery recommendations.
 Rules:
 - Match their personality type for HOW they recharge (social vs solo, lively vs calm venues, practical vs reflective)
 - If stated unwind preferences are present, prioritize them over personality assumptions when they conflict
@@ -58,15 +62,17 @@ Rules:
 ${COACH_VOICE_RULES}
 ${LOCATION_RULES}
 
-Return JSON only: [{"icon":"emoji","title":"max 5 words","tip":"max 32 words"}]`;
+Return JSON only as an object with a recommendations array:
+{"recommendations":[{"icon":"emoji","title":"max 5 words","tip":"max 32 words"}]}
+Each item MUST include non-empty icon, title, and tip fields.`;
 }
 
-function normalizeRecommendations(parsed) {
-  if (Array.isArray(parsed)) return parsed.slice(0, 4);
-  if (parsed?.recommendations && Array.isArray(parsed.recommendations)) {
-    return parsed.recommendations.slice(0, 4);
+function normalizeRecommendations(parsed, fallback) {
+  const recommendations = normalizeRecommendationsList(parsed, fallback);
+  if (!recommendations.length || !hasDisplayableRecommendations(recommendations)) {
+    throw new Error('Invalid recommendation format');
   }
-  throw new Error('Invalid recommendation format');
+  return recommendations;
 }
 
 export async function generateRecommendations(
@@ -86,7 +92,7 @@ export async function generateRecommendations(
     const parsed = await generateJson(
       buildPrompt(burnoutLevel, personality, userName, demographics, recoveryPreferences),
     );
-    const recommendations = normalizeRecommendations(parsed);
+    const recommendations = normalizeRecommendations(parsed, fallback);
     return { recommendations, source: getLastLlmProvider() ?? 'llm' };
   } catch (err) {
     console.error('Recommendations LLM failed:', err.message);

@@ -1,4 +1,8 @@
 import { BURNOUT_LEVEL_COPY } from '@recharge/shared/questions';
+import {
+  DEFAULT_RECOVERY_TIPS,
+  normalizeRecommendationsList,
+} from '@recharge/shared/recommendations';
 import Header from '../components/shared/Header.jsx';
 import Footer from '../components/shared/Footer.jsx';
 import Button from '../components/shared/Button.jsx';
@@ -65,13 +69,14 @@ export default function Results({ data, error, onRetake, showSaveSection = true 
     displayName,
     burnout,
     personality,
-    recommendations,
+    recommendations: rawRecommendations,
     aiSource,
     persisted,
     persistError,
     sessionId,
     linked,
   } = data;
+  const recommendations = normalizeRecommendationsList(rawRecommendations ?? [], DEFAULT_RECOVERY_TIPS);
   const copy = burnout.summary || BURNOUT_LEVEL_COPY[burnout.cls];
   const isPersonalised = aiSource && !['static', 'bank'].includes(aiSource);
   const cloudSaved = persisted !== false;
