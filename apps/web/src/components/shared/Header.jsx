@@ -102,10 +102,10 @@ export default function Header({ variant = 'landing', onBack, onClose }) {
         <nav className="flex items-center gap-4 font-sans text-body-md text-on-surface-variant sm:gap-8">
           {variant === 'landing' ? (
             <>
-              <a href="#about" className="hidden btn-interactive hover:text-primary sm:inline">
+              <a href="/about" className="hidden btn-interactive hover:text-primary sm:inline">
                 About
               </a>
-              <a href="#faq" className="hidden btn-interactive hover:text-primary sm:inline">
+              <a href="/faq" className="hidden btn-interactive hover:text-primary sm:inline">
                 FAQ
               </a>
             </>

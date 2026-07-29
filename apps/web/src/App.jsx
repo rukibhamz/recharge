@@ -27,6 +27,8 @@ import HistoryRedirect from './screens/HistoryRedirect.jsx';
 import SavedResult from './screens/SavedResult.jsx';
 import LegalPage from './screens/LegalPage.jsx';
 import AdminDashboard from './screens/AdminDashboard.jsx';
+import AboutPage from './screens/AboutPage.jsx';
+import FaqPage from './screens/FaqPage.jsx';
 
 const SHARE_PATH = /^\/share\/([a-f0-9]{32})$/i;
 const HISTORY_DETAIL_PATH = /^\/history\/([0-9a-f-]{36})$/i;
@@ -41,6 +43,8 @@ function usePathRoute() {
   if (path === '/account') return { kind: 'account' };
   if (path === '/admin') return { kind: 'admin' };
   if (path === '/history') return { kind: 'history' };
+  if (path === '/about') return { kind: 'about' };
+  if (path === '/faq') return { kind: 'faq' };
   if (path === '/privacy') return { kind: 'legal', legal: 'privacy' };
   if (path === '/terms') return { kind: 'legal', legal: 'terms' };
   if (path === '/security') return { kind: 'legal', legal: 'security' };
@@ -61,6 +65,8 @@ export default function App() {
   if (route.kind === 'login') return <Login />;
   if (route.kind === 'account') return <AccountSettings />;
   if (route.kind === 'admin') return <AdminDashboard />;
+  if (route.kind === 'about') return <AboutPage />;
+  if (route.kind === 'faq') return <FaqPage />;
   if (route.kind === 'legal') return <LegalPage kind={route.legal} />;
   if (route.kind === 'history') return <HistoryRedirect />;
   if (route.kind === 'history-detail') return <SavedResult sessionId={route.sessionId} />;
