@@ -220,10 +220,14 @@ export async function saveSession({
   return { sessionId, shareToken, persisted: true, linked, persistError: null };
 }
 
+const SHARE_LINK_TTL_HOURS = 24;
+
 export async function getSessionByShareToken(shareToken) {
   if (!isSupabaseConfigured()) {
     return { data: null, error: new Error('Database not configured') };
   }
+
+  const cutoff = new Date(Date.now() - SHARE_LINK_TTL_HOURS * 60 * 60 * 1000).toISOString();
 
   const { data, error } = await supabase
     .from('sessions')
@@ -231,6 +235,7 @@ export async function getSessionByShareToken(shareToken) {
       'id, share_token, display_name, burnout_pct, burnout_level, burnout_cls, burnout_summary, personality_type, personality_name, personality_snapshot, traits, recommendations, created_at',
     )
     .eq('share_token', shareToken)
+    .gte('created_at', cutoff)
     .maybeSingle();
 
   return { data, error };

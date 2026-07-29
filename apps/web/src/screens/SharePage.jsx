@@ -43,7 +43,8 @@ export default function SharePage({ shareToken }) {
             Link not found
           </h1>
           <p className="mt-3 font-sans text-body-md text-on-surface-variant">
-            This shared result may have expired or the link might be incorrect. Try asking for a new link, or take your own assessment.
+            {error || 'This shared result may have expired or the link might be incorrect.'}{' '}
+            Try asking for a new link, or take your own assessment.
           </p>
           <Button className="mt-8" onClick={() => { window.location.href = '/'; }}>
             Take the assessment

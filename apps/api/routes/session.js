@@ -10,23 +10,28 @@ router.get('/:shareToken', async (req, res) => {
     return res.status(400).json({ error: 'Invalid share link.' });
   }
 
-  const { data, error } = await getSharedSessionResponse(shareToken);
+  try {
+    const { data, error } = await getSharedSessionResponse(shareToken);
 
-  if (error) {
-    console.error('Session fetch error:', error.message);
-    return res.status(500).json({ error: 'Could not load shared result.' });
+    if (error) {
+      console.error('Session fetch error:', error.message, error.code, error.details);
+      return res.status(500).json({ error: 'Could not load shared result. Please try again later.' });
+    }
+
+    if (!data) {
+      return res.status(404).json({ error: 'This share link has expired or does not exist. Share links are valid for 24 hours.' });
+    }
+
+    res.json({
+      burnout: data.burnout,
+      personality: data.personality,
+      recommendations: data.recommendations,
+      createdAt: data.createdAt,
+    });
+  } catch (err) {
+    console.error('Session route uncaught error:', err);
+    res.status(500).json({ error: 'Could not load shared result. Please try again later.' });
   }
-
-  if (!data) {
-    return res.status(404).json({ error: 'Share link not found or expired.' });
-  }
-
-  res.json({
-    burnout: data.burnout,
-    personality: data.personality,
-    recommendations: data.recommendations,
-    createdAt: data.createdAt,
-  });
 });
 
 export default router;

@@ -85,7 +85,12 @@ export async function completeAssessment(payload, accessToken) {
 }
 
 export async function fetchSharedSession(shareToken) {
-  const res = await fetch(apiUrl(`/api/session/${shareToken}`));
+  let res;
+  try {
+    res = await fetch(apiUrl(`/api/session/${shareToken}`));
+  } catch (err) {
+    throw new Error('Unable to reach the server. Please check your connection and try again.');
+  }
   const data = await parseJsonResponse(res, 'Share link not found');
   if (!res.ok) throw new Error(data.error || 'Share link not found');
   return data;
