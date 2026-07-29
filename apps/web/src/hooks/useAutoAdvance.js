@@ -31,5 +31,13 @@ export function useAutoAdvance({ questionIndex, onAnswer, onNext, onComplete, is
     [onAnswer, onNext, onComplete, isLast],
   );
 
-  return { handleSelect, isExiting };
+  const cancelPendingAdvance = useCallback(() => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    setIsExiting(false);
+  }, []);
+
+  return { handleSelect, isExiting, cancelPendingAdvance };
 }

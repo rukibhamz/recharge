@@ -20,13 +20,17 @@ export default function BurnoutPhase({
   const total = questions.length;
   const isLast = index === total - 1;
 
-  const { handleSelect, isExiting } = useAutoAdvance({
+  const { handleSelect, isExiting, cancelPendingAdvance } = useAutoAdvance({
     questionIndex: index,
     onAnswer,
     onNext,
     onComplete,
     isLast,
   });
+  const handleBack = () => {
+    cancelPendingAdvance();
+    onBack();
+  };
 
   if (!q) return null;
 
@@ -36,7 +40,7 @@ export default function BurnoutPhase({
       partLabel={personalityType ? `Burnout · ${personalityType}` : 'Burnout check-in'}
       questionIndex={index}
       totalQuestions={total}
-      onBack={onBack}
+      onBack={handleBack}
       onClose={onClose}
     >
       <QuestionCard
@@ -46,6 +50,7 @@ export default function BurnoutPhase({
         selected={selected}
         onSelect={handleSelect}
         isExiting={isExiting}
+        onBack={handleBack}
       />
     </AssessmentShell>
   );

@@ -10,6 +10,7 @@ export function flowStepIndex(phase) {
   switch (phase) {
     case 'name':
     case 'profile':
+    case 'recovery-preferences':
       return 0;
     case 'loading-personality-test':
     case 'personality':
@@ -30,6 +31,7 @@ export function flowStepIndex(phase) {
 
 export function phaseLabel(phase) {
   const labels = {
+    'recovery-preferences': 'Recovery preferences',
     'loading-personality-test': 'Building your interview',
     personality: 'Personality interview',
     'scoring-personality': 'Analysing personality',

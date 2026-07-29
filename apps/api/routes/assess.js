@@ -6,6 +6,10 @@ import {
   isValidDemographics,
   sanitizeDemographics,
 } from '@recharge/shared/demographics';
+import {
+  isValidRecoveryPreferences,
+  sanitizeRecoveryPreferences,
+} from '@recharge/shared/recoveryPreferences';
 import { optionalAuth } from '../middleware/requireAuth.js';
 import { saveSession } from '../services/sessions.js';
 import {
@@ -101,17 +105,22 @@ router.post('/complete', optionalAuth, async (req, res) => {
   const demographics = sanitizeDemographics(req.body?.demographics);
   const {
     personality,
+    recoveryPreferences: rawRecoveryPreferences,
     personalityAnswers,
     personalityQuestions,
     burnoutAnswers,
     burnoutQuestions,
   } = req.body ?? {};
+  const recoveryPreferences = sanitizeRecoveryPreferences(rawRecoveryPreferences);
 
   if (!isValidName(name)) {
     return res.status(400).json({ error: 'A valid name is required.' });
   }
   if (!isValidDemographics(demographics)) {
     return res.status(400).json({ error: 'A complete profile is required.' });
+  }
+  if (!isValidRecoveryPreferences(recoveryPreferences)) {
+    return res.status(400).json({ error: 'Recovery preferences are required.' });
   }
   if (!personality?.typeCode) {
     return res.status(400).json({ error: 'Personality result is required.' });
@@ -134,6 +143,7 @@ router.post('/complete', optionalAuth, async (req, res) => {
     const { recommendations, aiSource } = await completeAssessment({
       userName: name,
       demographics,
+      recoveryPreferences,
       personality,
       burnout,
       burnoutQuestions,
@@ -141,10 +151,11 @@ router.post('/complete', optionalAuth, async (req, res) => {
     });
 
     const safeBurnout = normalizeBurnoutResult(burnout);
+    const profileForStorage = { ...demographics, recoveryPreferences };
 
     const { sessionId, shareToken, persisted, linked, persistError } = await saveSession({
       displayName: name,
-      demographics,
+      demographics: profileForStorage,
       burnout: safeBurnout,
       personality,
       recommendations,

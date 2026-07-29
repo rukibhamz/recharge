@@ -1,6 +1,14 @@
 import OptionButton from './OptionButton.jsx';
+import Button from '../shared/Button.jsx';
 
-export default function QuestionCard({ question, options, selected, onSelect, isExiting }) {
+export default function QuestionCard({
+  question,
+  options,
+  selected,
+  onSelect,
+  isExiting,
+  onBack,
+}) {
   return (
     <div className={isExiting ? 'question-exit' : 'question-enter'}>
       <p className="text-center font-mono text-[11px] uppercase tracking-[0.08em] text-fern">
@@ -24,6 +32,11 @@ export default function QuestionCard({ question, options, selected, onSelect, is
             />
           </div>
         ))}
+      </div>
+      <div className="mt-6 flex justify-center">
+        <Button type="button" variant="ghost" onClick={onBack}>
+          ← Previous question
+        </Button>
       </div>
     </div>
   );

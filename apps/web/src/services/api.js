@@ -72,6 +72,7 @@ export async function completeAssessment(payload, accessToken) {
     body: JSON.stringify({
       userName: payload.userName,
       demographics: payload.demographics,
+      recoveryPreferences: payload.recoveryPreferences,
       personality: payload.personality,
       personalityQuestions: payload.personalityQuestions,
       personalityAnswers: payload.personalityAnswers,

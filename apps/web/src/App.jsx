@@ -13,6 +13,7 @@ import ScreenTransition from './components/shared/ScreenTransition.jsx';
 import Hero from './screens/Hero.jsx';
 import NameStep from './screens/NameStep.jsx';
 import ProfileStep from './screens/ProfileStep.jsx';
+import RecoveryPreferencesStep from './screens/RecoveryPreferencesStep.jsx';
 import BurnoutPhase from './screens/BurnoutPhase.jsx';
 import PersonalityPhase from './screens/PersonalityPhase.jsx';
 import PersonalityInsight from './screens/PersonalityInsight.jsx';
@@ -68,6 +69,7 @@ function AssessmentFlow() {
     phase,
     userName,
     demographics,
+    recoveryPreferences,
     burnoutIndex,
     personalityIndex,
     burnoutAnswers,
@@ -81,6 +83,7 @@ function AssessmentFlow() {
     setPhase,
     setUserName,
     setDemographics,
+    setRecoveryPreferences,
     setPersonalityQuestions,
     setBurnoutQuestions,
     setPersonalityResult,
@@ -288,6 +291,19 @@ function AssessmentFlow() {
           onClose={handleClose}
           onContinue={(profile) => {
             setDemographics(profile);
+            setPhase('recovery-preferences');
+          }}
+        />
+      )}
+
+      {activePhase === 'recovery-preferences' && (
+        <RecoveryPreferencesStep
+          phase="recovery-preferences"
+          initialPreferences={recoveryPreferences}
+          onBack={() => setPhase('profile')}
+          onClose={handleClose}
+          onContinue={(preferences) => {
+            setRecoveryPreferences(preferences);
             setPhase('loading-personality-test');
           }}
         />
@@ -315,7 +331,7 @@ function AssessmentFlow() {
           onAnswer={(value) => setPersonalityAnswer(personalityIndex, value)}
           onNext={nextPersonality}
           onBack={() => {
-            if (personalityIndex === 0) setPhase('profile');
+            if (personalityIndex === 0) setPhase('recovery-preferences');
             else prevPersonality();
           }}
           onClose={handleClose}

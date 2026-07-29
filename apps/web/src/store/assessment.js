@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { isValidDemographics } from '@recharge/shared/demographics';
+import { isValidRecoveryPreferences } from '@recharge/shared/recoveryPreferences';
 
 const emptyAnswers = (n = 0) => Array(n).fill(null);
 const emptyDemographics = () => ({
@@ -11,12 +12,19 @@ const emptyDemographics = () => ({
   workSector: '',
 });
 
+const emptyRecoveryPreferences = () => ({
+  social: '',
+  activity: '',
+  setting: '',
+});
+
 export const useAssessmentStore = create(
   persist(
     (set, get) => ({
       phase: 'hero',
       userName: '',
       demographics: emptyDemographics(),
+      recoveryPreferences: emptyRecoveryPreferences(),
       burnoutIndex: 0,
       personalityIndex: 0,
       burnoutAnswers: [],
@@ -31,6 +39,7 @@ export const useAssessmentStore = create(
       setPhase: (phase) => set({ phase }),
       setUserName: (userName) => set({ userName }),
       setDemographics: (demographics) => set({ demographics }),
+      setRecoveryPreferences: (recoveryPreferences) => set({ recoveryPreferences }),
       setPersonalityQuestions: (personalityQuestions) =>
         set({
           personalityQuestions,
@@ -70,6 +79,7 @@ export const useAssessmentStore = create(
           phase: 'hero',
           userName: '',
           demographics: emptyDemographics(),
+          recoveryPreferences: emptyRecoveryPreferences(),
           burnoutIndex: 0,
           personalityIndex: 0,
           burnoutAnswers: [],
@@ -86,6 +96,7 @@ export const useAssessmentStore = create(
         return {
           userName: state.userName,
           demographics: state.demographics,
+          recoveryPreferences: state.recoveryPreferences,
           personality: state.personalityResult,
           personalityAnswers: state.personalityAnswers,
           personalityQuestions: state.personalityQuestions,
@@ -116,6 +127,7 @@ export const useAssessmentStore = create(
         const base = {
           userName: s.userName,
           demographics: s.demographics,
+          recoveryPreferences: s.recoveryPreferences,
           burnoutIndex: s.burnoutIndex,
           personalityIndex: s.personalityIndex,
           burnoutAnswers: s.burnoutAnswers,
@@ -144,6 +156,7 @@ export const useAssessmentStore = create(
         const merged = { ...current, ...persisted };
         const hasName = Boolean(merged.userName?.trim());
         const hasProfile = isValidDemographics(merged.demographics);
+        const hasRecoveryPreferences = isValidRecoveryPreferences(merged.recoveryPreferences);
         const hasPersonalityTest = merged.personalityQuestions?.length >= 10;
         const hasBurnoutTest = merged.burnoutQuestions?.length >= 10;
         const hasPersonalityResult = Boolean(merged.personalityResult?.typeCode);
@@ -167,8 +180,10 @@ export const useAssessmentStore = create(
           merged.phase = 'scoring-personality';
         } else if (hasPersonalityTest) {
           merged.phase = 'personality';
-        } else if (hasName && hasProfile) {
+        } else if (hasName && hasProfile && hasRecoveryPreferences) {
           merged.phase = 'loading-personality-test';
+        } else if (hasName && hasProfile) {
+          merged.phase = 'recovery-preferences';
         } else if (hasName) {
           merged.phase = 'profile';
         } else {

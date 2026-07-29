@@ -340,6 +340,7 @@ export async function scoreBurnoutTest(
 export async function completeAssessment({
   userName,
   demographics,
+  recoveryPreferences,
   personality,
   burnout,
   burnoutQuestions,
@@ -350,6 +351,7 @@ export async function completeAssessment({
     personality,
     userName,
     demographics,
+    recoveryPreferences,
   );
 
   return {
