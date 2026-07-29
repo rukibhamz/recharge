@@ -16,7 +16,7 @@
     "db:migrate": "node scripts/run-migrations.mjs"
   },
   "devDependencies": {
-    "concurrently": "^9.1.2",
+    "concurrently": "^9.2.4",
     "dotenv": "^16.4.7",
     "pg": "^8.13.1"
   }
