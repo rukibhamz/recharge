@@ -9,6 +9,7 @@ import {
 } from './questionBank.js';
 import { runAgentTask } from './assessmentAgent.js';
 import { buildQuestionPromptContext } from './promptContext.js';
+import { inferBurnoutLifeDomain } from '@recharge/shared/questionLifeDomains';
 
 const TOTAL = 12;
 
@@ -56,11 +57,15 @@ export async function generateNextBurnoutQuestion({
 
   const userContext = buildQuestionPromptContext({ userName, demographics });
   const { result, source } = await runAgentTask('rewriteBurnoutQuestion', {
-    anchor,
+    anchor: {
+      ...anchor,
+      lifeDomain: inferBurnoutLifeDomain(anchor.seedText),
+    },
     userContext,
     userName,
     personality: personalityProfile,
     workContext: demographics?.workContext,
+    anchorIndex: index,
   });
 
   const question = {

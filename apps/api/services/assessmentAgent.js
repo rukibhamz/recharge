@@ -82,6 +82,7 @@ export async function personalizeAnchorBatch(taskId, anchors, context, { concurr
       const { result, source } = await runAgentTask(taskId, {
         ...context,
         anchor,
+        anchorIndex: i,
       });
       if (source !== 'bank-fallback') anyLlm = true;
       results[i] = { ...result, anchor, source };

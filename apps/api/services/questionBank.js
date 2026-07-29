@@ -2,6 +2,10 @@ import {
   buildFallbackBurnoutQuestions,
   buildFallbackPersonalityQuestions,
 } from '@recharge/shared/fallbackQuestions';
+import {
+  ensureLifeSocialBurnoutMix,
+  inferBurnoutLifeDomain,
+} from '@recharge/shared/questionLifeDomains';
 import { optionsForScale, resolveQuestionScale } from '@recharge/shared/questions';
 import { supabase, isSupabaseConfigured } from '../lib/supabase.js';
 
@@ -114,7 +118,8 @@ function selectBalancedBurnoutQuestions(allQuestions) {
     throw new Error(`Could not select ${BURNOUT_COUNT} balanced burnout questions`);
   }
 
-  return shuffle(selected).slice(0, BURNOUT_COUNT);
+  const balanced = shuffle(selected).slice(0, BURNOUT_COUNT);
+  return ensureLifeSocialBurnoutMix(balanced, allQuestions);
 }
 
 async function loadPersonalityBank() {
@@ -327,6 +332,7 @@ export async function selectBurnoutAnchors() {
         dimensionName: q.dimension,
         reverseScored: false,
         scale,
+        lifeDomain: inferBurnoutLifeDomain(q.question_text),
         options:
           scale === 'frequency'
             ? options.map((o) => ({ value: o.value, label: o.label }))

@@ -17,9 +17,10 @@
     "./workspaceContent": "./workspaceContent.js",
     "./llmConnectors": "./llmConnectors.js",
     "./recoveryPreferences": "./recoveryPreferences.js",
-    "./workContextCoaching": "./workContextCoaching.js"
+    "./workContextCoaching": "./workContextCoaching.js",
+    "./questionLifeDomains": "./questionLifeDomains.js"
   },
   "scripts": {
-    "test": "node --test scoring.test.js mbtiScoring.test.js demographics.test.js questionOptions.test.js questions.test.js burnoutCalibration.test.js llmConnectors.test.js workContextCoaching.test.js"
+    "test": "node --test scoring.test.js mbtiScoring.test.js demographics.test.js questionOptions.test.js questions.test.js burnoutCalibration.test.js llmConnectors.test.js workContextCoaching.test.js questionLifeDomains.test.js"
   }
 }

@@ -12,7 +12,29 @@ export const PERSONALITY_QUESTION_FORMAT = `Personality question format (critica
 - NEVER use "do you", "does", either/or ("X or Y"), or choice questions — those break the answer scale
 - Bad: "Do you feel more energised with others or alone?"
 - Good: "I feel more energised after spending time with others than after time alone."
-- Personalise using age and work context only — do NOT name cities, countries, or places in the question text`;
+- Focus on WHO THEY ARE in everyday life — friendships, family, hobbies, downtime, values, habits, stress — not only work
+- At least half of a full interview should NOT mention job, meetings, colleagues, manager, or career
+- Personalise using age and life context lightly — do NOT name cities, countries, or places in the question text`;
+
+export const PERSONALITY_LIFE_BALANCE_RULES = `Personality life balance (critical):
+- Personality is broader than work style — include social life, relationships, recharge habits, creativity, and daily rhythms
+- Prefer: friends, weekends, hobbies, family, alone time, personal projects, how they unwind
+- Avoid making every statement about meetings, deadlines, colleagues, or "at work" unless the seed is explicitly work-only
+- Work context may colour tone but should not dominate the statement`;
+
+export const BURNOUT_LIFE_BALANCE_RULES = `Burnout life balance (critical):
+- A full check-in includes BOTH work/role stress AND personal/social wellbeing
+- Items marked life/social must focus on friends, family, downtime, hobbies, or home life — not the workplace
+- Work items should match the person's actual work situation — not generic corporate language`;
+
+export const BURNOUT_SUMMARY_RULES = `Burnout summary wording (critical):
+- Sound warm and personal — reflect patterns from their answers
+- Reference sector as "your role", "your line of work", or "your field" — NEVER awkward phrases like "the demands of finance in Abuja"
+- Do NOT combine industry + city in one phrase (bad: "handle the demands of finance in Abuja")
+- Good: "the demands of your role" or "pressures in your line of work"
+- City may appear once for gentle local colour if provided — never as "handle X in [city]"
+- Include both work and personal-life signals when their answers mention them
+- Do not invent commute details, team dynamics, or landmarks they did not imply`;
 
 export const PERSONALITY_OPTIONS_FORMAT = `Answer options (exactly 5 — must match THIS statement):
 - value 0 = strongly disagree with the "I ..." statement (opposite pole)
@@ -45,7 +67,8 @@ export const BURNOUT_MIXED_SCALE_RULES = `Burnout question scales (critical — 
 - scale "frequency": "How often..." (or similar) — 5 options from never → always (labels may be natural, question-specific)
 - Mix both styles across the set — match scale to how the question is worded
 - Options MUST match the declared scale; never put Never/Always on an "I ..." statement or agree/disagree on a how-often question
-- Personalise wording to their work and age — no place names`;
+- Personalise wording to their work and age — no place names
+- Mix work-related and personal/social-life items across the set`;
 
 export const LOCATION_RULES = `Location accuracy (critical):
 - ONLY reference cities, neighbourhoods, or landmarks the user explicitly provided

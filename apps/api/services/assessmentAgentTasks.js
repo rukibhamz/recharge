@@ -1,9 +1,12 @@
 import {
   COACH_VOICE_RULES,
   PERSONALITY_QUESTION_FORMAT,
+  PERSONALITY_LIFE_BALANCE_RULES,
   PERSONALITY_INSIGHT_RULES,
   QUESTION_NO_LOCATION_RULES,
   BURNOUT_MIXED_SCALE_RULES,
+  BURNOUT_LIFE_BALANCE_RULES,
+  BURNOUT_SUMMARY_RULES,
   WORK_CONTEXT_REWRITE_RULES,
   personalityRecoveryProfile,
 } from '@recharge/shared/promptCoaching';
@@ -11,6 +14,10 @@ import {
   burnoutDimensionCoaching,
   workContextLanguageViolation,
 } from '@recharge/shared/workContextCoaching';
+import {
+  burnoutLifeDomainCoaching,
+  personalityQuestionDomainHint,
+} from '@recharge/shared/questionLifeDomains';
 import { firstName } from '@recharge/shared/name';
 
 const VALID_POLES = new Set(['E', 'I', 'S', 'N', 'T', 'F', 'J', 'P']);
@@ -24,14 +31,19 @@ export const ASSESSMENT_TASKS = {
   rewritePersonalityQuestion: {
     id: 'rewritePersonalityQuestion',
     buildPrompt(input) {
-      const { anchor, userContext, userName } = input;
+      const { anchor, userContext, userName, anchorIndex = 0 } = input;
       const name = firstName(userName);
+      const dichotomySlot = anchorIndex % 3;
+      const domainGuide = personalityQuestionDomainHint(anchor.dichotomy, dichotomySlot);
       return `Rewrite this personality interview statement for ${name || 'this person'}. Keep the SAME psychological meaning and scored pole.
 
 ${userContext}
 
+${domainGuide}
+
 ${COACH_VOICE_RULES}
 ${PERSONALITY_QUESTION_FORMAT}
+${PERSONALITY_LIFE_BALANCE_RULES}
 ${QUESTION_NO_LOCATION_RULES}
 ${WORK_CONTEXT_REWRITE_RULES}
 
@@ -44,7 +56,8 @@ Locked scoring metadata (echo exactly):
 
 Rules:
 - Output ONE first-person "I ..." statement
-- Personalise wording to their work situation (see block above) — no place names
+- Frame around everyday life and personality — not only work
+- Personalise lightly to their life stage and situation — no place names
 - If the seed implies an employer but this person is NOT employed, rewrite to their real context (job search, study, caregiving, etc.)
 - Do NOT invent a new trait; keep the seed meaning
 
@@ -105,16 +118,20 @@ Return JSON only: {"text":"I ...","scoredPole":"${input.anchor.scoredPole}","dic
           ? 'Use a "How often..." style frequency question.'
           : 'Use a first-person "I ..." agreement statement.';
       const dimensionGuide = burnoutDimensionCoaching(input.workContext, anchor.dimension);
+      const lifeDomainGuide = burnoutLifeDomainCoaching(anchor.lifeDomain ?? 'work');
 
       return `Rewrite this burnout check-in item for ${name || 'this person'}. Keep the SAME measurement intent and dimension.
 
 ${userContext}
 ${dimensionGuide ? `\n${dimensionGuide}\n` : ''}
+${lifeDomainGuide}
+
 Personality (colour tone only — do not change what is measured):
 ${recovery || `${personality?.typeCode ?? ''} — ${personality?.summary ?? ''}`}
 
 ${COACH_VOICE_RULES}
 ${BURNOUT_MIXED_SCALE_RULES}
+${BURNOUT_LIFE_BALANCE_RULES}
 ${QUESTION_NO_LOCATION_RULES}
 ${WORK_CONTEXT_REWRITE_RULES}
 
@@ -281,6 +298,8 @@ ${calibrated.calibrationNote ? `- note: ${calibrated.calibrationNote}` : ''}
 
 Their answers:
 ${qaBlock}
+
+${BURNOUT_SUMMARY_RULES}
 
 Write 2–3 warm sentences explaining what you see and why this level fits THEM (personality-aware). Do NOT invent a different pct or cls.
 

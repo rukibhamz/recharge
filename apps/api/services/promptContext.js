@@ -10,6 +10,7 @@ import {
   PERSONALITY_INSIGHT_RULES,
   QUESTION_NO_LOCATION_RULES,
   locationContext,
+  BURNOUT_SUMMARY_RULES,
 } from '@recharge/shared/promptCoaching';
 import { firstName } from '@recharge/shared/name';
 
@@ -22,9 +23,15 @@ export function buildUserPromptContext({ userName, demographics }) {
   if (name) parts.push(`Name: ${name}`);
   parts.push(demographicsPromptContext(demographics));
   if (labels) parts.push(locationContext({ ...demographics, countryLabel: labels.country }));
+  if (labels?.workSector) {
+    parts.push(
+      `Industry context: ${labels.workSector}. Refer to this as "your field" or "your line of work" — never awkward phrasing like "the demands of ${labels.workSector} in ${labels.city ?? 'your city'}".`,
+    );
+  }
 
   parts.push(COACH_VOICE_RULES);
   parts.push(LOCATION_RULES);
+  parts.push(BURNOUT_SUMMARY_RULES);
 
   return parts.join('\n\n');
 }
