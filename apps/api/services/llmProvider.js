@@ -1,8 +1,10 @@
-import { isCircuitOpen, generateGeminiJson } from './geminiClient.js';
-import { generateOllamaJson } from './ollamaClient.js';
+import { isCircuitOpen, generateGeminiJson, generateGeminiChat } from './geminiClient.js';
+import { generateOllamaJson, generateOllamaChat } from './ollamaClient.js';
 import {
   generateAnthropicJson,
+  generateAnthropicChat,
   generateOpenAiCompatibleJson,
+  generateOpenAiCompatibleChat,
 } from './openaiCompatClient.js';
 import { getRuntimeConnectors } from './connectors.js';
 import { recordLlmCall } from './llmMonitor.js';
@@ -57,6 +59,45 @@ async function callConnector(connector, prompt) {
   throw new Error(`Unknown LLM provider: ${provider}`);
 }
 
+async function callConnectorChat(connector, { system, messages }) {
+  const { provider, model, apiKey, baseUrl, name } = connector;
+  const meta = providerMeta(provider);
+
+  if (provider === 'gemini') {
+    if (isCircuitOpen() && !apiKey) {
+      throw new Error('Gemini circuit open');
+    }
+    const text = await generateGeminiChat({ system, messages }, { apiKey, model });
+    return { text, provider: `gemini:${model}`, label: name };
+  }
+
+  if (provider === 'ollama') {
+    const text = await generateOllamaChat({ system, messages }, { model, baseUrl });
+    return { text, provider: `ollama:${model}`, label: name };
+  }
+
+  if (provider === 'anthropic') {
+    const text = await generateAnthropicChat({ system, messages }, { apiKey, model, baseUrl });
+    return { text, provider: `anthropic:${model}`, label: name };
+  }
+
+  if (isOpenAiCompatible(provider)) {
+    const text = await generateOpenAiCompatibleChat(
+      { system, messages },
+      {
+        apiKey,
+        model,
+        baseUrl: baseUrl || meta?.defaultBaseUrl,
+        providerLabel: provider,
+        requireApiKey: meta?.needsApiKey !== false,
+      },
+    );
+    return { text, provider: `${provider}:${model}`, label: name };
+  }
+
+  throw new Error(`Unknown LLM provider: ${provider}`);
+}
+
 export async function hasAnyLlmProvider() {
   const connectors = await getRuntimeConnectors();
   return connectors.length > 0;
@@ -100,6 +141,50 @@ export async function generateJson(prompt) {
       llmStats.lastError = err.message;
       llmStats.lastErrorAt = new Date().toISOString();
       console.warn(`[llm] ${connector.name} failed — trying next:`, err.message);
+    }
+  }
+
+  throw new Error(`All LLM providers failed (${errors.join(' | ')})`);
+}
+
+/** Multi-turn free-text chat (Oma coach). */
+export async function generateChat({ system, messages }, { source = 'coach' } = {}) {
+  const connectors = await getRuntimeConnectors();
+  if (!connectors.length) {
+    throw new Error('No LLM connectors configured');
+  }
+
+  const errors = [];
+
+  for (const connector of connectors) {
+    const started = Date.now();
+    try {
+      const { text, provider } = await callConnectorChat(connector, { system, messages });
+      const latencyMs = Date.now() - started;
+      recordLlmCall({
+        connector,
+        success: true,
+        latencyMs,
+        source,
+      });
+      llmStats.totalCalls += 1;
+      llmStats.lastProvider = provider;
+      llmStats.lastConnectorId = connector.id;
+      llmStats.lastError = null;
+      return { text, provider };
+    } catch (err) {
+      const latencyMs = Date.now() - started;
+      recordLlmCall({
+        connector,
+        success: false,
+        latencyMs,
+        error: err.message,
+        source,
+      });
+      errors.push(`${connector.name} (${connector.provider}): ${err.message}`);
+      llmStats.lastError = err.message;
+      llmStats.lastErrorAt = new Date().toISOString();
+      console.warn(`[llm-chat] ${connector.name} failed — trying next:`, err.message);
     }
   }
 

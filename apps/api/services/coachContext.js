@@ -1,0 +1,144 @@
+import { demographicsLabels } from '@recharge/shared/demographics';
+import { firstName } from '@recharge/shared/name';
+import { personalityRecoveryProfile } from '@recharge/shared/promptCoaching';
+import { recoveryPreferencesPromptContext } from '@recharge/shared/recoveryPreferences';
+import {
+  COACH_NAME,
+  OMA_PERSONA,
+} from '@recharge/shared/coachPersona';
+import { normalizeRecommendationsList } from '@recharge/shared/recommendations';
+import { getSessionForUser, getSessionsForUser } from './sessions.js';
+import { supabase, isSupabaseConfigured } from '../lib/supabase.js';
+
+const HISTORY_LIMIT = 5;
+
+async function loadSessionWithDemographics(userId, sessionId) {
+  const { data, error } = await getSessionForUser(userId, sessionId);
+  if (error || !data) return { data: null, error: error ?? new Error('Session not found') };
+
+  if (!isSupabaseConfigured()) return { data, error: null };
+
+  const { data: row } = await supabase
+    .from('sessions')
+    .select('demographics')
+    .eq('id', sessionId)
+    .maybeSingle();
+
+  return {
+    data: {
+      ...data,
+      demographics: row?.demographics ?? null,
+    },
+    error: null,
+  };
+}
+
+function formatRecommendations(recommendations) {
+  const list = normalizeRecommendationsList(recommendations ?? [], []).slice(0, 4);
+  if (!list.length) return 'No recovery tips on file yet.';
+  return list
+    .map((rec, i) => `${i + 1}. ${rec.title}: ${rec.tip}`)
+    .join('\n');
+}
+
+function formatTraits(traits) {
+  if (!Array.isArray(traits) || !traits.length) return '';
+  return traits
+    .slice(0, 4)
+    .map((t) => {
+      const name = t.name || `${t.poleA ?? ''}/${t.poleB ?? ''}`;
+      return `- ${name}: ${t.pct ?? '?'}%`;
+    })
+    .join('\n');
+}
+
+/** Build Oma's system prompt from a saved assessment. */
+export function buildOmaSystemPrompt(session) {
+  const name = firstName(session?.displayName) || 'there';
+  const demographics = session?.demographics ?? {};
+  const recoveryPreferences =
+    demographics.recoveryPreferences ?? session?.recoveryPreferences ?? null;
+  const labels = demographicsLabels(demographics);
+  const personality = session?.personality;
+  const burnout = session?.burnout;
+
+  const lines = [
+    OMA_PERSONA,
+    '',
+    `You are speaking privately with ${name}.`,
+    '',
+    'Saved check-in context (use naturally — do not recite as a report):',
+  ];
+
+  if (burnout) {
+    lines.push(
+      `- Burnout: ${burnout.level ?? 'Unknown'} (${burnout.pct ?? '?'}%).`,
+    );
+    if (burnout.summary) {
+      lines.push(`- Burnout reflection: ${String(burnout.summary).slice(0, 600)}`);
+    }
+  }
+
+  if (personality) {
+    const typeTitle =
+      personality.type?.title || personality.type?.name || personality.typeCode || 'Unknown';
+    lines.push(`- Personality: ${personality.typeCode ?? ''} — ${typeTitle}`);
+    if (personality.summary) {
+      lines.push(`- Personality reflection: ${String(personality.summary).slice(0, 500)}`);
+    }
+    const traitLines = formatTraits(personality.traits);
+    if (traitLines) lines.push(`- Trait leanings:\n${traitLines}`);
+    const recoveryProfile = personalityRecoveryProfile(personality);
+    if (recoveryProfile) lines.push(recoveryProfile);
+  }
+
+  if (labels) {
+    const contextBits = [
+      labels.ageBand && `Age band: ${labels.ageBand}`,
+      labels.workContext && `Work situation: ${labels.workContext}`,
+      labels.workSector && `Field: ${labels.workSector}`,
+      labels.city && labels.country
+        ? `Location: ${labels.city}, ${labels.country}`
+        : labels.country
+          ? `Location: ${labels.country}`
+          : null,
+    ].filter(Boolean);
+    if (contextBits.length) {
+      lines.push(`- Life context: ${contextBits.join('; ')}`);
+    }
+  }
+
+  const unwind = recoveryPreferencesPromptContext(recoveryPreferences);
+  if (unwind) lines.push(unwind);
+
+  lines.push(`- Their recovery roadmap:\n${formatRecommendations(session?.recommendations)}`);
+  lines.push('');
+  lines.push(
+    `Sign replies as yourself (${COACH_NAME}) in tone only — do not end every message with a signature.`,
+  );
+
+  return lines.join('\n');
+}
+
+export async function resolveCoachAssessmentContext(userId, preferredSessionId = null) {
+  const { data: assessments, error: listError } = await getSessionsForUser(userId);
+  if (listError) return { assessments: [], session: null, error: listError };
+
+  if (!assessments.length) {
+    return { assessments: [], session: null, error: null };
+  }
+
+  const sessionId =
+    preferredSessionId && assessments.some((a) => a.sessionId === preferredSessionId)
+      ? preferredSessionId
+      : assessments[0].sessionId;
+
+  const { data: session, error } = await loadSessionWithDemographics(userId, sessionId);
+  if (error) return { assessments, session: null, error };
+
+  return {
+    assessments: assessments.slice(0, HISTORY_LIMIT),
+    session,
+    error: null,
+  };
+}

@@ -7,6 +7,7 @@ import questionsRouter from './routes/questions.js';
 import sessionRouter from './routes/session.js';
 import historyRouter from './routes/history.js';
 import accountRouter from './routes/account.js';
+import coachRouter from './routes/coach.js';
 import adminRouter from './routes/admin.js';
 import tenantRouter from './routes/tenant.js';
 import { rateLimit } from './middleware/rateLimit.js';
@@ -157,6 +158,7 @@ app.use('/api/questions', rateLimit, questionsRouter);
 app.use('/api/session', sessionRouter);
 app.use('/api/history', historyRouter);
 app.use('/api/account', accountRouter);
+app.use('/api/coach', coachRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/tenant', tenantRouter);
 

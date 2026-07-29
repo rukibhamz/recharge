@@ -135,3 +135,106 @@ export async function generateAnthropicJson(prompt, { apiKey, model, baseUrl }) 
   if (!text) throw new Error('Anthropic returned empty content');
   return extractJson(text);
 }
+
+export async function generateOpenAiCompatibleChat(
+  { system, messages },
+  {
+    apiKey,
+    model,
+    baseUrl,
+    providerLabel,
+    requireApiKey = true,
+  } = {},
+) {
+  if (requireApiKey && !apiKey) {
+    throw new Error(`${providerLabel || 'OpenAI-compatible'} API key not configured`);
+  }
+  if (!model) throw new Error('Model is required');
+  if (!baseUrl && providerLabel === 'openai-compat') {
+    throw new Error('Base URL is required for custom OpenAI-compatible providers');
+  }
+
+  const url = chatCompletionsUrl(baseUrl);
+  const headers = {
+    'Content-Type': 'application/json',
+  };
+  if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
+  if (providerLabel === 'openrouter') {
+    headers['HTTP-Referer'] = process.env.OPENROUTER_SITE_URL || 'https://recharge.app';
+    headers['X-Title'] = process.env.OPENROUTER_APP_NAME || 'Recharge';
+  }
+
+  const chatMessages = [];
+  if (system) {
+    chatMessages.push({ role: 'system', content: system });
+  }
+  for (const message of messages ?? []) {
+    if (message.role === 'user' || message.role === 'assistant') {
+      chatMessages.push({
+        role: message.role,
+        content: String(message.content ?? ''),
+      });
+    }
+  }
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      model,
+      temperature: 0.7,
+      messages: chatMessages,
+    }),
+    signal: AbortSignal.timeout(Number(process.env.OPENAI_TIMEOUT_MS) || 120_000),
+  });
+
+  if (!res.ok) {
+    const errBody = await res.text();
+    throw new Error(`${providerLabel || 'OpenAI-compatible'} ${res.status}: ${errBody.slice(0, 300)}`);
+  }
+
+  const data = await res.json();
+  const text = data.choices?.[0]?.message?.content?.trim();
+  if (!text) throw new Error(`${providerLabel || 'OpenAI-compatible'} returned empty chat content`);
+  return text;
+}
+
+export async function generateAnthropicChat({ system, messages }, { apiKey, model, baseUrl }) {
+  if (!apiKey) throw new Error('Anthropic API key not configured');
+  if (!model) throw new Error('Model is required');
+
+  const root = (baseUrl || 'https://api.anthropic.com').replace(/\/$/, '');
+  const chatMessages = (messages ?? [])
+    .filter((m) => m.role === 'user' || m.role === 'assistant')
+    .map((m) => ({
+      role: m.role,
+      content: String(m.content ?? ''),
+    }));
+
+  const res = await fetch(`${root}/v1/messages`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify({
+      model,
+      max_tokens: 1024,
+      temperature: 0.7,
+      system: system || 'You are a helpful wellbeing coach.',
+      messages: chatMessages,
+    }),
+    signal: AbortSignal.timeout(Number(process.env.ANTHROPIC_TIMEOUT_MS) || 120_000),
+  });
+
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`Anthropic ${res.status}: ${body.slice(0, 300)}`);
+  }
+
+  const data = await res.json();
+  const text = data.content?.map((b) => b.text).filter(Boolean).join('\n').trim();
+  if (!text) throw new Error('Anthropic returned empty chat content');
+  return text;
+}

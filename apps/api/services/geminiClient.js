@@ -62,7 +62,51 @@ async function generateWithModel(modelName, prompt, apiKey) {
   return JSON.parse(result.response.text());
 }
 
+async function generateChatWithModel(modelName, { system, messages }, apiKey) {
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const model = genAI.getGenerativeModel({
+    model: modelName,
+    systemInstruction: system || undefined,
+    generationConfig: { temperature: 0.7, maxOutputTokens: 1024 },
+  });
+
+  const history = (messages ?? [])
+    .filter((m) => m.role === 'user' || m.role === 'assistant')
+    .slice(0, -1)
+    .map((m) => ({
+      role: m.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: String(m.content ?? '') }],
+    }));
+
+  // Gemini chat history must start with a user turn
+  while (history.length && history[0].role !== 'user') {
+    history.shift();
+  }
+
+  const last = [...(messages ?? [])].reverse().find((m) => m.role === 'user');
+  if (!last?.content?.trim()) {
+    throw new Error('Gemini chat requires a user message');
+  }
+
+  const chat = model.startChat({ history });
+  const result = await chat.sendMessage(String(last.content));
+  const text = result.response.text()?.trim();
+  if (!text) throw new Error('Gemini returned empty chat content');
+  return text;
+}
+
 export async function generateGeminiJson(prompt, options = {}) {
+  return runGeminiRequest((modelName, apiKey) => generateWithModel(modelName, prompt, apiKey), options);
+}
+
+export async function generateGeminiChat({ system, messages }, options = {}) {
+  return runGeminiRequest(
+    (modelName, apiKey) => generateChatWithModel(modelName, { system, messages }, apiKey),
+    options,
+  );
+}
+
+async function runGeminiRequest(invoke, options = {}) {
   const apiKey = options.apiKey || geminiApiKey();
   if (!apiKey) {
     throw new Error('GEMINI_API_KEY not configured');
@@ -89,10 +133,10 @@ export async function generateGeminiJson(prompt, options = {}) {
         try {
           lastCallAt = Date.now();
           geminiStats.totalCalls += 1;
-          const parsed = await generateWithModel(modelName, prompt, apiKey);
+          const result = await invoke(modelName, apiKey);
           activeModel = modelName;
           geminiStats.activeModel = modelName;
-          return parsed;
+          return result;
         } catch (err) {
           lastErr = err;
 

@@ -92,3 +92,50 @@ export async function generateOllamaJson(prompt, options = {}) {
   ollamaStats.model = model;
   return extractJson(content);
 }
+
+/** Free-form chat (no JSON mode) for Oma coach. */
+export async function generateOllamaChat({ system, messages }, options = {}) {
+  const base = (options.baseUrl || ollamaBaseUrl()).replace(/\/$/, '');
+  const model = options.model || ollamaModel();
+  if (!base || !model) {
+    throw new Error('Ollama not configured');
+  }
+
+  const chatMessages = [];
+  if (system) {
+    chatMessages.push({ role: 'system', content: system });
+  }
+  for (const message of messages ?? []) {
+    if (message.role === 'user' || message.role === 'assistant') {
+      chatMessages.push({
+        role: message.role,
+        content: String(message.content ?? ''),
+      });
+    }
+  }
+
+  const res = await fetch(`${base}/api/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model,
+      stream: false,
+      messages: chatMessages,
+    }),
+    signal: AbortSignal.timeout(Number(process.env.OLLAMA_TIMEOUT_MS) || 120_000),
+  });
+
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`Ollama HTTP ${res.status}: ${body.slice(0, 200)}`);
+  }
+
+  const data = await res.json();
+  const content = data.message?.content?.trim();
+  if (!content) throw new Error('Ollama returned empty chat content');
+
+  ollamaStats.totalCalls += 1;
+  ollamaStats.connected = true;
+  ollamaStats.model = model;
+  return content;
+}

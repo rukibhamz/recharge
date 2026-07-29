@@ -292,3 +292,34 @@ export async function probeAdminLlmMonitor(accessToken) {
   if (!res.ok) throw new Error(data.error || 'Could not probe AI connectors');
   return data;
 }
+
+export async function fetchCoachStatus(accessToken) {
+  const res = await fetch(apiUrl('/api/coach/status'), {
+    headers: await authHeaders(accessToken),
+  });
+  const data = await parseJsonResponse(res, 'Could not load coach chat');
+  if (!res.ok) throw new Error(data.error || 'Could not load coach chat');
+  return data;
+}
+
+export async function startCoachConversation(accessToken, sessionId = null) {
+  const res = await fetch(apiUrl('/api/coach/conversations'), {
+    method: 'POST',
+    headers: await authHeaders(accessToken),
+    body: JSON.stringify(sessionId ? { sessionId } : {}),
+  });
+  const data = await parseJsonResponse(res, 'Could not start chat with Oma');
+  if (!res.ok) throw new Error(data.error || 'Could not start chat with Oma');
+  return data;
+}
+
+export async function sendCoachMessage(accessToken, conversationId, content) {
+  const res = await fetch(apiUrl(`/api/coach/conversations/${conversationId}/messages`), {
+    method: 'POST',
+    headers: await authHeaders(accessToken),
+    body: JSON.stringify({ content }),
+  });
+  const data = await parseJsonResponse(res, 'Oma could not reply right now');
+  if (!res.ok) throw new Error(data.error || 'Oma could not reply right now');
+  return data;
+}

@@ -58,9 +58,39 @@ export async function exportUserData(userId, email) {
       exportedAt: new Date().toISOString(),
       accountEmail: email ?? null,
       sessions,
+      coachConversations: await exportCoachConversations(userId),
     },
     error: null,
   };
+}
+
+async function exportCoachConversations(userId) {
+  const { data: conversations, error } = await supabase
+    .from('coach_conversations')
+    .select('id, session_id, title, created_at, updated_at')
+    .eq('user_id', userId)
+    .order('updated_at', { ascending: false });
+
+  if (error || !conversations?.length) return [];
+
+  const results = [];
+  for (const conv of conversations) {
+    const { data: messages } = await supabase
+      .from('coach_messages')
+      .select('role, content, created_at')
+      .eq('conversation_id', conv.id)
+      .order('created_at', { ascending: true });
+
+    results.push({
+      id: conv.id,
+      sessionId: conv.session_id,
+      title: conv.title,
+      createdAt: conv.created_at,
+      updatedAt: conv.updated_at,
+      messages: messages ?? [],
+    });
+  }
+  return results;
 }
 
 export async function deleteUserAccount(userId) {
