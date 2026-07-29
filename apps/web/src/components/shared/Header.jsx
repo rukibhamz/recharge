@@ -98,17 +98,21 @@ export default function Header({ variant = 'landing', onBack, onClose }) {
   return (
     <header className="mx-auto flex w-full max-w-landing items-center justify-between px-margin-mobile py-6 sm:px-8 lg:px-12">
       <Logo />
-      {variant === 'landing' || variant === 'account' ? (
-        <nav className="flex items-center gap-8 font-sans text-body-md text-on-surface-variant">
+      {variant === 'landing' || variant === 'account' || variant === 'share' ? (
+        <nav className="flex items-center gap-4 font-sans text-body-md text-on-surface-variant sm:gap-8">
           {variant === 'landing' ? (
             <>
-              <a href="#about" className="btn-interactive hover:text-primary">
+              <a href="#about" className="hidden btn-interactive hover:text-primary sm:inline">
                 About
               </a>
-              <a href="#faq" className="btn-interactive hover:text-primary">
+              <a href="#faq" className="hidden btn-interactive hover:text-primary sm:inline">
                 FAQ
               </a>
             </>
+          ) : variant === 'share' ? (
+            <a href="/" className="btn-interactive text-body-md hover:text-primary">
+              Take assessment
+            </a>
           ) : (
             <a href="/" className="btn-interactive hover:text-primary">
               Assessment
