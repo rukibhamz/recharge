@@ -124,7 +124,7 @@ export default function CoachChatPanel({ getAccessToken }) {
         </div>
         <h3 className="font-display text-headline-md text-primary">Meet {COACH_NAME}</h3>
         <p className="font-sans text-body-md text-on-surface-variant">
-          Oma is your private wellbeing coach. Save an assessment to your account first — she uses
+          Oma is your private wellbeing coach. Save an assessment to your account first, she uses
           your personality, burnout pattern, and recovery preferences to talk with you.
         </p>
         {error ? (
@@ -146,9 +146,9 @@ export default function CoachChatPanel({ getAccessToken }) {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className="card-eyebrow">Private coach</p>
-            <h3 className="font-display text-headline-md text-primary">Talk with {COACH_NAME}</h3>
+            <h3 className="font-display text-headline-md text-primary">Talk to {COACH_NAME}</h3>
             <p className="mt-1 font-sans text-body-md text-on-surface-variant">
-              Grounded conversation shaped by your saved check-ins — not therapy, just a calm ear
+              Grounded conversation shaped by your saved check-ins, not therapy, just a calm ear
               and practical tips.
             </p>
           </div>
@@ -195,7 +195,7 @@ export default function CoachChatPanel({ getAccessToken }) {
             Ready when you are. Oma will open with your latest saved profile nearby.
           </p>
           <Button onClick={handleStart} disabled={starting}>
-            {starting ? 'Connecting…' : `Start chatting with ${COACH_NAME}`}
+            {starting ? 'Connecting…' : `Start talking to ${COACH_NAME}`}
           </Button>
         </div>
       ) : (

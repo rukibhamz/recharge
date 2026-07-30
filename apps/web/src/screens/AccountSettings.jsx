@@ -15,7 +15,7 @@ const REMINDER_KEY = 'recharge-reminder-days';
 
 export default function AccountSettings() {
   const { user, loading: authLoading, getAccessToken, isConfigured, signOut } = useAuth();
-  const [tab, setTab] = useState('overview');
+  const [coachOpen, setCoachOpen] = useState(false);
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -59,6 +59,14 @@ export default function AccountSettings() {
       mounted = false;
     };
   }, [user, authLoading, getAccessToken]);
+
+  useEffect(() => {
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') setCoachOpen(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
 
   const displayName =
     sessions[0]?.displayName?.trim() || firstName(user?.email?.split('@')[0]) || 'Your profile';
@@ -143,7 +151,7 @@ export default function AccountSettings() {
           artworkVariant="recovery"
           asideBadge="Your sanctuary"
           asideTitle="Wellness, on your terms"
-          asideText="Manage reminders, talk with Oma, export your data, and revisit assessments in a space designed to feel calm — not clinical."
+          asideText="Manage reminders, talk to Oma, export your data, and revisit assessments in a space designed to feel calm, not clinical."
         >
           <section className="glass-card w-full p-gutter">
             <div className="flex flex-col items-center gap-6 md:flex-row">
@@ -170,37 +178,6 @@ export default function AccountSettings() {
           </section>
         </SplitEditorialLayout>
 
-        <div
-          className="flex gap-2 rounded-full border border-outline-variant/30 bg-white/70 p-1"
-          role="tablist"
-          aria-label="Account sections"
-        >
-          {[
-            { id: 'overview', label: 'Overview' },
-            { id: 'coach', label: `Talk with ${COACH_NAME}` },
-          ].map((item) => {
-            const active = tab === item.id;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                role="tab"
-                aria-selected={active}
-                onClick={() => setTab(item.id)}
-                className={`flex-1 rounded-full px-4 py-2.5 font-sans text-label-sm transition-colors ${
-                  active ? 'bg-canopy text-white' : 'text-on-surface-variant hover:text-canopy'
-                }`}
-              >
-                {item.label}
-              </button>
-            );
-          })}
-        </div>
-
-        {tab === 'coach' ? (
-          <CoachChatPanel getAccessToken={getAccessToken} />
-        ) : (
-          <>
             <section className="space-y-4">
               <div className="flex items-end justify-between">
                 <h2 className="font-display text-headline-md text-primary">Recent assessments</h2>
@@ -393,8 +370,6 @@ export default function AccountSettings() {
                 </Button>
               </div>
             </section>
-          </>
-        )}
       </main>
 
       {showDeleteModal ? (
@@ -430,6 +405,47 @@ export default function AccountSettings() {
           </div>
         </div>
       ) : null}
+
+      {coachOpen ? (
+        <div className="fixed inset-0 z-[80] flex items-end justify-end p-3 sm:p-4">
+          <button
+            type="button"
+            className="absolute inset-0 bg-on-surface/30 backdrop-blur-[1px]"
+            aria-label="Close Oma chat"
+            onClick={() => setCoachOpen(false)}
+          />
+          <section
+            role="dialog"
+            aria-label={`Talk to ${COACH_NAME}`}
+            className="relative z-[81] h-[min(78vh,42rem)] w-full max-w-[26rem] overflow-hidden rounded-xl border border-linen-sunken bg-linen-raised shadow-2xl"
+          >
+            <div className="flex items-center justify-between border-b border-outline-variant/25 px-4 py-3">
+              <p className="font-display text-body-lg text-primary">Talk to {COACH_NAME}</p>
+              <button
+                type="button"
+                onClick={() => setCoachOpen(false)}
+                className="rounded-full p-2 text-on-surface-variant transition-colors hover:bg-linen-sunken hover:text-canopy"
+                aria-label="Close chat"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="h-[calc(100%-3.25rem)] overflow-y-auto p-3 sm:p-4">
+              <CoachChatPanel getAccessToken={getAccessToken} />
+            </div>
+          </section>
+        </div>
+      ) : null}
+
+      <button
+        type="button"
+        onClick={() => setCoachOpen(true)}
+        className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-4 z-[70] inline-flex h-12 w-12 items-center justify-center rounded-full bg-canopy text-white shadow-xl transition-colors hover:bg-canopy-600 sm:right-6 sm:h-auto sm:w-auto sm:gap-2 sm:px-4 sm:py-3"
+        aria-label={`Talk to ${COACH_NAME}`}
+      >
+        <span aria-hidden="true" className="text-[18px]">💬</span>
+        <span className="hidden font-sans text-[14px] font-semibold sm:inline">Talk to {COACH_NAME}</span>
+      </button>
 
       <Footer />
     </div>
