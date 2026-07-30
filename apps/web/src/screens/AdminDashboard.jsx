@@ -9,6 +9,7 @@ import { ArcDivider } from '../components/shared/Arc.jsx';
 import WorkspaceManager from '../components/admin/WorkspaceManager.jsx';
 import ConnectorsManager from '../components/admin/ConnectorsManager.jsx';
 import LlmMonitorPanel from '../components/admin/LlmMonitorPanel.jsx';
+import CoachSettingsPanel from '../components/admin/CoachSettingsPanel.jsx';
 import { formatDate } from '../lib/formatDate.js';
 
 function StatCard({ label, value, hint }) {
@@ -49,7 +50,11 @@ function DistributionBar({ label, count, total, tone, badgeClass }) {
 
 export default function AdminDashboard() {
   const { user, loading: authLoading, getAccessToken } = useAuth();
-  const [tab, setTab] = useState('stats');
+  const [tab, setTab] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    const value = params.get('tab');
+    return ['stats', 'connectors', 'monitor', 'saas', 'coach'].includes(value) ? value : 'stats';
+  });
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -86,10 +91,19 @@ export default function AdminDashboard() {
 
   const tabs = [
     { id: 'stats', label: 'Statistics' },
+    { id: 'coach', label: 'Coach settings' },
     { id: 'connectors', label: 'AI connectors' },
     { id: 'monitor', label: 'AI monitoring' },
     { id: 'saas', label: 'Business SaaS' },
   ];
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    params.set('tab', tab);
+    const query = params.toString();
+    const url = query ? `${window.location.pathname}?${query}` : window.location.pathname;
+    window.history.replaceState(null, '', url);
+  }, [tab]);
 
   return (
     <div className="flex min-h-screen flex-col bg-linen">
@@ -135,6 +149,7 @@ export default function AdminDashboard() {
         ) : null}
 
         {!error && tab === 'saas' ? <WorkspaceManager getAccessToken={getAccessToken} /> : null}
+        {!error && tab === 'coach' ? <CoachSettingsPanel getAccessToken={getAccessToken} /> : null}
         {!error && tab === 'connectors' ? (
           <ConnectorsManager getAccessToken={getAccessToken} />
         ) : null}

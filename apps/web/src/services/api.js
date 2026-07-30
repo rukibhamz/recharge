@@ -174,6 +174,26 @@ export async function fetchAdminStats(accessToken) {
   return data;
 }
 
+export async function fetchAdminCoachSettings(accessToken) {
+  const res = await fetch(apiUrl('/api/admin/coach-settings'), {
+    headers: await authHeaders(accessToken),
+  });
+  const data = await parseJsonResponse(res, 'Could not load coach settings');
+  if (!res.ok) throw new Error(data.error || 'Could not load coach settings');
+  return data;
+}
+
+export async function updateAdminCoachSettings(accessToken, payload) {
+  const res = await fetch(apiUrl('/api/admin/coach-settings'), {
+    method: 'PUT',
+    headers: await authHeaders(accessToken),
+    body: JSON.stringify(payload),
+  });
+  const data = await parseJsonResponse(res, 'Could not update coach settings');
+  if (!res.ok) throw new Error(data.error || 'Could not update coach settings');
+  return data;
+}
+
 export async function fetchAdminWorkspaces(accessToken) {
   const res = await fetch(apiUrl('/api/admin/workspaces'), {
     headers: await authHeaders(accessToken),

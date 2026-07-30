@@ -244,3 +244,23 @@ export async function getConnectorSecret(id) {
   if (error) throw error;
   return data ? mapRuntime(data) : null;
 }
+
+export async function getRuntimeConnectorById(id, { allowDisabled = false } = {}) {
+  if (!id) return null;
+
+  const runtime = await getRuntimeConnectors();
+  const fromRuntime = runtime.find((c) => c.id === id);
+  if (fromRuntime) return fromRuntime;
+
+  if (!isSupabaseConfigured()) return null;
+  const { data, error } = await supabase
+    .from('llm_connectors')
+    .select(SELECT)
+    .eq('id', id)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) return null;
+  if (!allowDisabled && !data.enabled) return null;
+  return mapRuntime(data);
+}

@@ -2,6 +2,7 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase.js';
 import { ensureProfile } from './sessions.js';
 import { resolveCoachAssessmentContext } from './coachContext.js';
 import { generateOmaReply, getOmaOpening } from './coachAgent.js';
+import { getCoachSettings } from './coachSettings.js';
 
 function mapConversation(row) {
   if (!row) return null;
@@ -75,7 +76,10 @@ export async function getCoachStatus(userId, email) {
 
   await ensureProfile(userId, email);
 
-  const { assessments, session, error: ctxError } = await resolveCoachAssessmentContext(userId);
+  const [{ assessments, session, error: ctxError }, coachSettings] = await Promise.all([
+    resolveCoachAssessmentContext(userId),
+    getCoachSettings().catch(() => ({ name: 'Oma', connectorId: null })),
+  ]);
   if (ctxError) return { data: null, error: ctxError };
 
   const { data: conversations, error: convError } = await listConversationsForUser(userId);
@@ -101,7 +105,7 @@ export async function getCoachStatus(userId, email) {
 
   return {
     data: {
-      coachName: 'Oma',
+      coachName: coachSettings?.name || 'Oma',
       hasAssessment: Boolean(session),
       assessments: assessments.map((a) => ({
         sessionId: a.sessionId,
@@ -114,7 +118,7 @@ export async function getCoachStatus(userId, email) {
       conversations: conversations ?? [],
       conversation: conversation ? mapConversation(conversation) : null,
       messages,
-      opening: getOmaOpening(),
+      opening: await getOmaOpening(),
     },
     error: null,
   };
@@ -127,16 +131,16 @@ export async function startCoachConversation(userId, email, sessionId = null) {
 
   await ensureProfile(userId, email);
 
-  const { assessments, session, error: ctxError } = await resolveCoachAssessmentContext(
-    userId,
-    sessionId,
-  );
+  const [{ assessments, session, error: ctxError }, coachSettings] = await Promise.all([
+    resolveCoachAssessmentContext(userId, sessionId),
+    getCoachSettings().catch(() => ({ name: 'Oma', connectorId: null })),
+  ]);
   if (ctxError) return { data: null, error: ctxError };
   if (!session) {
     return { data: null, error: new Error('Save an assessment to your account before chatting with Oma.') };
   }
 
-  const opening = getOmaOpening();
+  const opening = await getOmaOpening();
   const { data: conversation, error: createError } = await supabase
     .from('coach_conversations')
     .insert({
@@ -166,7 +170,7 @@ export async function startCoachConversation(userId, email, sessionId = null) {
 
   return {
     data: {
-      coachName: 'Oma',
+      coachName: coachSettings?.name || 'Oma',
       hasAssessment: true,
       assessments: assessments.map((a) => ({
         sessionId: a.sessionId,

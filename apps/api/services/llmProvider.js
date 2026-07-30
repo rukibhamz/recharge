@@ -6,7 +6,7 @@ import {
   generateOpenAiCompatibleJson,
   generateOpenAiCompatibleChat,
 } from './openaiCompatClient.js';
-import { getRuntimeConnectors } from './connectors.js';
+import { getRuntimeConnectorById, getRuntimeConnectors } from './connectors.js';
 import { recordLlmCall } from './llmMonitor.js';
 import { isOpenAiCompatible, providerMeta } from '@recharge/shared/llmConnectors';
 
@@ -148,15 +148,31 @@ export async function generateJson(prompt) {
 }
 
 /** Multi-turn free-text chat (Oma coach). */
-export async function generateChat({ system, messages }, { source = 'coach' } = {}) {
+export async function generateChat(
+  { system, messages },
+  { source = 'coach', connectorId: requestedConnectorId = null } = {},
+) {
   const connectors = await getRuntimeConnectors();
   if (!connectors.length) {
     throw new Error('No LLM connectors configured');
   }
 
+  const ordered = [];
+  if (requestedConnectorId) {
+    try {
+      const preferred = await getRuntimeConnectorById(requestedConnectorId);
+      if (preferred) ordered.push(preferred);
+    } catch (err) {
+      console.warn('[llm-chat] preferred connector lookup failed:', err.message);
+    }
+  }
+  for (const c of connectors) {
+    if (!ordered.some((p) => p.id === c.id)) ordered.push(c);
+  }
+
   const errors = [];
 
-  for (const connector of connectors) {
+  for (const connector of ordered) {
     const started = Date.now();
     try {
       const { text, provider } = await callConnectorChat(connector, { system, messages });

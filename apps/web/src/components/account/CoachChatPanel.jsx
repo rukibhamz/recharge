@@ -138,10 +138,14 @@ export default function CoachChatPanel({ getAccessToken }) {
     }
   };
 
+  const coachName = status?.coachName || COACH_NAME;
+
   if (loading) {
     return (
       <div className="glass-card p-gutter text-center">
-        <p className="font-sans text-body-md text-on-surface-variant">Opening chat with Oma…</p>
+        <p className="font-sans text-body-md text-on-surface-variant">
+          Opening chat with {coachName}…
+        </p>
       </div>
     );
   }
@@ -152,10 +156,10 @@ export default function CoachChatPanel({ getAccessToken }) {
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-fern-tint text-2xl">
           🌿
         </div>
-        <h3 className="font-display text-headline-md text-primary">Meet {COACH_NAME}</h3>
+        <h3 className="font-display text-headline-md text-primary">Meet {coachName}</h3>
         <p className="font-sans text-body-md text-on-surface-variant">
-          Oma is your private wellbeing coach. Save an assessment to your account first, she uses
-          your personality, burnout pattern, and recovery preferences to talk with you.
+          {coachName} is your private wellbeing coach. Save an assessment to your account first,
+          then she uses your personality, burnout pattern, and recovery preferences to talk with you.
         </p>
         {error ? (
           <p className="font-sans text-body-md text-severe" role="alert">
@@ -177,7 +181,7 @@ export default function CoachChatPanel({ getAccessToken }) {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className="card-eyebrow">Private coach</p>
-            <h3 className="font-display text-headline-md text-primary">Talk to {COACH_NAME}</h3>
+            <h3 className="font-display text-headline-md text-primary">Talk to {coachName}</h3>
             <p className="mt-1 font-sans text-body-md text-on-surface-variant">
               Grounded conversation shaped by your saved check-ins, not therapy, just a calm ear
               and practical tips.
@@ -257,7 +261,7 @@ export default function CoachChatPanel({ getAccessToken }) {
             Ready when you are. Start a new chat, or continue an old one from above.
           </p>
           <Button onClick={handleStart} disabled={starting}>
-            {starting ? 'Connecting…' : `Start talking to ${COACH_NAME}`}
+            {starting ? 'Connecting…' : `Start talking to ${coachName}`}
           </Button>
         </div>
       ) : (
@@ -279,7 +283,7 @@ export default function CoachChatPanel({ getAccessToken }) {
                   >
                     {!isUser ? (
                       <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.06em] text-fern">
-                        {COACH_NAME}
+                        {coachName}
                       </p>
                     ) : null}
                     <p className="whitespace-pre-wrap">{message.content}</p>
@@ -290,7 +294,7 @@ export default function CoachChatPanel({ getAccessToken }) {
             {sending ? (
               <div className="flex justify-start">
                 <div className="rounded-2xl rounded-bl-md bg-linen-sunken px-4 py-3 font-sans text-[14px] text-ink-soft">
-                  Oma is thinking…
+                  {coachName} is thinking…
                 </div>
               </div>
             ) : null}

@@ -56,7 +56,7 @@ function formatTraits(traits) {
 /** Build Oma's system prompt from a saved assessment. */
 export function buildOmaSystemPrompt(
   session,
-  { userTurnCount = 0, adviceAcknowledged = false } = {},
+  { userTurnCount = 0, adviceAcknowledged = false, coachName = COACH_NAME } = {},
 ) {
   const name = firstName(session?.displayName) || 'there';
   const demographics = session?.demographics ?? {};
@@ -119,8 +119,11 @@ export function buildOmaSystemPrompt(
 
   lines.push(`- Their recovery roadmap (only offer when they want advice):\n${formatRecommendations(session?.recommendations)}`);
   lines.push('');
+  if (coachName && coachName !== COACH_NAME) {
+    lines.push(`For this conversation, your name is ${coachName}. Introduce yourself with this name.`);
+  }
   lines.push(
-    `Sign replies as yourself (${COACH_NAME}) in tone only. Do not end every message with a signature.`,
+    `Sign replies as yourself (${coachName || COACH_NAME}) in tone only. Do not end every message with a signature.`,
   );
 
   return lines.join('\n');

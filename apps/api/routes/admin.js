@@ -19,6 +19,7 @@ import {
 import { testConnectorRuntime } from '../services/llmProvider.js';
 import { getLlmMonitorSnapshot, probeConnectorAvailability } from '../services/llmMonitor.js';
 import { LLM_PROVIDERS } from '@recharge/shared/llmConnectors';
+import { getCoachSettings, updateCoachSettings } from '../services/coachSettings.js';
 
 const router = Router();
 
@@ -37,6 +38,26 @@ router.get('/stats', requireAdmin, async (_req, res) => {
   } catch (err) {
     console.error('Admin stats failed:', err.message);
     res.status(500).json({ error: err.message || 'Could not load admin stats.' });
+  }
+});
+
+router.get('/coach-settings', requireAdmin, async (_req, res) => {
+  try {
+    const settings = await getCoachSettings();
+    res.json({ settings });
+  } catch (err) {
+    console.error('Coach settings load failed:', err.message);
+    res.status(500).json({ error: err.message || 'Could not load coach settings.' });
+  }
+});
+
+router.put('/coach-settings', requireAdmin, async (req, res) => {
+  try {
+    const settings = await updateCoachSettings(req.body ?? {});
+    res.json({ settings });
+  } catch (err) {
+    const status = /required|invalid/i.test(err.message) ? 400 : 500;
+    res.status(status).json({ error: err.message || 'Could not update coach settings.' });
   }
 });
 
