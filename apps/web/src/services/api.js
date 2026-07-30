@@ -323,3 +323,12 @@ export async function sendCoachMessage(accessToken, conversationId, content) {
   if (!res.ok) throw new Error(data.error || 'Oma could not reply right now');
   return data;
 }
+
+export async function fetchCoachConversationMessages(accessToken, conversationId) {
+  const res = await fetch(apiUrl(`/api/coach/conversations/${conversationId}/messages`), {
+    headers: await authHeaders(accessToken),
+  });
+  const data = await parseJsonResponse(res, 'Could not load this chat');
+  if (!res.ok) throw new Error(data.error || 'Could not load this chat');
+  return data;
+}

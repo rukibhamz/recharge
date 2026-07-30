@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { requireAuth } from '../middleware/requireAuth.js';
 import { coachRateLimit } from '../middleware/coachRateLimit.js';
 import {
+  getCoachConversationMessages,
   getCoachStatus,
   sendCoachMessage,
   startCoachConversation,
@@ -70,6 +71,28 @@ router.post('/conversations/:id/messages', async (req, res) => {
     }
     console.error('Coach message error:', error.message);
     return res.status(500).json({ error: 'Oma could not reply right now.' });
+  }
+  res.json(data);
+});
+
+router.get('/conversations/:id/messages', async (req, res) => {
+  const { id } = req.params;
+  if (!/^[0-9a-f-]{36}$/i.test(id)) {
+    return res.status(400).json({ error: 'Invalid conversation id.' });
+  }
+
+  const { data, error } = await getCoachConversationMessages(req.user.id, id);
+  if (error) {
+    if (/Conversation not found/i.test(error.message)) {
+      return res.status(404).json({ error: 'Conversation not found.' });
+    }
+    if (/coach_conversations|coach_messages|42P01/i.test(error.message)) {
+      return res.status(503).json({
+        error: 'Coach chat is not set up yet. Run migration 015_coach_chat.sql in Supabase.',
+      });
+    }
+    console.error('Coach conversation load error:', error.message);
+    return res.status(500).json({ error: 'Could not load this conversation.' });
   }
   res.json(data);
 });

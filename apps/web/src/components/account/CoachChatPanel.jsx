@@ -4,6 +4,7 @@ import {
   COACH_STARTERS,
 } from '@recharge/shared/coachPersona';
 import {
+  fetchCoachConversationMessages,
   fetchCoachStatus,
   sendCoachMessage,
   startCoachConversation,
@@ -19,6 +20,7 @@ export default function CoachChatPanel({ getAccessToken }) {
   const [status, setStatus] = useState(null);
   const [input, setInput] = useState('');
   const [selectedSessionId, setSelectedSessionId] = useState('');
+  const [selectedConversationId, setSelectedConversationId] = useState('');
   const bottomRef = useRef(null);
 
   const loadStatus = async () => {
@@ -28,6 +30,7 @@ export default function CoachChatPanel({ getAccessToken }) {
       const data = await fetchCoachStatus(token);
       setStatus(data);
       setSelectedSessionId(data.activeSessionId || data.assessments?.[0]?.sessionId || '');
+      setSelectedConversationId(data.conversation?.id || data.conversations?.[0]?.id || '');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -49,7 +52,34 @@ export default function CoachChatPanel({ getAccessToken }) {
     try {
       const token = await getAccessToken();
       const data = await startCoachConversation(token, selectedSessionId || null);
-      setStatus(data);
+      setStatus((prev) => ({
+        ...data,
+        conversations: data.conversations ?? prev?.conversations ?? [],
+      }));
+      setSelectedConversationId(data.conversation?.id || '');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setStarting(false);
+    }
+  };
+
+  const handleContinueConversation = async () => {
+    if (!selectedConversationId) return;
+    setStarting(true);
+    setError(null);
+    try {
+      const token = await getAccessToken();
+      const data = await fetchCoachConversationMessages(token, selectedConversationId);
+      setStatus((prev) =>
+        prev
+          ? {
+              ...prev,
+              conversation: data.conversation,
+              messages: data.messages,
+            }
+          : prev,
+      );
     } catch (err) {
       setError(err.message);
     } finally {
@@ -139,6 +169,7 @@ export default function CoachChatPanel({ getAccessToken }) {
 
   const messages = status.messages ?? [];
   const conversation = status.conversation;
+  const conversationOptions = status.conversations ?? [];
 
   return (
     <div className="space-y-4">
@@ -158,6 +189,37 @@ export default function CoachChatPanel({ getAccessToken }) {
             </Button>
           ) : null}
         </div>
+
+        {conversationOptions.length > 0 ? (
+          <div className="space-y-2">
+            <span className="field-label">Continue previous chat</span>
+            <div className="flex gap-2">
+              <select
+                className="field flex-1"
+                value={selectedConversationId}
+                onChange={(e) => setSelectedConversationId(e.target.value)}
+              >
+                {conversationOptions.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {formatDate(c.updatedAt)} · {c.messageCount || 0} msgs
+                    {c.lastMessageSnippet ? ` · ${c.lastMessageSnippet}` : ''}
+                  </option>
+                ))}
+              </select>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleContinueConversation}
+                disabled={starting || !selectedConversationId}
+              >
+                Continue
+              </Button>
+            </div>
+            <p className="font-sans text-label-sm text-on-surface-variant">
+              Choose an old thread to continue, or start a new one below.
+            </p>
+          </div>
+        ) : null}
 
         {status.assessments?.length > 1 ? (
           <label className="block">
@@ -192,7 +254,7 @@ export default function CoachChatPanel({ getAccessToken }) {
       {!conversation ? (
         <div className="glass-card space-y-4 p-gutter text-center">
           <p className="font-sans text-body-md text-on-surface-variant">
-            Ready when you are. Oma will open with your latest saved profile nearby.
+            Ready when you are. Start a new chat, or continue an old one from above.
           </p>
           <Button onClick={handleStart} disabled={starting}>
             {starting ? 'Connecting…' : `Start talking to ${COACH_NAME}`}
