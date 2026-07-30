@@ -1,9 +1,12 @@
 import {
   COACH_NAME,
   CRISIS_RESPONSE,
+  detectsAdviceAcknowledgement,
   detectsCrisisLanguage,
+  detectsOmaCloseSignal,
   OMA_OPENING,
   sanitizeOmaReply,
+  omaWrapUpReply,
 } from '@recharge/shared/coachPersona';
 import { llmFeatures } from '../config/llm.js';
 import { generateChat, hasAnyLlmProvider } from './llmProvider.js';
@@ -28,6 +31,10 @@ export async function generateOmaReply({ session, history, userMessage }) {
     return { reply: sanitizeOmaReply(CRISIS_RESPONSE), source: 'crisis' };
   }
 
+  if (detectsOmaCloseSignal(trimmed)) {
+    return { reply: sanitizeOmaReply(omaWrapUpReply()), source: 'wrap-up' };
+  }
+
   if (!llmFeatures.coachChat || !(await hasAnyLlmProvider())) {
     return { reply: FALLBACK_REPLY, source: 'static' };
   }
@@ -39,9 +46,9 @@ export async function generateOmaReply({ session, history, userMessage }) {
     };
   }
 
-  const system = buildOmaSystemPrompt(session, {
-    userTurnCount: history.filter((m) => m.role === 'user').length + 1,
-  });
+  const userTurnCount = history.filter((m) => m.role === 'user').length + 1;
+  const adviceAcknowledged = detectsAdviceAcknowledgement(trimmed);
+  const system = buildOmaSystemPrompt(session, { userTurnCount, adviceAcknowledged });
   const messages = [
     ...history
       .filter((m) => m.role === 'user' || m.role === 'assistant')

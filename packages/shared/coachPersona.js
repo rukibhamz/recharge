@@ -74,9 +74,32 @@ Hard limits:
 export const OMA_OPENING =
   "Hi, I'm Oma. I've got your latest check-in nearby. We can take this slowly. What's been sitting heaviest on you lately?";
 
-/** Turn-aware coaching: early = probe, later = may advise. */
-export function omaTurnGuidance(userTurnCount) {
+const CLOSE_SIGNAL_PATTERNS =
+  /\b(thank(s| you)|this helps|that helps|got it|i('ll| will) try|i'm good|we can stop|let('?s| us) stop|talk later|bye|goodnight)\b/i;
+
+const ADVICE_ACK_PATTERNS =
+  /\b(that makes sense|makes sense|i can do that|i'll do that|i('ll| will) try|i needed that|helpful|this helps|got it)\b/i;
+
+export function detectsOmaCloseSignal(text) {
+  return CLOSE_SIGNAL_PATTERNS.test(String(text ?? ''));
+}
+
+export function detectsAdviceAcknowledgement(text) {
+  return ADVICE_ACK_PATTERNS.test(String(text ?? ''));
+}
+
+export function omaWrapUpReply() {
+  return "I am glad this helped. You have done something important by slowing down and naming what is going on. If you want, we can pick this up later and check how the next step feels.";
+}
+
+/** Turn-aware coaching: early = probe, middle = explore, later = gentle advice/wrap. */
+export function omaTurnGuidance({ userTurnCount = 0, adviceAcknowledged = false } = {}) {
   const turns = Number(userTurnCount) || 0;
+
+  if (adviceAcknowledged && turns >= 3) {
+    return 'Turn guidance: The user sounds like they got what they needed. Stop probing. Give a brief warm wrap-up and invite them to return later if helpful.';
+  }
+
   if (turns <= 1) {
     return `Turn guidance: This is early in the conversation. Reflect briefly, then ask 1-2 probing questions. Do not give advice yet unless they explicitly ask for it.`;
   }
@@ -85,6 +108,9 @@ export function omaTurnGuidance(userTurnCount) {
   }
   if (turns === 3) {
     return `Turn guidance: You may start gently bridging toward options if the picture is clear, but prefer one more clarifying question first unless they want advice now.`;
+  }
+  if (turns >= 6) {
+    return 'Turn guidance: This is a longer thread. Do not keep probing in loops. Offer one concise reflection, one small next step, and a natural option to pause here.';
   }
   return `Turn guidance: They have shared several turns. You may offer one small suggestion if it fits, then ask how that sits with them. Still prioritize their words over a lecture.`;
 }

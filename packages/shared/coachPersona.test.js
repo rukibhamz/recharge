@@ -4,9 +4,12 @@ import {
   COACH_NAME,
   detectsCrisisLanguage,
   CRISIS_RESPONSE,
+  detectsAdviceAcknowledgement,
+  detectsOmaCloseSignal,
   OMA_PERSONA,
   sanitizeOmaReply,
   omaTurnGuidance,
+  omaWrapUpReply,
 } from './coachPersona.js';
 
 describe('coachPersona', () => {
@@ -44,7 +47,20 @@ describe('coachPersona', () => {
   it('prioritizes probing before advice', () => {
     assert.match(OMA_PERSONA, /inquisitive/i);
     assert.match(OMA_PERSONA, /Do NOT jump to advice/i);
-    assert.match(omaTurnGuidance(1), /Do not give advice yet/i);
-    assert.match(omaTurnGuidance(4), /small suggestion/i);
+    assert.match(omaTurnGuidance({ userTurnCount: 1 }), /Do not give advice yet/i);
+    assert.match(omaTurnGuidance({ userTurnCount: 4 }), /small suggestion/i);
+  });
+
+  it('detects close signals and advice acknowledgement', () => {
+    assert.equal(detectsOmaCloseSignal('Thanks, this helps. Talk later.'), true);
+    assert.equal(detectsOmaCloseSignal('I feel stressed today'), false);
+    assert.equal(detectsAdviceAcknowledgement('That makes sense, I will try it.'), true);
+    assert.equal(detectsAdviceAcknowledgement('I do not know what to do'), false);
+  });
+
+  it('switches to wrap-up guidance after acknowledgement', () => {
+    const guidance = omaTurnGuidance({ userTurnCount: 4, adviceAcknowledged: true });
+    assert.match(guidance, /Stop probing/i);
+    assert.match(omaWrapUpReply(), /glad this helped/i);
   });
 });

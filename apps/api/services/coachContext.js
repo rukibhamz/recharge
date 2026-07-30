@@ -54,7 +54,10 @@ function formatTraits(traits) {
 }
 
 /** Build Oma's system prompt from a saved assessment. */
-export function buildOmaSystemPrompt(session, { userTurnCount = 0 } = {}) {
+export function buildOmaSystemPrompt(
+  session,
+  { userTurnCount = 0, adviceAcknowledged = false } = {},
+) {
   const name = firstName(session?.displayName) || 'there';
   const demographics = session?.demographics ?? {};
   const recoveryPreferences =
@@ -66,7 +69,7 @@ export function buildOmaSystemPrompt(session, { userTurnCount = 0 } = {}) {
   const lines = [
     OMA_PERSONA,
     '',
-    omaTurnGuidance(userTurnCount),
+    omaTurnGuidance({ userTurnCount, adviceAcknowledged }),
     '',
     `You are speaking privately with ${name}.`,
     '',
