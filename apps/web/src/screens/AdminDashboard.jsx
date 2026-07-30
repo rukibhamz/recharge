@@ -12,6 +12,20 @@ import LlmMonitorPanel from '../components/admin/LlmMonitorPanel.jsx';
 import CoachSettingsPanel from '../components/admin/CoachSettingsPanel.jsx';
 import { formatDate } from '../lib/formatDate.js';
 
+const ADMIN_TAB_KEY = 'recharge-admin-tab';
+const VALID_TABS = new Set(['stats', 'coach', 'connectors', 'monitor', 'saas']);
+
+function resolveInitialTab() {
+  const params = new URLSearchParams(window.location.search);
+  const fromQuery = params.get('tab');
+  if (fromQuery && VALID_TABS.has(fromQuery)) return fromQuery;
+
+  const fromStorage = localStorage.getItem(ADMIN_TAB_KEY);
+  if (fromStorage && VALID_TABS.has(fromStorage)) return fromStorage;
+
+  return 'stats';
+}
+
 function StatCard({ label, value, hint }) {
   return (
     <div className="surface-card p-5">
@@ -50,11 +64,7 @@ function DistributionBar({ label, count, total, tone, badgeClass }) {
 
 export default function AdminDashboard() {
   const { user, loading: authLoading, getAccessToken } = useAuth();
-  const [tab, setTab] = useState(() => {
-    const params = new URLSearchParams(window.location.search);
-    const value = params.get('tab');
-    return ['stats', 'connectors', 'monitor', 'saas', 'coach'].includes(value) ? value : 'stats';
-  });
+  const [tab, setTab] = useState(resolveInitialTab);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -103,7 +113,20 @@ export default function AdminDashboard() {
     const query = params.toString();
     const url = query ? `${window.location.pathname}?${query}` : window.location.pathname;
     window.history.replaceState(null, '', url);
+    localStorage.setItem(ADMIN_TAB_KEY, tab);
   }, [tab]);
+
+  useEffect(() => {
+    const onPopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const next = params.get('tab');
+      if (next && VALID_TABS.has(next)) {
+        setTab(next);
+      }
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
 
   return (
     <div className="flex min-h-screen flex-col bg-linen">
