@@ -15,22 +15,34 @@ describe('recommendations', () => {
   it('normalizes canonical shape', () => {
     const item = normalizeRecommendationItem({
       icon: '🌿',
+      when: 'Today',
       title: 'Schedule recovery',
       tip: 'Block thirty minutes daily.',
     });
     assert.equal(item.title, 'Schedule recovery');
     assert.equal(item.tip, 'Block thirty minutes daily.');
+    assert.equal(item.when, 'Today');
   });
 
   it('maps alternate LLM field names', () => {
     const item = normalizeRecommendationItem({
       emoji: '🎯',
+      timing: 'This week',
       heading: 'Narrow your focus',
       description: 'Limit active projects to three maximum.',
     });
     assert.equal(item.icon, '🎯');
     assert.equal(item.title, 'Narrow your focus');
     assert.equal(item.tip, 'Limit active projects to three maximum.');
+    assert.equal(item.when, 'This week');
+  });
+
+  it('fills default when labels by position', () => {
+    const list = normalizeRecommendationsList(
+      [{ title: 'Rest first', tip: 'Treat rest as maintenance.' }],
+      FALLBACK,
+    );
+    assert.equal(list[0].when, 'Today');
   });
 
   it('extracts wrapped recommendation arrays', () => {

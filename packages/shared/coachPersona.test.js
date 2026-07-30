@@ -44,9 +44,9 @@ describe('coachPersona', () => {
     assert.match(OMA_PERSONA, /Never use em dashes/i);
   });
 
-  it('prioritizes probing before advice', () => {
-    assert.match(OMA_PERSONA, /inquisitive/i);
-    assert.match(OMA_PERSONA, /Do NOT jump to advice/i);
+  it('keeps early turns conversational before advice', () => {
+    assert.match(OMA_PERSONA, /warm friend/i);
+    assert.match(OMA_PERSONA, /Do not jump to a full plan early/i);
     assert.match(omaTurnGuidance({ userTurnCount: 1 }), /Do not give advice yet/i);
     assert.match(omaTurnGuidance({ userTurnCount: 4 }), /small suggestion/i);
   });
@@ -61,6 +61,6 @@ describe('coachPersona', () => {
   it('switches to wrap-up guidance after acknowledgement', () => {
     const guidance = omaTurnGuidance({ userTurnCount: 4, adviceAcknowledged: true });
     assert.match(guidance, /Stop probing/i);
-    assert.match(omaWrapUpReply(), /glad this helped/i);
+    assert.match(omaWrapUpReply(), /Glad that helped/i);
   });
 });

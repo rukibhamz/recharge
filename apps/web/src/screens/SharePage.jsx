@@ -118,7 +118,7 @@ export default function SharePage({ shareToken }) {
         {recommendations?.length > 0 ? (
           <section className="space-y-4 sm:space-y-gutter">
             <h3 className="font-display text-body-lg font-medium text-primary sm:text-headline-md">
-              Strategic recovery
+              Recovery roadmap
             </h3>
             <div className="grid grid-cols-1 gap-4 sm:gap-gutter md:grid-cols-2">
               {recommendations.map((rec, i) => (

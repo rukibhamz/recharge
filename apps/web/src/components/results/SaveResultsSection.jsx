@@ -106,6 +106,9 @@ export default function SaveResultsSection({ sessionId, initiallyLinked, cloudSa
       <label className="font-sans text-label-sm uppercase tracking-wide text-on-surface-variant">
         Save to history (optional)
       </label>
+      <p className="font-sans text-body-md text-on-surface-variant">
+        Keep this roadmap, compare future check-ins, and talk it through with Oma in your account.
+      </p>
 
       {sent ? (
         <p className="font-sans text-body-md text-on-surface">

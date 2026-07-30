@@ -239,7 +239,7 @@ export function personalityRecoveryProfile(personality) {
   }
 
   lines.push(
-    'Each recommendation must feel written for THIS person — specific place types, activities, and social settings that match their type. No generic wellness platitudes.',
+    'Each recommendation must feel written for THIS person — specific place types, activities, and social settings that match their type. Prefer doable next steps with a clear when/how. No generic wellness platitudes.',
   );
 
   return lines.join('\n');

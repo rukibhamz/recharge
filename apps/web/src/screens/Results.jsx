@@ -174,6 +174,9 @@ export default function Results({ data, error, onRetake, showSaveSection = true 
             <h3 className="font-display text-headline-md font-normal text-ink">Your recovery roadmap</h3>
             <span className="ai-badge">{isPersonalised ? 'Personalised' : 'Curated'}</span>
           </div>
+          <p className="font-sans text-body-md text-ink-soft">
+            Four practical steps for this week — start today, then protect your energy as you go.
+          </p>
           <div className="grid grid-cols-1 gap-gutter md:grid-cols-2">
             {recommendations.map((rec, i) => (
               <RecommendationCard key={i} {...rec} />

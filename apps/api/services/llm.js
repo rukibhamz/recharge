@@ -11,28 +11,108 @@ import { COACH_VOICE_RULES, LOCATION_RULES } from '@recharge/shared/promptCoachi
 
 export const STATIC_FALLBACK = {
   'Healthy Range': [
-    { icon: '🌿', title: 'Protect your rhythm', tip: 'Block one non-negotiable recovery slot each day this week.' },
-    { icon: '🚶', title: 'Move with intention', tip: 'Take a ten-minute walk without your phone after lunch.' },
-    { icon: '📝', title: 'Name what works', tip: 'List three habits that keep you steady and keep doing them.' },
-    { icon: '🤝', title: 'Stay connected', tip: 'Reach out to one person who helps you feel grounded.' },
+    {
+      icon: '🌿',
+      when: 'Today',
+      title: 'Keep one recovery slot',
+      tip: 'Block one non-negotiable recovery slot today. Put it on your calendar and protect it the way you would a meeting.',
+    },
+    {
+      icon: '🚶',
+      when: 'This week',
+      title: 'Move without your phone',
+      tip: 'Take a ten-minute walk after lunch without your phone three times this week. Notice how your energy shifts afterward.',
+    },
+    {
+      icon: '📝',
+      when: 'Protect energy',
+      title: 'Name what works',
+      tip: 'List three habits that keep you steady. Keep doing them on purpose this week instead of waiting until you crash.',
+    },
+    {
+      icon: '🤝',
+      when: 'This week',
+      title: 'Stay connected',
+      tip: 'Reach out to one person who helps you feel grounded. Suggest a specific time this week, even if it is short.',
+    },
   ],
   'Mild Burnout': [
-    { icon: '🛑', title: 'Pause one commitment', tip: 'Drop or defer one non-essential task before Friday.' },
-    { icon: '😴', title: 'Guard your sleep', tip: 'Set a screens-off time thirty minutes before bed tonight.' },
-    { icon: '🧘', title: 'Reset between tasks', tip: 'Take three slow breaths before switching to your next task.' },
-    { icon: '☀️', title: 'Morning buffer', tip: 'Start tomorrow with fifteen quiet minutes before messages.' },
+    {
+      icon: '🛑',
+      when: 'Today',
+      title: 'Pause one commitment',
+      tip: 'Drop or defer one non-essential task before the end of today. Tell the relevant person what you are moving, then stop negotiating with yourself.',
+    },
+    {
+      icon: '😴',
+      when: 'Tonight',
+      title: 'Guard your sleep',
+      tip: 'Set a screens-off time thirty minutes before bed tonight. Put the phone outside the bedroom if you can.',
+    },
+    {
+      icon: '🧘',
+      when: 'This week',
+      title: 'Reset between tasks',
+      tip: 'Before each big switch this week, take three slow breaths and name the next task out loud. Keep transitions short and intentional.',
+    },
+    {
+      icon: '☀️',
+      when: 'Protect energy',
+      title: 'Morning buffer',
+      tip: 'Start tomorrow with fifteen quiet minutes before messages. No inbox until that buffer is done.',
+    },
   ],
   'Moderate Burnout': [
-    { icon: '📅', title: 'Schedule recovery', tip: 'Block thirty minutes daily for rest with no productivity goal.' },
-    { icon: '🔕', title: 'Reduce input noise', tip: 'Turn off non-urgent notifications for the next forty-eight hours.' },
-    { icon: '💬', title: 'Ask for support', tip: 'Tell one trusted person you are depleted and need help.' },
-    { icon: '🎯', title: 'Shrink the list', tip: 'Pick only three priorities for this week and let the rest wait.' },
+    {
+      icon: '📅',
+      when: 'Today',
+      title: 'Schedule recovery',
+      tip: 'Block thirty minutes today for rest with no productivity goal. Treat it as required maintenance, not optional.',
+    },
+    {
+      icon: '🔕',
+      when: 'This week',
+      title: 'Reduce input noise',
+      tip: 'Turn off non-urgent notifications for the next forty-eight hours. Check messages in two short windows only.',
+    },
+    {
+      icon: '🎯',
+      when: 'Protect energy',
+      title: 'Shrink the list',
+      tip: 'Pick only three priorities for this week and write them where you will see them. Let the rest wait or get deferred.',
+    },
+    {
+      icon: '💬',
+      when: 'This week',
+      title: 'Ask for support',
+      tip: 'Tell one trusted person you are depleted. Ask for one concrete form of help before Friday.',
+    },
   ],
   'Severe Burnout': [
-    { icon: '🆘', title: 'Seek real support', tip: 'Talk to a manager, coach, or professional about your load this week.' },
-    { icon: '🛑', title: 'Stop adding', tip: 'Say no to one new request before taking on anything else.' },
-    { icon: '🏠', title: 'Minimum viable day', tip: 'Define the smallest version of a good day and aim for only that.' },
-    { icon: '💤', title: 'Recovery first', tip: 'Treat rest as required maintenance, not a reward you earn.' },
+    {
+      icon: '🆘',
+      when: 'Today',
+      title: 'Seek real support',
+      tip: 'Talk today to a manager, coach, trusted person, or professional about your load. Ask for one concrete change this week.',
+    },
+    {
+      icon: '🛑',
+      when: 'This week',
+      title: 'Stop adding',
+      tip: 'Say no to one new request before taking on anything else. Use a short script: "I cannot take that on right now."',
+    },
+    {
+      icon: '🏠',
+      when: 'Protect energy',
+      title: 'Minimum viable day',
+      tip: 'Define the smallest version of a good day and aim for only that. Everything beyond it is optional until you stabilize.',
+    },
+    {
+      icon: '💤',
+      when: 'Tonight',
+      title: 'Recovery first',
+      tip: 'Choose one recovery action for tonight, such as earlier sleep or a quiet hour. Do it before extra work or scrolling.',
+    },
   ],
 };
 
@@ -51,20 +131,28 @@ ${explicitRecoveryStyle}
 
 Burnout level: ${burnoutLevel}
 
-Write exactly 4 recovery recommendations.
+Write exactly 4 recovery recommendations that form a practical this-week roadmap.
+Order them as a sequence:
+1) Today — one immediate action they can do within 24 hours
+2) This week — one load, boundary, or schedule change
+3) Protect energy — one habit that reduces drain
+4) Support or reset — one social, environment, or longer cushion step
+
 Rules:
+- Each tip must be a concrete action with when/how (timebox, place, or script), not a vague wellness slogan
+- Title should sound like an action ("Mute work chat after 7pm"), not a theme ("Protect your rhythm")
 - Match their personality type for HOW they recharge (social vs solo, lively vs calm venues, practical vs reflective)
 - If stated unwind preferences are present, prioritize them over personality assumptions when they conflict
 - Use their city ONLY if provided; never invent cities
-- Specific enough to act on this week — not generic wellness advice
 - Never mention app or product names
+- Avoid generic lines like "practice self-care", "be mindful", or "listen to your body" without a specific next step
 
 ${COACH_VOICE_RULES}
 ${LOCATION_RULES}
 
 Return JSON only as an object with a recommendations array:
-{"recommendations":[{"icon":"emoji","title":"max 5 words","tip":"max 32 words"}]}
-Each item MUST include non-empty icon, title, and tip fields.`;
+{"recommendations":[{"icon":"emoji","when":"Today|Tonight|This week|Protect energy","title":"max 6 words","tip":"1-2 concrete sentences, max 55 words"}]}
+Each item MUST include non-empty icon, when, title, and tip fields.`;
 }
 
 function normalizeRecommendations(parsed, fallback) {

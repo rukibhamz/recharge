@@ -1,9 +1,29 @@
 /** Generic curated tips for display when stored recommendations use legacy/unknown keys. */
 export const DEFAULT_RECOVERY_TIPS = [
-  { icon: '📅', title: 'Schedule recovery', tip: 'Block thirty minutes daily for rest with no productivity goal.' },
-  { icon: '🔕', title: 'Reduce input noise', tip: 'Turn off non-urgent notifications for the next forty-eight hours.' },
-  { icon: '💬', title: 'Ask for support', tip: 'Tell one trusted person you are depleted and need help.' },
-  { icon: '🎯', title: 'Shrink the list', tip: 'Pick only three priorities for this week and let the rest wait.' },
+  {
+    icon: '📅',
+    when: 'Today',
+    title: 'Block a real break',
+    tip: 'Put a 30-minute rest block on your calendar today with no productivity goal. Treat it like a meeting you cannot skip.',
+  },
+  {
+    icon: '🔕',
+    when: 'This week',
+    title: 'Cut the noise',
+    tip: 'Mute non-urgent notifications for the next 48 hours. Check messages in two short windows instead of all day.',
+  },
+  {
+    icon: '🎯',
+    when: 'Protect energy',
+    title: 'Shrink the list',
+    tip: 'Pick only three priorities for this week and write them down. Everything else waits or gets deferred.',
+  },
+  {
+    icon: '💬',
+    when: 'This week',
+    title: 'Ask for backup',
+    tip: 'Tell one trusted person you are depleted and name one concrete way they can help before Friday.',
+  },
 ];
 
 const TITLE_KEYS = ['title', 'name', 'heading', 'headline', 'label', 'recommendation_title'];
@@ -20,6 +40,9 @@ const TIP_KEYS = [
   'message',
 ];
 const ICON_KEYS = ['icon', 'emoji', 'symbol'];
+const WHEN_KEYS = ['when', 'timing', 'phase', 'horizon', 'timeframe', 'step'];
+
+const DEFAULT_WHEN_BY_INDEX = ['Today', 'This week', 'Protect energy', 'This week'];
 
 function pickFirst(obj, keys) {
   if (!obj || typeof obj !== 'object') return '';
@@ -60,8 +83,8 @@ function flattenRecommendationSource(item) {
   return coerced;
 }
 
-/** Normalize one recommendation object to { icon, title, tip }. */
-export function normalizeRecommendationItem(item, fallback = null) {
+/** Normalize one recommendation object to { icon, when, title, tip }. */
+export function normalizeRecommendationItem(item, fallback = null, index = 0) {
   const source = flattenRecommendationSource(item);
 
   if (typeof source === 'string') {
@@ -69,6 +92,7 @@ export function normalizeRecommendationItem(item, fallback = null) {
     if (!tip) return fallback ? { ...fallback } : null;
     return {
       icon: fallback?.icon ?? '💡',
+      when: fallback?.when ?? DEFAULT_WHEN_BY_INDEX[index] ?? 'This week',
       title: fallback?.title ?? 'Recovery step',
       tip,
     };
@@ -81,6 +105,11 @@ export function normalizeRecommendationItem(item, fallback = null) {
   const title = pickFirst(source, TITLE_KEYS);
   const tip = pickFirst(source, TIP_KEYS);
   const icon = pickFirst(source, ICON_KEYS) || fallback?.icon || '💡';
+  const when =
+    pickFirst(source, WHEN_KEYS) ||
+    fallback?.when ||
+    DEFAULT_WHEN_BY_INDEX[index] ||
+    'This week';
 
   if (!title && !tip) {
     return fallback ? { ...fallback } : null;
@@ -88,6 +117,7 @@ export function normalizeRecommendationItem(item, fallback = null) {
 
   return {
     icon,
+    when,
     title: title || fallback?.title || 'Recovery step',
     tip: tip || fallback?.tip || '',
   };
@@ -116,16 +146,16 @@ function extractRecommendationArray(parsed) {
 }
 
 /**
- * Normalize LLM/DB recommendation payloads to a stable [{ icon, title, tip }] list.
+ * Normalize LLM/DB recommendation payloads to a stable [{ icon, when, title, tip }] list.
  * Falls back to `fallbackList` entries when fields are missing.
  */
 export function normalizeRecommendationsList(parsed, fallbackList = []) {
   const raw = extractRecommendationArray(parsed);
-  if (!raw?.length) return fallbackList.slice(0, 4);
+  if (!raw?.length) return fallbackList.slice(0, 4).map((item) => ({ ...item }));
 
   const normalized = raw
     .slice(0, 4)
-    .map((item, index) => normalizeRecommendationItem(item, fallbackList[index] ?? null))
+    .map((item, index) => normalizeRecommendationItem(item, fallbackList[index] ?? null, index))
     .filter(Boolean);
 
   for (let i = normalized.length; i < 4 && i < fallbackList.length; i += 1) {
@@ -134,9 +164,15 @@ export function normalizeRecommendationsList(parsed, fallbackList = []) {
 
   return normalized.map((rec, index) => {
     const fallback = fallbackList[index];
-    if (!fallback) return rec;
+    if (!fallback) {
+      return {
+        ...rec,
+        when: rec.when || DEFAULT_WHEN_BY_INDEX[index] || 'This week',
+      };
+    }
     return {
       icon: rec.icon || fallback.icon,
+      when: rec.when?.trim() ? rec.when : fallback.when || DEFAULT_WHEN_BY_INDEX[index] || 'This week',
       title: rec.title?.trim() ? rec.title : fallback.title,
       tip: rec.tip?.trim() ? rec.tip : fallback.tip,
     };

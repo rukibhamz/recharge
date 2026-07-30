@@ -38,7 +38,10 @@ function formatRecommendations(recommendations) {
   const list = normalizeRecommendationsList(recommendations ?? [], []).slice(0, 4);
   if (!list.length) return 'No recovery tips on file yet.';
   return list
-    .map((rec, i) => `${i + 1}. ${rec.title}: ${rec.tip}`)
+    .map((rec, i) => {
+      const when = rec.when ? ` (${rec.when})` : '';
+      return `${i + 1}.${when} ${rec.title}: ${rec.tip}`;
+    })
     .join('\n');
 }
 
