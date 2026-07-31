@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import {
   COACH_NAME,
   COACH_STARTERS,
@@ -11,6 +11,7 @@ import {
 } from '../../services/api.js';
 import Button from '../shared/Button.jsx';
 import { formatDate } from '../../lib/formatDate.js';
+import { useRefreshOnFocus } from '../../hooks/useRefreshOnFocus.js';
 
 export default function CoachChatPanel({ getAccessToken }) {
   const [loading, setLoading] = useState(true);
@@ -23,7 +24,7 @@ export default function CoachChatPanel({ getAccessToken }) {
   const [selectedConversationId, setSelectedConversationId] = useState('');
   const bottomRef = useRef(null);
 
-  const loadStatus = async () => {
+  const loadStatus = useCallback(async () => {
     setError(null);
     try {
       const token = await getAccessToken();
@@ -36,11 +37,13 @@ export default function CoachChatPanel({ getAccessToken }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [getAccessToken]);
 
   useEffect(() => {
     loadStatus();
-  }, [getAccessToken]);
+  }, [loadStatus]);
+
+  useRefreshOnFocus(loadStatus, true);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });

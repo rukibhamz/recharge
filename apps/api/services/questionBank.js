@@ -6,17 +6,17 @@ import {
   ensureLifeSocialBurnoutMix,
   inferBurnoutLifeDomain,
 } from '@recharge/shared/questionLifeDomains';
+import {
+  PERSONALITY_PER_DICHOTOMY,
+  selectPoleBalancedPersonalityQuestions,
+} from '@recharge/shared/personalitySelection';
 import { optionsForScale, resolveQuestionScale } from '@recharge/shared/questions';
 import { supabase, isSupabaseConfigured } from '../lib/supabase.js';
 
 const CACHE_MS = Number(process.env.QUESTION_BANK_CACHE_MS) || 300_000;
-const PERSONALITY_COUNT = 12;
-const PERSONALITY_PER_DICHOTOMY = 3;
 const BURNOUT_COUNT = 12;
 const BURNOUT_PER_DIMENSION = 2;
 const MIN_PERSONALITY_BANK = 120;
-
-const DICHOTOMY_CODES = ['E/I', 'S/N', 'T/F', 'J/P'];
 
 const DIMENSION_SLUGS = {
   Exhaustion: 'exhaustion',
@@ -46,24 +46,13 @@ function shuffle(arr) {
 }
 
 function selectBalancedPersonalityQuestions(allQuestions) {
-  const byDichotomy = new Map();
-  for (const q of allQuestions) {
-    const key = q.dichotomy;
-    if (!byDichotomy.has(key)) byDichotomy.set(key, []);
-    byDichotomy.get(key).push(q);
-  }
-
-  const selected = [];
-  for (const code of DICHOTOMY_CODES) {
-    const group = byDichotomy.get(code) ?? [];
-    selected.push(...shuffle(group).slice(0, PERSONALITY_PER_DICHOTOMY));
-  }
-
-  if (selected.length < PERSONALITY_COUNT) {
-    throw new Error(`Could not select ${PERSONALITY_COUNT} balanced personality questions`);
-  }
-
-  return shuffle(selected).slice(0, PERSONALITY_COUNT);
+  return selectPoleBalancedPersonalityQuestions(allQuestions, {
+    stable: true,
+    perPole: PERSONALITY_PER_DICHOTOMY / 2,
+    scoredPoleKey: 'scored_pole',
+    dichotomyKey: 'dichotomy',
+    numberKey: 'question_number',
+  });
 }
 
 function formatPersonalitySelection(questions, options) {

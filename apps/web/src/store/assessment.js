@@ -123,37 +123,21 @@ export const useAssessmentStore = create(
       },
     }),
     {
-      name: 'recharge-assessment-v16',
-      partialize: (s) => {
-        const base = {
-          userName: s.userName,
-          demographics: s.demographics,
-          recoveryPreferences: s.recoveryPreferences,
-          burnoutIndex: s.burnoutIndex,
-          personalityIndex: s.personalityIndex,
-          burnoutAnswers: s.burnoutAnswers,
-          personalityAnswers: s.personalityAnswers,
-          personalityQuestions: s.personalityQuestions,
-          burnoutQuestions: s.burnoutQuestions,
-          personalityResult: s.personalityResult,
-        };
-        if (s.results) {
-          return { ...base, results: s.results, phase: 'results' };
-        }
-        return base;
-      },
+      name: 'recharge-assessment-v17',
+      partialize: (s) => ({
+        userName: s.userName,
+        demographics: s.demographics,
+        recoveryPreferences: s.recoveryPreferences,
+        burnoutIndex: s.burnoutIndex,
+        personalityIndex: s.personalityIndex,
+        burnoutAnswers: s.burnoutAnswers,
+        personalityAnswers: s.personalityAnswers,
+        personalityQuestions: s.personalityQuestions,
+        burnoutQuestions: s.burnoutQuestions,
+        personalityResult: s.personalityResult,
+        // Do not persist completed results — returning to `/` should feel fresh.
+      }),
       merge: (persisted, current) => {
-        if (persisted?.results) {
-          return {
-            ...current,
-            ...persisted,
-            phase: 'results',
-            results: persisted.results,
-            error: null,
-            errorPhase: null,
-          };
-        }
-
         const merged = {
           ...current,
           ...persisted,

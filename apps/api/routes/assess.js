@@ -11,7 +11,7 @@ import {
   sanitizeRecoveryPreferences,
 } from '@recharge/shared/recoveryPreferences';
 import { optionalAuth } from '../middleware/requireAuth.js';
-import { saveSession } from '../services/sessions.js';
+import { saveSession, getLatestPersonalityTypeForUser } from '../services/sessions.js';
 import {
   completeAssessment,
   generateBurnoutTest,
@@ -22,6 +22,23 @@ import {
 } from '../services/llmAssessment.js';
 
 const router = Router();
+
+function sanitizePriorTypeCode(value) {
+  const code = String(value ?? '')
+    .toUpperCase()
+    .replace(/[^EISNTFJP]/g, '');
+  return code.length === 4 ? code : null;
+}
+
+async function resolvePriorTypeCode(req, bodyPrior) {
+  const fromBody = sanitizePriorTypeCode(bodyPrior);
+  if (req.user?.id) {
+    const { typeCode } = await getLatestPersonalityTypeForUser(req.user.id);
+    const fromAccount = sanitizePriorTypeCode(typeCode);
+    if (fromAccount) return fromAccount;
+  }
+  return fromBody;
+}
 
 function parseQuestions(body) {
   return Array.isArray(body?.questions) ? body.questions : body?.personalityQuestions ?? body?.burnoutQuestions ?? [];
@@ -63,11 +80,13 @@ router.post('/personality/score', optionalAuth, async (req, res) => {
   }
 
   try {
+    const priorTypeCode = await resolvePriorTypeCode(req, req.body?.priorTypeCode);
     const { personality, source } = await scorePersonalityTest(
       name,
       demographics,
       questionList,
       answers,
+      priorTypeCode,
     );
     res.json({ personality, source });
   } catch (err) {

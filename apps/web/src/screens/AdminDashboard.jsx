@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { fetchAdminStats } from '../services/api.js';
 import Header from '../components/shared/Header.jsx';
@@ -11,6 +11,7 @@ import ConnectorsManager from '../components/admin/ConnectorsManager.jsx';
 import LlmMonitorPanel from '../components/admin/LlmMonitorPanel.jsx';
 import CoachSettingsPanel from '../components/admin/CoachSettingsPanel.jsx';
 import { formatDate } from '../lib/formatDate.js';
+import { useRefreshOnFocus } from '../hooks/useRefreshOnFocus.js';
 
 const ADMIN_TAB_KEY = 'recharge-admin-tab';
 const VALID_TABS = new Set(['stats', 'coach', 'connectors', 'monitor', 'saas']);
@@ -94,6 +95,20 @@ export default function AdminDashboard() {
       mounted = false;
     };
   }, [user, authLoading, getAccessToken]);
+
+  const refreshStats = useCallback(async () => {
+    if (authLoading || !user) return;
+    try {
+      const token = await getAccessToken();
+      const data = await fetchAdminStats(token);
+      setStats(data);
+      setError(null);
+    } catch (err) {
+      setError(err.message);
+    }
+  }, [user, authLoading, getAccessToken]);
+
+  useRefreshOnFocus(refreshStats, Boolean(user) && !authLoading);
 
   const burnoutTotal = stats
     ? Object.values(stats.burnoutDistribution).reduce((a, b) => a + b, 0)

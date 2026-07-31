@@ -129,8 +129,8 @@ export function normalizeBurnoutResult(parsed) {
   };
 }
 
-async function scorePersonalityFromBank(questions, answers) {
-  const mbti = scoreMbti(answers, questions);
+async function scorePersonalityFromBank(questions, answers, priorTypeCode = null) {
+  const mbti = scoreMbti(answers, questions, { priorTypeCode });
   let profile = null;
   try {
     profile = await getMbtiTypeProfile(mbti.typeCode);
@@ -192,8 +192,15 @@ export async function generatePersonalityTest(userName, demographics) {
 /**
  * Always score with scoreMbti when poles exist.
  * Agent writes narrative only around the locked type.
+ * @param {string|null} [priorTypeCode] Previous type for unclear-band stability.
  */
-export async function scorePersonalityTest(userName, demographics, questions, answers) {
+export async function scorePersonalityTest(
+  userName,
+  demographics,
+  questions,
+  answers,
+  priorTypeCode = null,
+) {
   if (!questionsSupportMbtiScoring(questions)) {
     if (!bankFallbackEnabled()) {
       throw new Error('Personality questions missing scoring metadata (scoredPole).');
@@ -203,7 +210,7 @@ export async function scorePersonalityTest(userName, demographics, questions, an
   }
 
   if (questionsSupportMbtiScoring(questions)) {
-    const mbti = scoreMbti(answers, questions);
+    const mbti = scoreMbti(answers, questions, { priorTypeCode });
     let profile = null;
     try {
       profile = await getMbtiTypeProfile(mbti.typeCode);
@@ -265,7 +272,7 @@ export async function scorePersonalityTest(userName, demographics, questions, an
     return { personality, source };
   }
 
-  return scorePersonalityFromBank(questions, answers);
+  return scorePersonalityFromBank(questions, answers, priorTypeCode);
 }
 
 /** Anchored burnout questions personalized with locked personality. */

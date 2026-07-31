@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { fetchHistory, downloadAccountExport, deleteAccount } from '../services/api.js';
 import Header from '../components/shared/Header.jsx';
@@ -10,6 +10,7 @@ import { COACH_NAME } from '@recharge/shared/coachPersona';
 import SplitEditorialLayout from '../components/shared/SplitEditorialLayout.jsx';
 import PageLoadingState from '../components/shared/PageLoadingState.jsx';
 import CoachChatPanel from '../components/account/CoachChatPanel.jsx';
+import { useRefreshOnFocus } from '../hooks/useRefreshOnFocus.js';
 
 const REMINDER_KEY = 'recharge-reminder-days';
 
@@ -34,31 +35,31 @@ export default function AccountSettings() {
     [],
   );
 
+  const loadHistory = useCallback(async () => {
+    if (authLoading || !user) return;
+    try {
+      const token = await getAccessToken();
+      const { sessions: items } = await fetchHistory(token);
+      setSessions(items ?? []);
+      setError(null);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [user, authLoading, getAccessToken]);
+
   useEffect(() => {
     if (authLoading) return;
     if (!user) {
       window.location.replace('/login');
       return;
     }
+    setLoading(true);
+    loadHistory();
+  }, [user, authLoading, loadHistory]);
 
-    let mounted = true;
-
-    (async () => {
-      try {
-        const token = await getAccessToken();
-        const { sessions: items } = await fetchHistory(token);
-        if (mounted) setSessions(items ?? []);
-      } catch (err) {
-        if (mounted) setError(err.message);
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    })();
-
-    return () => {
-      mounted = false;
-    };
-  }, [user, authLoading, getAccessToken]);
+  useRefreshOnFocus(loadHistory, Boolean(user) && !authLoading);
 
   useEffect(() => {
     const onKeyDown = (event) => {

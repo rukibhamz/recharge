@@ -299,6 +299,35 @@ export async function getSessionsForUser(userId) {
   return { data: items, error: null };
 }
 
+/** Latest saved personality type code for a user (for retake stability). */
+export async function getLatestPersonalityTypeForUser(userId) {
+  if (!isSupabaseConfigured() || !userId) {
+    return { typeCode: null, error: null };
+  }
+
+  const { data, error } = await supabase
+    .from('user_sessions')
+    .select(
+      `
+      created_at,
+      sessions (
+        personality_type
+      )
+    `,
+    )
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(1);
+
+  if (error) return { typeCode: null, error };
+
+  const typeCode = data?.[0]?.sessions?.personality_type ?? null;
+  return {
+    typeCode: typeCode ? String(typeCode).toUpperCase() : null,
+    error: null,
+  };
+}
+
 export async function getSessionForUser(userId, sessionId) {
   if (!isSupabaseConfigured()) {
     return { data: null, error: new Error('Database not configured') };

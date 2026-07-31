@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { isValidRecoveryPreferences } from '@recharge/shared/recoveryPreferences';
 import { normalizePath, parsePathRoute } from './lib/navigation.js';
+import { getLastPersonalityType, setLastPersonalityType } from './lib/lastPersonality.js';
 import { useAssessmentStore } from './store/assessment.js';
 import {
   completeAssessment,
@@ -110,6 +111,15 @@ function AssessmentFlow() {
     burnoutAnswers.length === burnoutQuestions.length &&
     burnoutAnswers.every((answer) => answer !== null);
 
+  // Completed results should not stick when returning to `/` after visiting another page.
+  useEffect(() => {
+    const state = useAssessmentStore.getState();
+    if (state.phase === 'results' || state.results) {
+      clearFetchGuards();
+      state.reset();
+    }
+  }, []);
+
   // Recover from stale persisted state that would otherwise render a blank screen
   useEffect(() => {
     if (phase === 'personality' && personalityQuestions.length < 10) {
@@ -165,13 +175,17 @@ function AssessmentFlow() {
   const handleScorePersonality = useCallback(() => {
     runOnce('personality-score', async () => {
       try {
+        const token = await getAccessToken().catch(() => null);
         const { personality } = await scorePersonalityTest({
           userName,
           demographics,
           questions: personalityQuestions,
           answers: personalityAnswers,
+          priorTypeCode: getLastPersonalityType(),
+          accessToken: token,
         });
         setPersonalityResult(personality);
+        if (personality?.typeCode) setLastPersonalityType(personality.typeCode);
         setPhase('personality-insight');
       } catch (err) {
         fail(err.message, 'scoring-personality');
@@ -182,6 +196,7 @@ function AssessmentFlow() {
     demographics,
     personalityQuestions,
     personalityAnswers,
+    getAccessToken,
     setPersonalityResult,
     setPhase,
     fail,
@@ -226,6 +241,8 @@ function AssessmentFlow() {
         const token = await getAccessToken();
         const data = await completeAssessment(payload, token);
         setResults(data);
+        const typeCode = data?.personality?.typeCode ?? payload?.personality?.typeCode;
+        if (typeCode) setLastPersonalityType(typeCode);
       } catch (err) {
         fail(err.message, 'processing');
       }

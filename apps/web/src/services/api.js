@@ -43,11 +43,13 @@ export async function scorePersonalityTest({
   demographics,
   questions,
   answers,
+  priorTypeCode = null,
+  accessToken = null,
 }) {
   const res = await fetch(apiUrl('/api/assess/personality/score'), {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userName, demographics, questions, answers }),
+    headers: await authHeaders(accessToken),
+    body: JSON.stringify({ userName, demographics, questions, answers, priorTypeCode }),
   });
   const data = await parseJsonResponse(res, 'Could not analyze personality');
   if (!res.ok) throw new Error(data.error || 'Could not analyze personality');
