@@ -267,8 +267,12 @@ export async function getSessionsForUser(userId) {
         burnout_pct,
         burnout_level,
         burnout_cls,
+        burnout_summary,
         personality_type,
         personality_name,
+        personality_snapshot,
+        traits,
+        recommendations,
         created_at
       )
     `,
@@ -278,23 +282,8 @@ export async function getSessionsForUser(userId) {
 
   if (error) return { data: [], error };
 
-  const items = (data ?? [])
-    .map((row) => row.sessions)
-    .filter(Boolean)
-    .map((s) => ({
-      sessionId: s.id,
-      shareToken: s.share_token,
-      displayName: s.display_name,
-      burnout: {
-        pct: s.burnout_pct,
-        level: s.burnout_level,
-        cls: s.burnout_cls,
-      },
-      personality: {
-        type: { id: s.personality_type, name: s.personality_name },
-      },
-      createdAt: s.created_at,
-    }));
+  const rows = (data ?? []).map((row) => row.sessions).filter(Boolean);
+  const items = await Promise.all(rows.map((s) => buildSessionResponse(s)));
 
   return { data: items, error: null };
 }
