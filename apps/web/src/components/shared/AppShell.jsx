@@ -177,34 +177,37 @@ function SidebarBody({
   onNavigate,
   onToggleCollapse,
   showCollapseToggle,
+  showBrand = true,
 }) {
   const { brandName } = useTenant();
   const initial = (userEmail?.[0] || brandName?.[0] || '?').toUpperCase();
 
   return (
     <div className="flex h-full flex-col">
-      <div className={`border-b border-linen-sunken ${collapsed ? 'px-2 py-3' : 'px-3 py-3'}`}>
-        <div
-          className={`flex items-center gap-2 ${collapsed ? 'flex-col justify-center' : 'justify-between'}`}
-        >
-          {collapsed ? (
-            <LogoMark className="rounded-2xl" title={brandName} />
-          ) : (
-            <Logo variant="compact" className="min-w-0 flex-1" />
-          )}
-          {showCollapseToggle ? (
-            <button
-              type="button"
-              onClick={onToggleCollapse}
-              className="btn-interactive flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-linen-sunken text-canopy-600 transition-colors hover:bg-fern-tint"
-              aria-label={collapsed ? 'Expand menu' : 'Collapse menu'}
-              title={collapsed ? 'Expand menu' : 'Collapse menu'}
-            >
-              <NavIcon name={collapsed ? 'menu' : 'panel'} className="h-4 w-4" />
-            </button>
-          ) : null}
+      {showBrand ? (
+        <div className={`border-b border-linen-sunken ${collapsed ? 'px-2 py-3' : 'px-3 py-3'}`}>
+          <div
+            className={`flex items-center gap-2 ${collapsed ? 'flex-col justify-center' : 'justify-between'}`}
+          >
+            {collapsed ? (
+              <LogoMark className="rounded-2xl" title={brandName} />
+            ) : (
+              <Logo variant="compact" className="min-w-0 flex-1" />
+            )}
+            {showCollapseToggle ? (
+              <button
+                type="button"
+                onClick={onToggleCollapse}
+                className="btn-interactive flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-linen-sunken text-canopy-600 transition-colors hover:bg-fern-tint"
+                aria-label={collapsed ? 'Expand menu' : 'Collapse menu'}
+                title={collapsed ? 'Expand menu' : 'Collapse menu'}
+              >
+                <NavIcon name={collapsed ? 'menu' : 'panel'} className="h-4 w-4" />
+              </button>
+            ) : null}
+          </div>
         </div>
-      </div>
+      ) : null}
 
       <nav
         className={`flex-1 space-y-1 overflow-y-auto py-4 ${collapsed ? 'px-2' : 'px-3'}`}
@@ -343,6 +346,7 @@ export default function AppShell({
                 footerItems={footerItems}
                 onNavigate={closeMobile}
                 showCollapseToggle={false}
+                showBrand={false}
               />
             </div>
           </aside>
