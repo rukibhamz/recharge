@@ -280,9 +280,41 @@ export async function getSessionsForUser(userId) {
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
 
-  if (error) return { data: [], error };
+  // Fall back if optional snapshot columns missing from older DBs
+  let rows;
+  if (error) {
+    if (/burnout_summary|personality_snapshot|column/i.test(error.message || '')) {
+      const light = await supabase
+        .from('user_sessions')
+        .select(
+          `
+          created_at,
+          sessions (
+            id,
+            share_token,
+            display_name,
+            burnout_pct,
+            burnout_level,
+            burnout_cls,
+            personality_type,
+            personality_name,
+            traits,
+            recommendations,
+            created_at
+          )
+        `,
+        )
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+      if (light.error) return { data: [], error: light.error };
+      rows = (light.data ?? []).map((row) => row.sessions).filter(Boolean);
+    } else {
+      return { data: [], error };
+    }
+  } else {
+    rows = (data ?? []).map((row) => row.sessions).filter(Boolean);
+  }
 
-  const rows = (data ?? []).map((row) => row.sessions).filter(Boolean);
   const items = await Promise.all(rows.map((s) => buildSessionResponse(s)));
 
   return { data: items, error: null };

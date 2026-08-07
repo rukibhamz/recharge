@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { requireAdmin } from '../middleware/requireAdmin.js';
-import { isAdminConfigured } from '../config/admin.js';
+import { requireAuth } from '../middleware/requireAuth.js';
+import { isAdminConfigured, isAdminEmail } from '../config/admin.js';
 import { getAdminStats } from '../services/adminStats.js';
 import {
   createWorkspace,
@@ -23,11 +24,14 @@ import { getCoachSettings, updateCoachSettings } from '../services/coachSettings
 
 const router = Router();
 
-router.get('/me', requireAdmin, (req, res) => {
+/** Any signed-in user can probe admin status; no secrets returned. */
+router.get('/me', requireAuth, (req, res) => {
+  const configured = isAdminConfigured();
+  const admin = configured && isAdminEmail(req.user?.email);
   res.json({
-    admin: true,
+    admin,
+    configured,
     email: req.user?.email ?? null,
-    configured: isAdminConfigured(),
   });
 });
 

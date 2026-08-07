@@ -42,6 +42,19 @@ function isAllowedCorsOrigin(requestOrigin) {
   const allowed = corsOrigins();
   if (allowed.includes(origin)) return true;
 
+  // Local loopback (XAMPP / Vite / preview ports) — common when CORS_ORIGIN only lists :5173
+  try {
+    const { protocol, hostname } = new URL(origin);
+    if (
+      (protocol === 'http:' || protocol === 'https:') &&
+      (hostname === 'localhost' || hostname === '127.0.0.1')
+    ) {
+      return true;
+    }
+  } catch {
+    /* ignore */
+  }
+
   if (process.env.CORS_VERCEL_PREVIEWS === '1') {
     try {
       const { protocol, hostname } = new URL(origin);
@@ -69,7 +82,12 @@ const corsOptions = {
   allowedHeaders: ['Content-Type', 'Authorization'],
 };
 
-app.use(helmet());
+app.use(
+  helmet({
+    // Allow browser apps on other origins (Vercel, XAMPP, Vite) to read API responses
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+  }),
+);
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 app.use(express.json());

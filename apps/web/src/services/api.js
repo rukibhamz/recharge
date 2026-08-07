@@ -1,8 +1,46 @@
-/** Empty in dev (Vite proxies /api). Set VITE_API_URL on Vercel to your hosted API origin. */
-const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+/** Empty in Vite dev (proxies /api). Production: set VITE_API_URL. Local XAMPP → :3001 auto. */
+function resolveApiBase() {
+  const configured = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+  if (configured) return configured;
+
+  // Vite dev server proxies /api → localhost:3001
+  if (import.meta.env.DEV) return '';
+
+  if (typeof window !== 'undefined') {
+    const { hostname, port, protocol } = window.location;
+    const isLoopback = hostname === 'localhost' || hostname === '127.0.0.1';
+    // Static host (Apache/XAMPP, etc.) — not Vite (5173) or the API itself (3001)
+    if (isLoopback && port !== '5173' && port !== '3001') {
+      return `${protocol}//${hostname}:3001`;
+    }
+  }
+
+  return '';
+}
+
+const API_BASE = resolveApiBase();
 
 function apiUrl(path) {
   return `${API_BASE}${path}`;
+}
+
+function networkErrorMessage(err) {
+  const raw = String(err?.message || err || '');
+  if (/networkerror|failed to fetch|load failed|network request failed/i.test(raw)) {
+    const hint = API_BASE
+      ? `Could not reach the API at ${API_BASE}. Is it running (port 3001)?`
+      : 'Could not reach the API. Start it with npm run dev (or set VITE_API_URL to your hosted API).';
+    return hint;
+  }
+  return raw || 'Network request failed';
+}
+
+async function safeFetch(url, options) {
+  try {
+    return await fetch(url, options);
+  } catch (err) {
+    throw new Error(networkErrorMessage(err));
+  }
 }
 
 async function authHeaders(accessToken) {
@@ -28,7 +66,7 @@ async function parseJsonResponse(res, fallbackError) {
 }
 
 export async function fetchPersonalityTest(userName, demographics) {
-  const res = await fetch(apiUrl('/api/assess/personality/test'), {
+  const res = await safeFetch(apiUrl('/api/assess/personality/test'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ userName, demographics }),
@@ -46,7 +84,7 @@ export async function scorePersonalityTest({
   priorTypeCode = null,
   accessToken = null,
 }) {
-  const res = await fetch(apiUrl('/api/assess/personality/score'), {
+  const res = await safeFetch(apiUrl('/api/assess/personality/score'), {
     method: 'POST',
     headers: await authHeaders(accessToken),
     body: JSON.stringify({ userName, demographics, questions, answers, priorTypeCode }),
@@ -57,7 +95,7 @@ export async function scorePersonalityTest({
 }
 
 export async function fetchBurnoutTest({ userName, demographics, personality }) {
-  const res = await fetch(apiUrl('/api/assess/burnout/test'), {
+  const res = await safeFetch(apiUrl('/api/assess/burnout/test'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ userName, demographics, personality }),
@@ -68,7 +106,7 @@ export async function fetchBurnoutTest({ userName, demographics, personality }) 
 }
 
 export async function completeAssessment(payload, accessToken) {
-  const res = await fetch(apiUrl('/api/assess/complete'), {
+  const res = await safeFetch(apiUrl('/api/assess/complete'), {
     method: 'POST',
     headers: await authHeaders(accessToken),
     body: JSON.stringify({
@@ -90,7 +128,7 @@ export async function completeAssessment(payload, accessToken) {
 export async function fetchSharedSession(shareToken) {
   let res;
   try {
-    res = await fetch(apiUrl(`/api/session/${shareToken}`));
+    res = await safeFetch(apiUrl(`/api/session/${shareToken}`));
   } catch (err) {
     throw new Error('Unable to reach the server. Please check your connection and try again.');
   }
@@ -100,7 +138,7 @@ export async function fetchSharedSession(shareToken) {
 }
 
 export async function linkSessionToAccount(sessionId, accessToken) {
-  const res = await fetch(apiUrl('/api/history/link'), {
+  const res = await safeFetch(apiUrl('/api/history/link'), {
     method: 'POST',
     headers: await authHeaders(accessToken),
     body: JSON.stringify({ sessionId }),
@@ -111,7 +149,7 @@ export async function linkSessionToAccount(sessionId, accessToken) {
 }
 
 export async function fetchHistory(accessToken) {
-  const res = await fetch(apiUrl('/api/history'), {
+  const res = await safeFetch(apiUrl('/api/history'), {
     headers: await authHeaders(accessToken),
   });
   const data = await parseJsonResponse(res, 'Could not load history');
@@ -120,7 +158,7 @@ export async function fetchHistory(accessToken) {
 }
 
 export async function fetchSavedSession(sessionId, accessToken) {
-  const res = await fetch(apiUrl(`/api/history/${sessionId}`), {
+  const res = await safeFetch(apiUrl(`/api/history/${sessionId}`), {
     headers: await authHeaders(accessToken),
   });
   const data = await parseJsonResponse(res, 'Could not load saved result');
@@ -129,7 +167,7 @@ export async function fetchSavedSession(sessionId, accessToken) {
 }
 
 export async function downloadAccountExport(accessToken) {
-  const res = await fetch(apiUrl('/api/account/export'), {
+  const res = await safeFetch(apiUrl('/api/account/export'), {
     headers: await authHeaders(accessToken),
   });
   if (!res.ok) {
@@ -146,7 +184,7 @@ export async function downloadAccountExport(accessToken) {
 }
 
 export async function deleteAccount(accessToken) {
-  const res = await fetch(apiUrl('/api/account'), {
+  const res = await safeFetch(apiUrl('/api/account'), {
     method: 'DELETE',
     headers: await authHeaders(accessToken),
   });
@@ -156,19 +194,19 @@ export async function deleteAccount(accessToken) {
 }
 
 export async function fetchAdminAccess(accessToken) {
-  const res = await fetch(apiUrl('/api/admin/me'), {
+  const res = await safeFetch(apiUrl('/api/admin/me'), {
     headers: await authHeaders(accessToken),
   });
-  if (res.status === 401 || res.status === 403 || res.status === 503) {
-    return { admin: false };
+  if (res.status === 401) {
+    return { admin: false, configured: null };
   }
   const data = await parseJsonResponse(res, 'Could not verify admin access');
-  if (!res.ok) return { admin: false };
+  if (!res.ok) return { admin: false, configured: data?.configured ?? null };
   return data;
 }
 
 export async function fetchAdminStats(accessToken) {
-  const res = await fetch(apiUrl('/api/admin/stats'), {
+  const res = await safeFetch(apiUrl('/api/admin/stats'), {
     headers: await authHeaders(accessToken),
   });
   const data = await parseJsonResponse(res, 'Could not load admin stats');
@@ -177,7 +215,7 @@ export async function fetchAdminStats(accessToken) {
 }
 
 export async function fetchAdminCoachSettings(accessToken) {
-  const res = await fetch(apiUrl('/api/admin/coach-settings'), {
+  const res = await safeFetch(apiUrl('/api/admin/coach-settings'), {
     headers: await authHeaders(accessToken),
   });
   const data = await parseJsonResponse(res, 'Could not load coach settings');
@@ -186,7 +224,7 @@ export async function fetchAdminCoachSettings(accessToken) {
 }
 
 export async function updateAdminCoachSettings(accessToken, payload) {
-  const res = await fetch(apiUrl('/api/admin/coach-settings'), {
+  const res = await safeFetch(apiUrl('/api/admin/coach-settings'), {
     method: 'PUT',
     headers: await authHeaders(accessToken),
     body: JSON.stringify(payload),
@@ -197,7 +235,7 @@ export async function updateAdminCoachSettings(accessToken, payload) {
 }
 
 export async function fetchAdminWorkspaces(accessToken) {
-  const res = await fetch(apiUrl('/api/admin/workspaces'), {
+  const res = await safeFetch(apiUrl('/api/admin/workspaces'), {
     headers: await authHeaders(accessToken),
   });
   const data = await parseJsonResponse(res, 'Could not load workspaces');
@@ -206,7 +244,7 @@ export async function fetchAdminWorkspaces(accessToken) {
 }
 
 export async function createAdminWorkspace(accessToken, payload) {
-  const res = await fetch(apiUrl('/api/admin/workspaces'), {
+  const res = await safeFetch(apiUrl('/api/admin/workspaces'), {
     method: 'POST',
     headers: await authHeaders(accessToken),
     body: JSON.stringify(payload),
@@ -217,7 +255,7 @@ export async function createAdminWorkspace(accessToken, payload) {
 }
 
 export async function updateAdminWorkspace(accessToken, id, payload) {
-  const res = await fetch(apiUrl(`/api/admin/workspaces/${id}`), {
+  const res = await safeFetch(apiUrl(`/api/admin/workspaces/${id}`), {
     method: 'PATCH',
     headers: await authHeaders(accessToken),
     body: JSON.stringify(payload),
@@ -228,7 +266,7 @@ export async function updateAdminWorkspace(accessToken, id, payload) {
 }
 
 export async function deleteAdminWorkspace(accessToken, id) {
-  const res = await fetch(apiUrl(`/api/admin/workspaces/${id}`), {
+  const res = await safeFetch(apiUrl(`/api/admin/workspaces/${id}`), {
     method: 'DELETE',
     headers: await authHeaders(accessToken),
   });
@@ -239,14 +277,14 @@ export async function deleteAdminWorkspace(accessToken, id) {
 
 export async function resolveTenant(host) {
   const q = host ? `?host=${encodeURIComponent(host)}` : '';
-  const res = await fetch(apiUrl(`/api/tenant/resolve${q}`));
+  const res = await safeFetch(apiUrl(`/api/tenant/resolve${q}`));
   const data = await parseJsonResponse(res, 'Could not resolve tenant');
   if (!res.ok) throw new Error(data.error || 'Could not resolve tenant');
   return data;
 }
 
 export async function fetchAdminConnectors(accessToken) {
-  const res = await fetch(apiUrl('/api/admin/connectors'), {
+  const res = await safeFetch(apiUrl('/api/admin/connectors'), {
     headers: await authHeaders(accessToken),
   });
   const data = await parseJsonResponse(res, 'Could not load AI connectors');
@@ -255,7 +293,7 @@ export async function fetchAdminConnectors(accessToken) {
 }
 
 export async function createAdminConnector(accessToken, payload) {
-  const res = await fetch(apiUrl('/api/admin/connectors'), {
+  const res = await safeFetch(apiUrl('/api/admin/connectors'), {
     method: 'POST',
     headers: await authHeaders(accessToken),
     body: JSON.stringify(payload),
@@ -266,7 +304,7 @@ export async function createAdminConnector(accessToken, payload) {
 }
 
 export async function updateAdminConnector(accessToken, id, payload) {
-  const res = await fetch(apiUrl(`/api/admin/connectors/${id}`), {
+  const res = await safeFetch(apiUrl(`/api/admin/connectors/${id}`), {
     method: 'PATCH',
     headers: await authHeaders(accessToken),
     body: JSON.stringify(payload),
@@ -277,7 +315,7 @@ export async function updateAdminConnector(accessToken, id, payload) {
 }
 
 export async function deleteAdminConnector(accessToken, id) {
-  const res = await fetch(apiUrl(`/api/admin/connectors/${id}`), {
+  const res = await safeFetch(apiUrl(`/api/admin/connectors/${id}`), {
     method: 'DELETE',
     headers: await authHeaders(accessToken),
   });
@@ -287,7 +325,7 @@ export async function deleteAdminConnector(accessToken, id) {
 }
 
 export async function testAdminConnector(accessToken, id) {
-  const res = await fetch(apiUrl(`/api/admin/connectors/${id}/test`), {
+  const res = await safeFetch(apiUrl(`/api/admin/connectors/${id}/test`), {
     method: 'POST',
     headers: await authHeaders(accessToken),
   });
@@ -297,7 +335,7 @@ export async function testAdminConnector(accessToken, id) {
 }
 
 export async function fetchAdminLlmMonitor(accessToken) {
-  const res = await fetch(apiUrl('/api/admin/llm-monitor'), {
+  const res = await safeFetch(apiUrl('/api/admin/llm-monitor'), {
     headers: await authHeaders(accessToken),
   });
   const data = await parseJsonResponse(res, 'Could not load AI monitoring');
@@ -306,7 +344,7 @@ export async function fetchAdminLlmMonitor(accessToken) {
 }
 
 export async function probeAdminLlmMonitor(accessToken) {
-  const res = await fetch(apiUrl('/api/admin/llm-monitor/probe'), {
+  const res = await safeFetch(apiUrl('/api/admin/llm-monitor/probe'), {
     method: 'POST',
     headers: await authHeaders(accessToken),
   });
@@ -316,7 +354,7 @@ export async function probeAdminLlmMonitor(accessToken) {
 }
 
 export async function fetchCoachStatus(accessToken) {
-  const res = await fetch(apiUrl('/api/coach/status'), {
+  const res = await safeFetch(apiUrl('/api/coach/status'), {
     headers: await authHeaders(accessToken),
   });
   const data = await parseJsonResponse(res, 'Could not load coach chat');
@@ -325,7 +363,7 @@ export async function fetchCoachStatus(accessToken) {
 }
 
 export async function startCoachConversation(accessToken, sessionId = null) {
-  const res = await fetch(apiUrl('/api/coach/conversations'), {
+  const res = await safeFetch(apiUrl('/api/coach/conversations'), {
     method: 'POST',
     headers: await authHeaders(accessToken),
     body: JSON.stringify(sessionId ? { sessionId } : {}),
@@ -336,7 +374,7 @@ export async function startCoachConversation(accessToken, sessionId = null) {
 }
 
 export async function sendCoachMessage(accessToken, conversationId, content) {
-  const res = await fetch(apiUrl(`/api/coach/conversations/${conversationId}/messages`), {
+  const res = await safeFetch(apiUrl(`/api/coach/conversations/${conversationId}/messages`), {
     method: 'POST',
     headers: await authHeaders(accessToken),
     body: JSON.stringify({ content }),
@@ -347,7 +385,7 @@ export async function sendCoachMessage(accessToken, conversationId, content) {
 }
 
 export async function fetchCoachConversationMessages(accessToken, conversationId) {
-  const res = await fetch(apiUrl(`/api/coach/conversations/${conversationId}/messages`), {
+  const res = await safeFetch(apiUrl(`/api/coach/conversations/${conversationId}/messages`), {
     headers: await authHeaders(accessToken),
   });
   const data = await parseJsonResponse(res, 'Could not load this chat');
