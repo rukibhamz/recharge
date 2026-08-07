@@ -36,7 +36,7 @@ export default function LegalPage({ kind = 'privacy' }) {
   const page = PAGES[kind] ?? PAGES.privacy;
 
   return (
-    <div className="flex min-h-screen flex-col bg-warm">
+    <div className="flex min-h-screen flex-col">
       <Header variant="account" />
       <article className="mx-auto w-full max-w-container flex-1 px-margin-mobile py-12 sm:px-gutter">
         <h1 className="font-display text-headline-lg text-primary">{page.title}</h1>

@@ -7,7 +7,7 @@ import EditorialMobileBand from '../components/shared/EditorialMobileBand.jsx';
 
 export default function QuestionLoading({ phase, messages, badge = 'Crafting your questions' }) {
   return (
-    <div className="flex min-h-screen flex-col bg-warm">
+    <div className="flex min-h-screen flex-col">
       <Header variant="processing-mobile" />
       <div className="hidden lg:block">
         <Header />

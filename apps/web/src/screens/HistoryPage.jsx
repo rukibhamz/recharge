@@ -51,7 +51,7 @@ export default function HistoryPage() {
 
   if (!isConfigured) {
     return (
-      <div className="flex min-h-screen flex-col bg-warm">
+      <div className="flex min-h-screen flex-col">
         <Header variant="account" />
         <section className="mx-auto max-w-container flex-1 px-margin-mobile py-16 text-center">
           <p className="font-sans text-body-md text-on-surface-variant">
@@ -65,7 +65,7 @@ export default function HistoryPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="flex min-h-screen flex-col bg-warm">
+      <div className="flex min-h-screen flex-col">
         <Header variant="account" />
         <PageLoadingState message="Loading your results…" artworkVariant="reflection" />
         <Footer compact />
@@ -74,7 +74,7 @@ export default function HistoryPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-warm">
+    <div className="flex min-h-screen flex-col">
       <Header variant="account" />
 
       <section className="mx-auto w-full max-w-landing flex-1 px-margin-mobile py-12 sm:px-gutter">

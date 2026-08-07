@@ -14,7 +14,7 @@ export default function AssessmentError({ error, errorPhase, onRetry, onStartOve
   const hint = RETRY_HINTS[errorPhase] ?? 'Something interrupted your assessment.';
 
   return (
-    <div className="flex min-h-screen flex-col bg-warm">
+    <div className="flex min-h-screen flex-col">
       <Header />
       <section className="mx-auto flex max-w-lg flex-1 flex-col justify-center px-margin-mobile py-16 text-center sm:px-gutter">
         <div className="editorial-frame mx-auto mb-8 w-full max-w-xs">

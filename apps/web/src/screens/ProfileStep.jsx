@@ -42,7 +42,7 @@ export default function ProfileStep({ phase, initialProfile = {}, onBack, onClos
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-warm">
+    <div className="flex min-h-screen flex-col">
       <Header variant="assessment-mobile" onBack={onBack} onClose={onClose} />
 
       <div className="mx-auto flex w-full max-w-landing flex-1 flex-col justify-center px-margin-mobile pb-12 pt-6 sm:px-gutter lg:px-8">

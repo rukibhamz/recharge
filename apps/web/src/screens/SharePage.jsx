@@ -29,7 +29,7 @@ export default function SharePage({ shareToken }) {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen flex-col bg-warm">
+      <div className="flex min-h-screen flex-col">
         <Header variant="share" />
         <PageLoadingState message="Loading shared profile…" artworkVariant="recovery" />
         <Footer compact />
@@ -39,7 +39,7 @@ export default function SharePage({ shareToken }) {
 
   if (error || !data) {
     return (
-      <div className="flex min-h-screen flex-col bg-warm">
+      <div className="flex min-h-screen flex-col">
         <Header variant="share" />
         <section className="mx-auto flex max-w-md flex-1 flex-col items-center justify-center px-6 py-12 text-center">
           <EditorialArtwork variant="reflection" className="mx-auto mb-8 aspect-[4/3] w-full max-w-xs rounded-xl" />
@@ -65,7 +65,7 @@ export default function SharePage({ shareToken }) {
   const personalitySummary = personality.summary || personality.type?.desc;
 
   return (
-    <div className="flex min-h-screen flex-col bg-warm">
+    <div className="flex min-h-screen flex-col">
       <Header variant="share" />
 
       <main className="mx-auto w-full max-w-container flex-1 space-y-6 px-4 py-6 sm:space-y-stack-gap sm:px-gutter sm:py-stack-gap">

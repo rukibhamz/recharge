@@ -298,10 +298,10 @@ export default function AppShell({
   const closeMobile = () => setMobileOpen(false);
 
   return (
-    <div className={`flex min-h-screen bg-linen ${className}`}>
-      {/* Desktop sidebar */}
+    <div className={`flex min-h-screen bg-transparent ${className}`}>
+      {/* Desktop sidebar — solid panel; site atmosphere shows in content */}
       <aside
-        className={`sticky top-0 hidden h-screen shrink-0 border-r border-linen-sunken bg-linen-raised transition-[width] duration-200 ease-out md:flex md:flex-col ${
+        className={`sticky top-0 hidden h-screen shrink-0 border-r border-linen-sunken bg-linen-raised/95 shadow-sm backdrop-blur-sm transition-[width] duration-200 ease-out md:flex md:flex-col ${
           collapsed ? 'w-[4.75rem]' : 'w-[16.5rem]'
         }`}
       >
@@ -325,7 +325,7 @@ export default function AppShell({
             aria-label="Close navigation"
             onClick={closeMobile}
           />
-          <aside className="absolute inset-y-0 left-0 flex w-[min(18rem,88vw)] flex-col border-r border-linen-sunken bg-linen-raised shadow-2xl">
+          <aside className="absolute inset-y-0 left-0 flex w-[min(18rem,88vw)] flex-col border-r border-linen-sunken bg-linen-raised/98 shadow-2xl backdrop-blur-md">
             <div className="flex items-center justify-between border-b border-linen-sunken px-4 py-3">
               <Logo />
               <button
@@ -354,7 +354,7 @@ export default function AppShell({
       ) : null}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-40 flex items-center justify-between border-b border-linen-sunken bg-linen/90 px-4 py-3 backdrop-blur-sm md:hidden">
+        <header className="sticky top-0 z-40 flex items-center justify-between border-b border-white/50 bg-white/70 px-4 py-3 backdrop-blur-md md:hidden">
           <button
             type="button"
             onClick={() => setMobileOpen(true)}

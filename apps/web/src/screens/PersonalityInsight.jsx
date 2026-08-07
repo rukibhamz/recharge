@@ -10,7 +10,7 @@ export default function PersonalityInsight({ personality, userName, onContinue, 
   const firstName = userName?.trim().split(/\s+/)[0] ?? '';
 
   return (
-    <div className="flex min-h-screen flex-col bg-warm">
+    <div className="flex min-h-screen flex-col">
       <Header variant="assessment-mobile" onBack={onBack} onClose={onClose} />
 
       <div className="mx-auto w-full max-w-landing flex-1 px-margin-mobile pb-12 pt-6 sm:px-gutter lg:px-8">

@@ -39,7 +39,7 @@ export default function Hero({ onStart }) {
   const { content } = useTenant();
 
   return (
-    <div className="flex min-h-screen flex-col bg-linen">
+    <div className="flex min-h-screen flex-col">
       <Header />
 
       <main className="flex-1">
@@ -176,7 +176,7 @@ export default function Hero({ onStart }) {
         </section>
       </main>
 
-      <div className="sticky bottom-0 border-t border-linen-sunken bg-linen/95 p-5 backdrop-blur-sm lg:hidden">
+      <div className="sticky bottom-0 border-t border-white/50 bg-white/80 p-5 backdrop-blur-md lg:hidden">
         <Button size="lg" className="w-full" onClick={onStart}>
           {content.cta}
           <span aria-hidden="true">→</span>

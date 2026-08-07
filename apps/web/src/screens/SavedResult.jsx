@@ -52,7 +52,7 @@ export default function SavedResult({ sessionId }) {
 
   if (authLoading || loading) {
     return (
-      <div className="flex min-h-screen flex-col bg-warm">
+      <div className="flex min-h-screen flex-col">
         <Header variant="account" />
         <PageLoadingState message="Loading your result…" artworkVariant="recovery" />
         <Footer compact />
@@ -62,7 +62,7 @@ export default function SavedResult({ sessionId }) {
 
   if (error) {
     return (
-      <div className="flex min-h-screen flex-col bg-warm">
+      <div className="flex min-h-screen flex-col">
         <Header variant="account" />
         <section className="mx-auto max-w-container flex-1 px-margin-mobile py-16 text-center">
           <h2 className="font-display text-headline-lg text-primary">Result not found</h2>

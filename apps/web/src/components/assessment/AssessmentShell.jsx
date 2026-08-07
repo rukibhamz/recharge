@@ -20,7 +20,7 @@ export default function AssessmentShell({
   const footerNote = phaseLabel(phase);
 
   return (
-    <div className="flex min-h-screen flex-col bg-linen">
+    <div className="flex min-h-screen flex-col">
       <Header variant="assessment-mobile" onBack={onBack} onClose={onClose} />
 
       {phase ? (

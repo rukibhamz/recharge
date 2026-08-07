@@ -4,7 +4,16 @@
 
 @layer base {
   body {
-    @apply min-h-screen bg-linen text-ink;
+    @apply min-h-screen text-ink antialiased;
+    /* Cool mist base + warm linen undertone — site-wide sanctuary atmosphere */
+    background-color: #f0f4f5;
+    background-image:
+      radial-gradient(ellipse 75% 70% at 5% 0%, rgba(182, 235, 254, 0.38), transparent 55%),
+      radial-gradient(ellipse 65% 75% at 100% 35%, rgba(15, 76, 92, 0.09), transparent 55%),
+      radial-gradient(ellipse 55% 50% at 35% 100%, rgba(212, 230, 229, 0.55), transparent 50%),
+      radial-gradient(ellipse 40% 40% at 70% 15%, rgba(220, 235, 225, 0.45), transparent 50%),
+      linear-gradient(165deg, #faf9f6 0%, #f0f4f5 42%, #eef2f4 100%);
+    background-attachment: fixed;
   }
 
   h1,
@@ -33,24 +42,30 @@
 }
 
 @layer components {
-  /* Soft linen surfaces — prefer flat cards over glassmorphism */
+  /* Floating surfaces — soft lift over atmospheric background */
   .glass-panel {
-    @apply rounded-md border border-linen-sunken bg-linen-raised/95;
-    box-shadow: 0 1px 3px rgba(22, 35, 28, 0.08);
+    @apply rounded-2xl border border-white/60 bg-white/70 backdrop-blur-md;
+    box-shadow: 0 8px 32px rgba(22, 35, 28, 0.05);
   }
 
   .glass-card {
-    @apply rounded-md border border-linen-sunken bg-linen-raised;
-    box-shadow: 0 1px 3px rgba(22, 35, 28, 0.08);
+    @apply rounded-2xl border border-white/70 bg-white/80 backdrop-blur-sm;
+    box-shadow: 0 8px 28px rgba(22, 35, 28, 0.05);
   }
 
   .surface-card {
-    @apply rounded-md border border-linen-sunken bg-linen-raised;
-    box-shadow: 0 1px 3px rgba(22, 35, 28, 0.08);
+    @apply rounded-2xl border border-white/70 bg-white/85 backdrop-blur-sm;
+    box-shadow: 0 8px 28px rgba(22, 35, 28, 0.05);
+  }
+
+  .floating-bar {
+    @apply rounded-2xl border border-white/60 bg-white/70 backdrop-blur-md;
+    box-shadow: 0 8px 32px rgba(22, 35, 28, 0.05);
   }
 
   .demo-card {
-    @apply relative overflow-hidden rounded-md border border-linen-sunken bg-linen-raised p-6;
+    @apply relative overflow-hidden rounded-2xl border border-white/70 bg-white/85 p-6 backdrop-blur-sm;
+    box-shadow: 0 8px 28px rgba(22, 35, 28, 0.05);
   }
 
   .demo-card::before {
@@ -107,8 +122,8 @@
   }
 
   .editorial-frame {
-    @apply overflow-hidden rounded-md border border-linen-sunken bg-linen-raised;
-    box-shadow: 0 1px 3px rgba(22, 35, 28, 0.08);
+    @apply overflow-hidden rounded-2xl border border-white/70 bg-white/85 backdrop-blur-sm;
+    box-shadow: 0 8px 28px rgba(22, 35, 28, 0.05);
   }
 
   .editorial-mobile-band {

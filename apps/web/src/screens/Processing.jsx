@@ -73,7 +73,7 @@ export default function Processing({ phase, messages = DEFAULT_MESSAGES }) {
   }, [messages]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-warm">
+    <div className="flex min-h-screen flex-col">
       <Header variant="processing-mobile" />
       <div className="hidden lg:block">
         <Header />

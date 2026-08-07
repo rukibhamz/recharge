@@ -3,6 +3,9 @@ import NavLink from './NavLink.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useIsAdmin } from '../../hooks/useIsAdmin.js';
 
+const navLinkClass =
+  'btn-interactive font-sans text-sm font-medium text-on-surface transition-colors hover:text-primary';
+
 function AccountNav() {
   const { user, loading, isConfigured } = useAuth();
   const { isAdmin } = useIsAdmin();
@@ -11,36 +14,30 @@ function AccountNav() {
 
   if (user) {
     return (
-      <nav className="flex items-center gap-4">
+      <div className="flex items-center gap-6">
         {isAdmin ? (
-          <NavLink
-            href="/admin"
-            className="hidden font-sans text-body-md text-on-surface-variant btn-interactive hover:text-primary sm:inline"
-          >
+          <NavLink href="/admin" className={`hidden sm:inline ${navLinkClass}`}>
             Admin
           </NavLink>
         ) : null}
-        <NavLink
-          href="/account"
-          className="hidden font-sans text-body-md text-on-surface-variant btn-interactive hover:text-primary sm:inline"
-        >
+        <NavLink href="/account" className={`hidden sm:inline ${navLinkClass}`}>
           Account
         </NavLink>
         <NavLink
           href="/account"
-          className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-fern-tint text-canopy"
+          className="flex size-11 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-fern-tint text-canopy shadow-sm"
           aria-label="Account settings"
         >
           <span className="font-display text-body-md font-semibold">
             {(user.email?.[0] ?? '?').toUpperCase()}
           </span>
         </NavLink>
-      </nav>
+      </div>
     );
   }
 
   return (
-    <NavLink href="/login" className="btn-interactive font-sans text-body-md text-primary hover:underline">
+    <NavLink href="/login" className={navLinkClass}>
       Sign in
     </NavLink>
   );
@@ -49,12 +46,12 @@ function AccountNav() {
 export default function Header({ variant = 'landing', onBack, onClose }) {
   if (variant === 'assessment-mobile') {
     return (
-      <header className="border-b border-linen-sunken bg-linen lg:hidden">
-        <div className="mx-auto flex max-w-container items-center justify-between px-margin-mobile py-4">
+      <header className="px-margin-mobile py-3 lg:hidden sm:px-6">
+        <div className="floating-bar mx-auto flex max-w-container items-center justify-between px-4 py-3">
           <button
             type="button"
             onClick={onBack}
-            className="btn-interactive flex h-10 w-10 items-center justify-center rounded-full text-canopy-600 hover:bg-fern-tint active:scale-95"
+            className="btn-interactive flex h-10 w-10 items-center justify-center rounded-full text-canopy-600 hover:bg-fern-tint/60 active:scale-95"
             aria-label="Go back"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -71,7 +68,7 @@ export default function Header({ variant = 'landing', onBack, onClose }) {
           <button
             type="button"
             onClick={onClose}
-            className="btn-interactive flex h-10 w-10 items-center justify-center rounded-full text-canopy-600 hover:bg-fern-tint active:scale-95"
+            className="btn-interactive flex h-10 w-10 items-center justify-center rounded-full text-canopy-600 hover:bg-fern-tint/60 active:scale-95"
             aria-label="Close assessment"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -97,33 +94,37 @@ export default function Header({ variant = 'landing', onBack, onClose }) {
   }
 
   return (
-    <header className="mx-auto flex w-full max-w-landing items-center justify-between px-margin-mobile py-6 sm:px-8 lg:px-12">
-      <NavLink href="/" className="btn-interactive">
-        <Logo />
-      </NavLink>
-      {variant === 'landing' || variant === 'account' || variant === 'share' ? (
-        <nav className="flex items-center gap-4 font-sans text-body-md text-on-surface-variant sm:gap-8">
-          {variant === 'landing' ? (
-            <>
-              <NavLink href="/about" className="btn-interactive hover:text-primary">
-                About
-              </NavLink>
-              <NavLink href="/faq" className="btn-interactive hover:text-primary">
-                FAQ
-              </NavLink>
-            </>
-          ) : variant === 'share' ? (
-            <NavLink href="/" className="btn-interactive text-body-md hover:text-primary">
-              Take assessment
-            </NavLink>
-          ) : (
-            <NavLink href="/" className="btn-interactive hover:text-primary">
-              Assessment
-            </NavLink>
-          )}
-          <AccountNav />
-        </nav>
-      ) : null}
-    </header>
+    <div className="mx-auto w-full max-w-landing px-margin-mobile pt-5 sm:px-8 lg:px-12">
+      <header className="floating-bar flex items-center justify-between px-5 py-3.5 sm:px-6">
+        <NavLink href="/" className="btn-interactive shrink-0 text-primary">
+          <Logo />
+        </NavLink>
+        {variant === 'landing' || variant === 'account' || variant === 'share' ? (
+          <div className="flex flex-1 items-center justify-end gap-6 sm:gap-9">
+            <nav className="hidden items-center gap-8 md:flex">
+              {variant === 'landing' ? (
+                <>
+                  <NavLink href="/about" className={navLinkClass}>
+                    About
+                  </NavLink>
+                  <NavLink href="/faq" className={navLinkClass}>
+                    FAQ
+                  </NavLink>
+                </>
+              ) : variant === 'share' ? (
+                <NavLink href="/" className={navLinkClass}>
+                  Take assessment
+                </NavLink>
+              ) : (
+                <NavLink href="/" className={navLinkClass}>
+                  Assessment
+                </NavLink>
+              )}
+            </nav>
+            <AccountNav />
+          </div>
+        ) : null}
+      </header>
+    </div>
   );
 }

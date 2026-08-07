@@ -17,7 +17,7 @@ export default class ErrorBoundary extends React.Component {
   render() {
     if (this.state.error) {
       return (
-        <div className="flex min-h-screen flex-col items-center justify-center bg-warm px-6 text-center">
+        <div className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
           <h1 className="font-display text-headline-md text-primary">Something went wrong</h1>
           <p className="mt-3 max-w-md font-sans text-body-md text-on-surface-variant">
             The app hit an unexpected error. Try refreshing the page or clearing site data for this

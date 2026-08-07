@@ -248,7 +248,7 @@ export default function AdminDashboard() {
 
   if (authLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-linen">
+      <div className="flex min-h-screen items-center justify-center">
         <PageLoadingState message="Loading admin…" artworkVariant="reflection" />
       </div>
     );

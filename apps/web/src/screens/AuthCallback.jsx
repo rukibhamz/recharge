@@ -120,7 +120,7 @@ export default function AuthCallback() {
 
   if (error) {
     return (
-      <div className="flex min-h-screen flex-col bg-linen">
+      <div className="flex min-h-screen flex-col">
         <Header />
         <section className="mx-auto flex max-w-lg flex-1 flex-col items-center justify-center gap-6 px-margin-mobile py-16 text-center sm:px-gutter">
           <div className="editorial-frame w-full max-w-xs">
@@ -141,7 +141,7 @@ export default function AuthCallback() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-linen">
+    <div className="flex min-h-screen flex-col">
       <Header />
       <PageLoadingState message="Completing sign-in…" artworkVariant="reflection" />
     </div>

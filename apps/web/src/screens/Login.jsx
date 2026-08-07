@@ -45,7 +45,7 @@ export default function Login() {
 
   if (!isConfigured) {
     return (
-      <div className="flex min-h-screen flex-col bg-warm">
+      <div className="flex min-h-screen flex-col">
         <Header />
         <section className="mx-auto max-w-md flex-1 px-margin-mobile py-16 text-center sm:px-gutter">
           <h1 className="font-display text-headline-lg text-primary">Sign-in unavailable</h1>
@@ -64,7 +64,7 @@ export default function Login() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-warm">
+    <div className="flex min-h-screen flex-col">
       <Header />
 
       <section className="mx-auto w-full max-w-landing flex-1 px-margin-mobile py-12 sm:px-gutter lg:py-16">

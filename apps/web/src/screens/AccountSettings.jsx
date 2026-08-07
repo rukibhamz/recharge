@@ -142,7 +142,7 @@ export default function AccountSettings() {
 
   if (!isConfigured) {
     return (
-      <div className="flex min-h-screen flex-col bg-warm">
+      <div className="flex min-h-screen flex-col">
         <Header variant="account" />
         <section className="mx-auto max-w-container flex-1 px-margin-mobile py-16 text-center">
           <p className="font-sans text-body-md text-on-surface-variant">
@@ -156,7 +156,7 @@ export default function AccountSettings() {
 
   if (authLoading || loading) {
     return (
-      <div className="flex min-h-screen flex-col bg-warm">
+      <div className="flex min-h-screen flex-col">
         <Header variant="account" />
         <PageLoadingState message="Loading your account…" artworkVariant="reflection" />
         <Footer compact />

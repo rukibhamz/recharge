@@ -9,7 +9,7 @@ export default function HistoryRedirect() {
   }, []);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-warm">
+    <div className="flex min-h-screen items-center justify-center">
       <LoadingDots />
     </div>
   );

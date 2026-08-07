@@ -33,7 +33,7 @@ export default function Results({ data, error, onRetake, showSaveSection = true 
 
   if (error) {
     return (
-      <div className="flex min-h-screen flex-col bg-warm">
+      <div className="flex min-h-screen flex-col">
         <Header />
         <section className="mx-auto max-w-container flex-1 px-margin-mobile py-16 text-center sm:px-gutter">
           <h2 className="font-display text-headline-lg text-primary">Something went wrong</h2>
@@ -49,7 +49,7 @@ export default function Results({ data, error, onRetake, showSaveSection = true 
 
   if (!data) {
     return (
-      <div className="flex min-h-screen flex-col bg-warm">
+      <div className="flex min-h-screen flex-col">
         <Header />
         <section className="mx-auto max-w-container flex-1 px-margin-mobile py-16 text-center sm:px-gutter">
           <h2 className="font-display text-headline-lg text-primary">Session expired</h2>
@@ -85,7 +85,7 @@ export default function Results({ data, error, onRetake, showSaveSection = true 
   const badgeClass = BURNOUT_BADGE_CLASSES[burnout.cls] ?? BURNOUT_BADGE_CLASSES.moderate;
 
   return (
-    <div className="flex min-h-screen flex-col bg-linen">
+    <div className="flex min-h-screen flex-col">
       <Header />
 
       <main className="mx-auto w-full max-w-container flex-1 space-y-stack-gap px-margin-mobile py-stack-gap sm:px-gutter">
