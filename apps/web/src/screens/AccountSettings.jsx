@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { fetchHistory, downloadAccountExport, deleteAccount } from '../services/api.js';
 import Header from '../components/shared/Header.jsx';
 import Footer from '../components/shared/Footer.jsx';
+import AppShell from '../components/shared/AppShell.jsx';
 import Button from '../components/shared/Button.jsx';
 import { formatDate, relativeAssessmentTime, burnoutMoodIcon } from '../lib/formatDate.js';
 import { firstName } from '@recharge/shared/name';
@@ -11,11 +12,13 @@ import SplitEditorialLayout from '../components/shared/SplitEditorialLayout.jsx'
 import PageLoadingState from '../components/shared/PageLoadingState.jsx';
 import CoachChatPanel from '../components/account/CoachChatPanel.jsx';
 import { useRefreshOnFocus } from '../hooks/useRefreshOnFocus.js';
+import { useIsAdmin } from '../hooks/useIsAdmin.js';
 
 const REMINDER_KEY = 'recharge-reminder-days';
 
 export default function AccountSettings() {
   const { user, loading: authLoading, getAccessToken, isConfigured, signOut } = useAuth();
+  const { isAdmin } = useIsAdmin();
   const [coachOpen, setCoachOpen] = useState(false);
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -72,6 +75,38 @@ export default function AccountSettings() {
   const displayName =
     sessions[0]?.displayName?.trim() || firstName(user?.email?.split('@')[0]) || 'Your profile';
   const lastAssessment = sessions[0]?.createdAt;
+
+  const navItems = useMemo(() => {
+    const items = [
+      { id: 'overview', label: 'Overview', icon: 'user', href: '/account', active: true },
+      { id: 'assessment', label: 'Assessment', icon: 'compass', href: '/' },
+      {
+        id: 'oma',
+        label: `Talk to ${COACH_NAME}`,
+        icon: 'chat',
+        onClick: () => setCoachOpen(true),
+      },
+    ];
+    if (isAdmin) {
+      items.push({ id: 'admin', label: 'Admin', icon: 'settings', href: '/admin' });
+    }
+    return items;
+  }, [isAdmin]);
+
+  const footerItems = useMemo(
+    () => [
+      {
+        id: 'logout',
+        label: 'Sign out',
+        icon: 'logout',
+        onClick: () =>
+          signOut().then(() => {
+            window.location.href = '/';
+          }),
+      },
+    ],
+    [signOut],
+  );
 
   const selectReminder = (days) => {
     setReminderDays(days);
@@ -131,10 +166,13 @@ export default function AccountSettings() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-warm">
-      <Header variant="account" />
-
-      <main className="mx-auto w-full max-w-landing flex-1 space-y-stack-gap px-margin-mobile pb-32 pt-8 sm:px-gutter">
+    <AppShell
+      userEmail={user?.email}
+      userLabel={displayName}
+      items={navItems}
+      footerItems={footerItems}
+    >
+      <main className="mx-auto w-full max-w-landing flex-1 space-y-stack-gap px-margin-mobile pb-28 pt-8 sm:px-8 lg:px-10">
         {linkError ? (
           <div className="rounded-xl border border-severe/30 bg-severe/5 px-4 py-3 font-sans text-body-md text-on-surface-variant">
             Could not link your latest result: {linkError}. Complete a new assessment and try
@@ -179,198 +217,198 @@ export default function AccountSettings() {
           </section>
         </SplitEditorialLayout>
 
-            <section className="space-y-4">
-              <div className="flex items-end justify-between">
-                <h2 className="font-display text-headline-md text-primary">Recent assessments</h2>
-                {sessions.length > 1 ? (
-                  <span className="font-sans text-label-sm text-on-surface-variant">
-                    {sessions.length} saved
-                  </span>
-                ) : null}
-              </div>
+        <section className="space-y-4">
+          <div className="flex items-end justify-between">
+            <h2 className="font-display text-headline-md text-primary">Recent assessments</h2>
+            {sessions.length > 1 ? (
+              <span className="font-sans text-label-sm text-on-surface-variant">
+                {sessions.length} saved
+              </span>
+            ) : null}
+          </div>
 
-              {sessions.length === 0 ? (
-                <div className="glass-card p-gutter text-center">
-                  <p className="font-sans text-body-md text-on-surface-variant">
-                    Complete an assessment and save it to your account to see history here.
-                  </p>
-                  <Button className="mt-6" onClick={() => { window.location.href = '/'; }}>
-                    Take assessment
-                  </Button>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 gap-4">
-                  {sessions.slice(0, 5).map((item) => {
-                    const mood = burnoutMoodIcon(item.burnout?.cls);
-                    return (
-                      <a
-                        key={item.sessionId}
-                        href={`/history/${item.sessionId}`}
-                        className="glass-card group flex cursor-pointer items-center justify-between p-4 transition-colors hover:bg-surface-bright"
+          {sessions.length === 0 ? (
+            <div className="glass-card p-gutter text-center">
+              <p className="font-sans text-body-md text-on-surface-variant">
+                Complete an assessment and save it to your account to see history here.
+              </p>
+              <Button className="mt-6" onClick={() => { window.location.href = '/'; }}>
+                Take assessment
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4">
+              {sessions.slice(0, 5).map((item) => {
+                const mood = burnoutMoodIcon(item.burnout?.cls);
+                return (
+                  <a
+                    key={item.sessionId}
+                    href={`/history/${item.sessionId}`}
+                    className="glass-card group flex cursor-pointer items-center justify-between p-4 transition-colors hover:bg-surface-bright"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div
+                        className={`flex h-12 w-12 items-center justify-center rounded-full ${mood.tone}`}
                       >
-                        <div className="flex items-center gap-4">
-                          <div
-                            className={`flex h-12 w-12 items-center justify-center rounded-full ${mood.tone}`}
-                          >
-                            <span className="text-xl" aria-hidden="true">
-                              {item.burnout?.cls === 'healthy'
-                                ? '🙂'
-                                : item.burnout?.cls === 'severe'
-                                  ? '😔'
-                                  : '😐'}
-                            </span>
-                          </div>
-                          <div>
-                            <p className="font-sans text-label-sm text-on-surface-variant">
-                              {formatDate(item.createdAt)}
-                            </p>
-                            <p className="font-sans text-body-md font-medium text-on-surface">
-                              {item.burnout?.level ?? 'Assessment result'}
-                            </p>
-                            <p className="font-sans text-body-md text-on-surface-variant">
-                              {item.personality?.type?.name ?? 'Personality profile'}
-                            </p>
-                          </div>
-                        </div>
-                        <span className="text-on-surface-variant transition-transform group-hover:translate-x-1">
-                          →
+                        <span className="text-xl" aria-hidden="true">
+                          {item.burnout?.cls === 'healthy'
+                            ? '🙂'
+                            : item.burnout?.cls === 'severe'
+                              ? '😔'
+                              : '😐'}
                         </span>
-                      </a>
-                    );
-                  })}
-                </div>
-              )}
-            </section>
-
-            <section className="space-y-4">
-              <h2 className="font-display text-headline-md text-primary">Wellness reminders</h2>
-              <div className="glass-card space-y-6 p-gutter">
-                <p className="font-sans text-body-md text-on-surface-variant">
-                  Set your re-assessment frequency to maintain a healthy balance.
-                </p>
-                <div className="flex flex-wrap gap-3">
-                  {[30, 60, 90].map((days) => (
-                    <button
-                      key={days}
-                      type="button"
-                      onClick={() => selectReminder(days)}
-                      className={`rounded-full border-2 px-6 py-3 font-sans text-label-sm transition-all ${
-                        reminderDays === days
-                          ? 'border-primary bg-primary text-white'
-                          : 'border-outline-variant bg-transparent text-on-surface-variant hover:border-primary/30'
-                      }`}
-                    >
-                      {days} days
-                    </button>
-                  ))}
-                </div>
-                <div className="flex items-center justify-between border-t border-outline-variant/30 pt-4">
-                  <div>
-                    <p className="font-sans text-body-md font-medium">Push notifications</p>
-                    <p className="font-sans text-label-sm text-on-surface-variant">
-                      Receive reminders on this device
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={pushEnabled}
-                    onClick={() => setPushEnabled((v) => !v)}
-                    className={`relative h-6 w-12 rounded-full p-1 transition-colors ${
-                      pushEnabled ? 'bg-primary' : 'bg-surface-dim'
-                    }`}
-                  >
-                    <span
-                      className={`block h-4 w-4 rounded-full bg-white transition-transform ${
-                        pushEnabled ? 'translate-x-6' : 'translate-x-0'
-                      }`}
-                    />
-                  </button>
-                </div>
-              </div>
-            </section>
-
-            <section className="space-y-4">
-              <h2 className="font-display text-headline-md text-primary">Security</h2>
-              <div className="glass-card divide-y divide-outline-variant/30 p-gutter">
-                <div className="flex items-center justify-between py-4 first:pt-0">
-                  <div>
-                    <p className="font-sans text-body-md font-medium">Login method</p>
-                    <p className="font-sans text-label-sm text-on-surface-variant">
-                      Password-less magic links
-                    </p>
-                  </div>
-                  <a href="/login" className="font-sans text-label-sm text-primary underline">
-                    Change email
+                      </div>
+                      <div>
+                        <p className="font-sans text-label-sm text-on-surface-variant">
+                          {formatDate(item.createdAt)}
+                        </p>
+                        <p className="font-sans text-body-md font-medium text-on-surface">
+                          {item.burnout?.level ?? 'Assessment result'}
+                        </p>
+                        <p className="font-sans text-body-md text-on-surface-variant">
+                          {item.personality?.type?.name ?? 'Personality profile'}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-on-surface-variant transition-transform group-hover:translate-x-1">
+                      →
+                    </span>
                   </a>
-                </div>
-                <div className="flex items-center justify-between py-4 last:pb-0">
-                  <div>
-                    <p className="font-sans text-body-md font-medium">Sign out</p>
-                    <p className="font-sans text-label-sm text-on-surface-variant">
-                      End your session on this device
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => signOut().then(() => { window.location.href = '/'; })}
-                    className="font-sans text-label-sm text-primary underline"
-                  >
-                    Sign out
-                  </button>
-                </div>
-              </div>
-            </section>
+                );
+              })}
+            </div>
+          )}
+        </section>
 
-            <section className="space-y-4">
-              <h2 className="font-display text-headline-md text-primary">Data &amp; privacy</h2>
-              <div className="glass-card space-y-6 p-gutter">
-                <div className="flex items-start gap-4 rounded-lg border border-outline-variant/20 bg-surface-container-low p-4">
-                  <span className="text-primary-container" aria-hidden="true">
-                    ✓
-                  </span>
-                  <p className="font-sans text-body-md">
-                    Your data is encrypted and handled in strict accordance with GDPR. Read our{' '}
-                    <a href="/privacy" className="text-primary underline">
-                      privacy policy
-                    </a>
-                    .
-                  </p>
-                </div>
-                {actionError ? (
-                  <p className="font-sans text-body-md text-severe" role="alert">
-                    {actionError}
-                  </p>
-                ) : null}
+        <section className="space-y-4">
+          <h2 className="font-display text-headline-md text-primary">Wellness reminders</h2>
+          <div className="glass-card space-y-6 p-gutter">
+            <p className="font-sans text-body-md text-on-surface-variant">
+              Set your re-assessment frequency to maintain a healthy balance.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              {[30, 60, 90].map((days) => (
                 <button
+                  key={days}
                   type="button"
-                  onClick={handleExport}
-                  disabled={exporting}
-                  className="flex w-full items-center justify-between rounded-lg border border-outline-variant/30 bg-white p-4 transition-colors hover:bg-surface-bright disabled:opacity-50"
+                  onClick={() => selectReminder(days)}
+                  className={`rounded-full border-2 px-6 py-3 font-sans text-label-sm transition-all ${
+                    reminderDays === days
+                      ? 'border-primary bg-primary text-white'
+                      : 'border-outline-variant bg-transparent text-on-surface-variant hover:border-primary/30'
+                  }`}
                 >
-                  <span className="font-sans text-body-md">Request personal data archive</span>
-                  <span className="font-sans text-label-sm text-on-surface-variant">
-                    {exporting ? 'Preparing…' : '.JSON'}
-                  </span>
+                  {days} days
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setShowDeleteModal(true)}
-                  className="flex w-full items-center gap-3 rounded-lg border border-error/10 bg-error-container/20 p-4 text-error transition-colors hover:bg-error-container/40"
-                >
-                  <span className="font-sans text-body-md font-medium">
-                    Delete account &amp; permanent erasure
-                  </span>
-                </button>
-                <Button
-                  variant="secondary"
-                  className="w-full"
-                  onClick={() => { window.location.href = '/'; }}
-                >
-                  New assessment
-                </Button>
+              ))}
+            </div>
+            <div className="flex items-center justify-between border-t border-outline-variant/30 pt-4">
+              <div>
+                <p className="font-sans text-body-md font-medium">Push notifications</p>
+                <p className="font-sans text-label-sm text-on-surface-variant">
+                  Receive reminders on this device
+                </p>
               </div>
-            </section>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={pushEnabled}
+                onClick={() => setPushEnabled((v) => !v)}
+                className={`relative h-6 w-12 rounded-full p-1 transition-colors ${
+                  pushEnabled ? 'bg-primary' : 'bg-surface-dim'
+                }`}
+              >
+                <span
+                  className={`block h-4 w-4 rounded-full bg-white transition-transform ${
+                    pushEnabled ? 'translate-x-6' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section className="space-y-4">
+          <h2 className="font-display text-headline-md text-primary">Security</h2>
+          <div className="glass-card divide-y divide-outline-variant/30 p-gutter">
+            <div className="flex items-center justify-between py-4 first:pt-0">
+              <div>
+                <p className="font-sans text-body-md font-medium">Login method</p>
+                <p className="font-sans text-label-sm text-on-surface-variant">
+                  Password-less magic links
+                </p>
+              </div>
+              <a href="/login" className="font-sans text-label-sm text-primary underline">
+                Change email
+              </a>
+            </div>
+            <div className="flex items-center justify-between py-4 last:pb-0">
+              <div>
+                <p className="font-sans text-body-md font-medium">Sign out</p>
+                <p className="font-sans text-label-sm text-on-surface-variant">
+                  End your session on this device
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => signOut().then(() => { window.location.href = '/'; })}
+                className="font-sans text-label-sm text-primary underline"
+              >
+                Sign out
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section className="space-y-4">
+          <h2 className="font-display text-headline-md text-primary">Data &amp; privacy</h2>
+          <div className="glass-card space-y-6 p-gutter">
+            <div className="flex items-start gap-4 rounded-lg border border-outline-variant/20 bg-surface-container-low p-4">
+              <span className="text-primary-container" aria-hidden="true">
+                ✓
+              </span>
+              <p className="font-sans text-body-md">
+                Your data is encrypted and handled in strict accordance with GDPR. Read our{' '}
+                <a href="/privacy" className="text-primary underline">
+                  privacy policy
+                </a>
+                .
+              </p>
+            </div>
+            {actionError ? (
+              <p className="font-sans text-body-md text-severe" role="alert">
+                {actionError}
+              </p>
+            ) : null}
+            <button
+              type="button"
+              onClick={handleExport}
+              disabled={exporting}
+              className="flex w-full items-center justify-between rounded-lg border border-outline-variant/30 bg-white p-4 transition-colors hover:bg-surface-bright disabled:opacity-50"
+            >
+              <span className="font-sans text-body-md">Request personal data archive</span>
+              <span className="font-sans text-label-sm text-on-surface-variant">
+                {exporting ? 'Preparing…' : '.JSON'}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowDeleteModal(true)}
+              className="flex w-full items-center gap-3 rounded-lg border border-error/10 bg-error-container/20 p-4 text-error transition-colors hover:bg-error-container/40"
+            >
+              <span className="font-sans text-body-md font-medium">
+                Delete account &amp; permanent erasure
+              </span>
+            </button>
+            <Button
+              variant="secondary"
+              className="w-full"
+              onClick={() => { window.location.href = '/'; }}
+            >
+              New assessment
+            </Button>
+          </div>
+        </section>
       </main>
 
       {showDeleteModal ? (
@@ -444,11 +482,13 @@ export default function AccountSettings() {
         className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-4 z-[70] inline-flex h-12 w-12 items-center justify-center rounded-full bg-canopy text-white shadow-xl transition-colors hover:bg-canopy-600 sm:right-6 sm:h-auto sm:w-auto sm:gap-2 sm:px-4 sm:py-3"
         aria-label={`Talk to ${COACH_NAME}`}
       >
-        <span aria-hidden="true" className="text-[18px]">💬</span>
-        <span className="hidden font-sans text-[14px] font-semibold sm:inline">Talk to {COACH_NAME}</span>
+        <span aria-hidden="true" className="text-[18px]">
+          💬
+        </span>
+        <span className="hidden font-sans text-[14px] font-semibold sm:inline">
+          Talk to {COACH_NAME}
+        </span>
       </button>
-
-      <Footer />
-    </div>
+    </AppShell>
   );
 }

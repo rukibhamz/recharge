@@ -1,15 +1,43 @@
 import { useTenant } from '../../context/TenantContext.jsx';
-import ArcIcon from './Arc.jsx';
 
-export default function Logo({ className = '' }) {
+const LOGO_SRC = '/recharge-logo.png?v=4';
+const MARK_SRC = '/favicon.png?v=2';
+
+/**
+ * Brand mark — full logo artwork (transparent PNG).
+ * @param {'default' | 'compact'} [variant]
+ */
+export default function Logo({ className = '', variant = 'default' }) {
   const { brandName } = useTenant();
+  // Stacked logo (mark + wordmark) needs taller slot than wide wordmarks
+  const sizeClass =
+    variant === 'compact'
+      ? 'h-12 w-auto max-w-[7.5rem] sm:h-14 sm:max-w-[8.5rem]'
+      : 'h-14 w-auto max-w-[9rem] sm:h-16 sm:max-w-[10.5rem]';
 
   return (
-    <span
-      className={`inline-flex items-center gap-2 font-display text-[1.35rem] font-normal tracking-tight text-ink ${className}`}
-    >
-      <ArcIcon className="h-4 w-4 text-fern" />
-      {brandName}
+    <span className={`inline-flex items-center ${className}`}>
+      <img
+        src={LOGO_SRC}
+        alt={brandName || 'recharge'}
+        className={`${sizeClass} object-contain object-left`}
+        decoding="async"
+      />
     </span>
+  );
+}
+
+/** Circular mark for tight spaces (sidebar collapsed). */
+export function LogoMark({ className = '', title }) {
+  const { brandName } = useTenant();
+  return (
+    <img
+      src={MARK_SRC}
+      alt=""
+      title={title || brandName || 'recharge'}
+      className={`h-10 w-10 object-contain object-center ${className}`}
+      decoding="async"
+      aria-hidden={title ? undefined : true}
+    />
   );
 }

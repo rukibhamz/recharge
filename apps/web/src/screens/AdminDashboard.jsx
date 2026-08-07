@@ -1,8 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { fetchAdminStats } from '../services/api.js';
-import Header from '../components/shared/Header.jsx';
-import Footer from '../components/shared/Footer.jsx';
+import AppShell from '../components/shared/AppShell.jsx';
 import Button from '../components/shared/Button.jsx';
 import PageLoadingState from '../components/shared/PageLoadingState.jsx';
 import { ArcDivider } from '../components/shared/Arc.jsx';
@@ -11,6 +10,7 @@ import ConnectorsManager from '../components/admin/ConnectorsManager.jsx';
 import LlmMonitorPanel from '../components/admin/LlmMonitorPanel.jsx';
 import CoachSettingsPanel from '../components/admin/CoachSettingsPanel.jsx';
 import { formatDate } from '../lib/formatDate.js';
+import { firstName } from '@recharge/shared/name';
 
 const ADMIN_TAB_KEY = 'recharge-admin-tab';
 const VALID_TABS = new Set(['stats', 'coach', 'connectors', 'monitor', 'saas']);
@@ -63,7 +63,7 @@ function DistributionBar({ label, count, total, tone, badgeClass }) {
 }
 
 export default function AdminDashboard() {
-  const { user, loading: authLoading, getAccessToken } = useAuth();
+  const { user, loading: authLoading, getAccessToken, signOut } = useAuth();
   const [tab, setTab] = useState(resolveInitialTab);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -95,18 +95,6 @@ export default function AdminDashboard() {
     };
   }, [user, authLoading, getAccessToken]);
 
-  const burnoutTotal = stats
-    ? Object.values(stats.burnoutDistribution).reduce((a, b) => a + b, 0)
-    : 0;
-
-  const tabs = [
-    { id: 'stats', label: 'Statistics' },
-    { id: 'coach', label: 'Coach settings' },
-    { id: 'connectors', label: 'AI connectors' },
-    { id: 'monitor', label: 'AI monitoring' },
-    { id: 'saas', label: 'Business SaaS' },
-  ];
-
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     params.set('tab', tab);
@@ -128,11 +116,85 @@ export default function AdminDashboard() {
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
 
-  return (
-    <div className="flex min-h-screen flex-col bg-linen">
-      <Header variant="account" />
+  const burnoutTotal = stats
+    ? Object.values(stats.burnoutDistribution).reduce((a, b) => a + b, 0)
+    : 0;
 
-      <main className="mx-auto w-full max-w-landing flex-1 px-margin-mobile py-10 sm:px-8 lg:px-12">
+  const userLabel = firstName(user?.email?.split('@')[0]) || 'Admin';
+
+  const navItems = useMemo(
+    () => [
+      {
+        id: 'stats',
+        label: 'Statistics',
+        icon: 'chart',
+        active: tab === 'stats',
+        onClick: () => setTab('stats'),
+      },
+      {
+        id: 'coach',
+        label: 'Coach settings',
+        icon: 'chat',
+        active: tab === 'coach',
+        onClick: () => setTab('coach'),
+      },
+      {
+        id: 'connectors',
+        label: 'AI connectors',
+        icon: 'plug',
+        active: tab === 'connectors',
+        onClick: () => setTab('connectors'),
+      },
+      {
+        id: 'monitor',
+        label: 'AI monitoring',
+        icon: 'pulse',
+        active: tab === 'monitor',
+        onClick: () => setTab('monitor'),
+      },
+      {
+        id: 'saas',
+        label: 'Business SaaS',
+        icon: 'building',
+        active: tab === 'saas',
+        onClick: () => setTab('saas'),
+      },
+    ],
+    [tab],
+  );
+
+  const footerItems = useMemo(
+    () => [
+      { id: 'account', label: 'Account', icon: 'user', href: '/account' },
+      { id: 'assessment', label: 'Assessment', icon: 'compass', href: '/' },
+      {
+        id: 'logout',
+        label: 'Sign out',
+        icon: 'logout',
+        onClick: () => signOut().then(() => {
+          window.location.href = '/';
+        }),
+      },
+    ],
+    [signOut],
+  );
+
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-linen">
+        <PageLoadingState message="Loading admin…" artworkVariant="reflection" />
+      </div>
+    );
+  }
+
+  return (
+    <AppShell
+      userEmail={user?.email}
+      userLabel={userLabel}
+      items={navItems}
+      footerItems={footerItems}
+    >
+      <main className="mx-auto w-full max-w-landing flex-1 px-margin-mobile py-8 sm:px-8 lg:px-10">
         <header className="mb-8">
           <p className="hero-badge">Platform admin</p>
           <h1 className="mt-3 font-display text-headline-lg font-light text-ink">Operations</h1>
@@ -140,23 +202,6 @@ export default function AdminDashboard() {
             Monitor usage and deploy white-label workspaces for business clients.
           </p>
         </header>
-
-        <nav className="mb-8 flex flex-wrap gap-2 border-b border-linen-sunken">
-          {tabs.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => setTab(t.id)}
-              className={`btn-interactive -mb-px border-b-2 px-4 py-2.5 font-sans text-[15px] font-semibold transition-colors ${
-                tab === t.id
-                  ? 'border-canopy-600 text-canopy-600'
-                  : 'border-transparent text-ink-soft hover:text-ink'
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </nav>
 
         {error ? (
           <div className="surface-card border-signal-red/30 bg-signal-red-tint p-8 text-center">
@@ -317,8 +362,6 @@ export default function AdminDashboard() {
           </>
         ) : null}
       </main>
-
-      <Footer compact />
-    </div>
+    </AppShell>
   );
 }
