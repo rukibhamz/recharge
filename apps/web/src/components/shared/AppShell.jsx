@@ -183,22 +183,27 @@ function SidebarBody({
 
   return (
     <div className="flex h-full flex-col">
-      <div className={`border-b border-linen-sunken ${collapsed ? 'px-2 py-4' : 'px-4 py-5'}`}>
-        <div className={`flex items-center ${collapsed ? 'justify-center' : 'gap-3'}`}>
+      <div className={`border-b border-linen-sunken ${collapsed ? 'px-2 py-3' : 'px-3 py-3'}`}>
+        <div
+          className={`flex items-center gap-2 ${collapsed ? 'flex-col justify-center' : 'justify-between'}`}
+        >
           {collapsed ? (
             <LogoMark className="rounded-2xl" title={brandName} />
           ) : (
-            <div className="min-w-0 flex-1">
-              <Logo variant="compact" className="max-w-full" />
-              <p className="mt-1 truncate font-sans text-[12px] text-ink-soft">
-                {userLabel || userEmail || 'Signed in'}
-              </p>
-            </div>
+            <Logo variant="compact" className="min-w-0 flex-1" />
           )}
+          {showCollapseToggle ? (
+            <button
+              type="button"
+              onClick={onToggleCollapse}
+              className="btn-interactive flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-linen-sunken text-canopy-600 transition-colors hover:bg-fern-tint"
+              aria-label={collapsed ? 'Expand menu' : 'Collapse menu'}
+              title={collapsed ? 'Expand menu' : 'Collapse menu'}
+            >
+              <NavIcon name={collapsed ? 'menu' : 'panel'} className="h-4 w-4" />
+            </button>
+          ) : null}
         </div>
-        {!collapsed && userEmail && userLabel ? (
-          <p className="mt-1 truncate font-sans text-[12px] text-ink-faint">{userEmail}</p>
-        ) : null}
       </div>
 
       <nav
@@ -224,23 +229,6 @@ function SidebarBody({
             onNavigate={onNavigate}
           />
         ))}
-
-        {showCollapseToggle ? (
-          <button
-            type="button"
-            onClick={onToggleCollapse}
-            className={`btn-interactive flex w-full items-center gap-3 rounded-xl px-3 py-2.5 font-sans text-[14px] font-semibold text-ink-soft transition-colors hover:bg-linen-sunken hover:text-ink ${
-              collapsed ? 'justify-center px-2' : ''
-            }`}
-            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            title={collapsed ? 'Expand' : 'Collapse'}
-          >
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-linen-sunken text-canopy-600">
-              <NavIcon name="panel" />
-            </span>
-            {!collapsed ? <span>Collapse</span> : null}
-          </button>
-        ) : null}
 
         {!collapsed ? (
           <div className="mt-2 flex items-center gap-3 rounded-xl bg-linen-sunken/70 px-3 py-2.5">
@@ -375,7 +363,14 @@ export default function AppShell({
           <div className="h-10 w-10" aria-hidden="true" />
         </header>
 
-        <div className="min-h-0 flex-1">{children}</div>
+        <div className="min-h-0 flex-1">
+          {typeof children === 'function'
+            ? children({
+                sidebarCollapsed: collapsed,
+                toggleSidebar: () => setCollapsed((v) => !v),
+              })
+            : children}
+        </div>
       </div>
     </div>
   );

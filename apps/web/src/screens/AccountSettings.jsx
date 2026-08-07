@@ -3,12 +3,11 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { fetchHistory, downloadAccountExport, deleteAccount } from '../services/api.js';
 import Header from '../components/shared/Header.jsx';
 import Footer from '../components/shared/Footer.jsx';
-import AppShell from '../components/shared/AppShell.jsx';
+import AppShell, { NavIcon } from '../components/shared/AppShell.jsx';
 import Button from '../components/shared/Button.jsx';
 import { formatDate, relativeAssessmentTime, burnoutMoodIcon } from '../lib/formatDate.js';
 import { firstName } from '@recharge/shared/name';
 import { COACH_NAME } from '@recharge/shared/coachPersona';
-import SplitEditorialLayout from '../components/shared/SplitEditorialLayout.jsx';
 import PageLoadingState from '../components/shared/PageLoadingState.jsx';
 import CoachChatPanel from '../components/account/CoachChatPanel.jsx';
 import { useRefreshOnFocus } from '../hooks/useRefreshOnFocus.js';
@@ -172,7 +171,9 @@ export default function AccountSettings() {
       items={navItems}
       footerItems={footerItems}
     >
-      <main className="mx-auto w-full max-w-landing flex-1 space-y-stack-gap px-margin-mobile pb-28 pt-8 sm:px-8 lg:px-10">
+      {({ toggleSidebar, sidebarCollapsed }) => (
+      <>
+      <main className="mx-auto w-full max-w-landing flex-1 space-y-6 px-margin-mobile pb-28 pt-6 sm:px-8 lg:px-10">
         {linkError ? (
           <div className="rounded-xl border border-severe/30 bg-severe/5 px-4 py-3 font-sans text-body-md text-on-surface-variant">
             Could not link your latest result: {linkError}. Complete a new assessment and try
@@ -186,36 +187,42 @@ export default function AccountSettings() {
           </p>
         ) : null}
 
-        <SplitEditorialLayout
-          artworkVariant="recovery"
-          asideBadge="Your sanctuary"
-          asideTitle="Wellness, on your terms"
-          asideText="Manage reminders, talk to Oma, export your data, and revisit assessments in a space designed to feel calm, not clinical."
-        >
-          <section className="glass-card w-full p-gutter">
-            <div className="flex flex-col items-center gap-6 md:flex-row">
-              <div className="flex h-24 w-24 items-center justify-center rounded-full border-4 border-white bg-secondary-container text-primary shadow-sm">
-                <span className="font-display text-headline-lg">
-                  {displayName.charAt(0).toUpperCase()}
-                </span>
-              </div>
-              <div className="flex-1 text-center md:text-left">
-                <h1 className="font-display text-headline-lg text-primary">{displayName}</h1>
-                <p className="font-sans text-body-md text-on-surface-variant">{user.email}</p>
-                {lastAssessment ? (
-                  <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-secondary-container px-3 py-1 font-sans text-label-sm text-on-secondary-container">
-                    <span aria-hidden="true">✓</span>
-                    Last assessment: {relativeAssessmentTime(lastAssessment)}
-                  </div>
-                ) : (
-                  <p className="mt-2 font-sans text-body-md text-on-surface-variant">
-                    No saved assessments yet.
-                  </p>
-                )}
-              </div>
+        <section className="glass-card flex flex-wrap items-center gap-3 px-4 py-3 sm:gap-4 sm:px-5">
+          <button
+            type="button"
+            onClick={toggleSidebar}
+            className="btn-interactive hidden h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-fern-tint text-canopy transition-colors hover:bg-canopy hover:text-white md:inline-flex"
+            aria-label={sidebarCollapsed ? 'Expand menu' : 'Collapse menu'}
+            title={sidebarCollapsed ? 'Expand menu' : 'Collapse menu'}
+          >
+            <NavIcon name={sidebarCollapsed ? 'menu' : 'panel'} className="h-5 w-5" />
+          </button>
+
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-secondary-container text-primary">
+            <span className="font-display text-body-lg font-semibold">
+              {displayName.charAt(0).toUpperCase()}
+            </span>
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+              <h1 className="font-display text-body-lg text-primary sm:text-headline-md">
+                {displayName}
+              </h1>
+              <p className="truncate font-sans text-[13px] text-on-surface-variant">{user.email}</p>
             </div>
-          </section>
-        </SplitEditorialLayout>
+            {lastAssessment ? (
+              <div className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-secondary-container px-2.5 py-0.5 font-sans text-[12px] text-on-secondary-container">
+                <span aria-hidden="true">✓</span>
+                Last assessment: {relativeAssessmentTime(lastAssessment)}
+              </div>
+            ) : (
+              <p className="mt-0.5 font-sans text-[13px] text-on-surface-variant">
+                No saved assessments yet.
+              </p>
+            )}
+          </div>
+        </section>
 
         <section className="space-y-4">
           <div className="flex items-end justify-between">
@@ -489,6 +496,8 @@ export default function AccountSettings() {
           Talk to {COACH_NAME}
         </span>
       </button>
+      </>
+      )}
     </AppShell>
   );
 }

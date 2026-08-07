@@ -12,8 +12,8 @@ export default function Logo({ className = '', variant = 'default' }) {
   // Stacked logo (mark + wordmark) needs taller slot than wide wordmarks
   const sizeClass =
     variant === 'compact'
-      ? 'h-12 w-auto max-w-[7.5rem] sm:h-14 sm:max-w-[8.5rem]'
-      : 'h-14 w-auto max-w-[9rem] sm:h-16 sm:max-w-[10.5rem]';
+      ? 'h-[5.5rem] w-auto max-w-[11rem] sm:h-24 sm:max-w-[12.5rem]'
+      : 'h-20 w-auto max-w-[11rem] sm:h-24 sm:max-w-[13rem]';
 
   return (
     <span className={`inline-flex items-center ${className}`}>
