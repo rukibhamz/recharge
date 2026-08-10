@@ -12,6 +12,9 @@ import {
   DEFAULT_RECOVERY_TIPS,
   normalizeRecommendationsList,
 } from '@recharge/shared/recommendations';
+import {
+  resolveBurnoutSummary,
+} from '@recharge/shared/resultNarratives';
 import EditorialArtwork from '../components/shared/EditorialArtwork.jsx';
 import PageLoadingState from '../components/shared/PageLoadingState.jsx';
 
@@ -61,7 +64,8 @@ export default function SharePage({ shareToken }) {
 
   const { burnout, personality, recommendations: rawRecommendations } = data;
   const recommendations = normalizeRecommendationsList(rawRecommendations ?? [], DEFAULT_RECOVERY_TIPS);
-  const burnoutCopy = burnout.summary || BURNOUT_LEVEL_COPY[burnout.cls];
+  const burnoutCopy =
+    resolveBurnoutSummary(burnout, personality) || BURNOUT_LEVEL_COPY[burnout.cls];
   const personalitySummary = personality.summary || personality.type?.desc;
 
   return (

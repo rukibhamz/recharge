@@ -3,6 +3,10 @@ import {
   DEFAULT_RECOVERY_TIPS,
   normalizeRecommendationsList,
 } from '@recharge/shared/recommendations';
+import {
+  buildMoodboardCaption,
+  resolveBurnoutSummary,
+} from '@recharge/shared/resultNarratives';
 import Header from '../components/shared/Header.jsx';
 import Footer from '../components/shared/Footer.jsx';
 import Button from '../components/shared/Button.jsx';
@@ -15,7 +19,6 @@ import SaveResultsSection from '../components/results/SaveResultsSection.jsx';
 import EditorialArtwork from '../components/shared/EditorialArtwork.jsx';
 import { ArcDivider } from '../components/shared/Arc.jsx';
 import { BURNOUT_BADGE_CLASSES } from '../lib/design.js';
-
 export default function Results({ data, error, onRetake, showSaveSection = true }) {
   const shareToken = data?.shareToken ?? null;
   const shareCardPayload =
@@ -77,7 +80,9 @@ export default function Results({ data, error, onRetake, showSaveSection = true 
     linked,
   } = data;
   const recommendations = normalizeRecommendationsList(rawRecommendations ?? [], DEFAULT_RECOVERY_TIPS);
-  const copy = burnout.summary || BURNOUT_LEVEL_COPY[burnout.cls];
+  const copy =
+    resolveBurnoutSummary(burnout, personality) || BURNOUT_LEVEL_COPY[burnout.cls];
+  const moodboardCaption = buildMoodboardCaption(personality, burnout);
   const isPersonalised = aiSource && !['static', 'bank'].includes(aiSource);
   const cloudSaved = persisted !== false;
   const personalityTitle = personality.type?.title || personality.type?.name || 'Your profile';
@@ -161,10 +166,7 @@ export default function Results({ data, error, onRetake, showSaveSection = true 
             <EditorialArtwork variant="reflection" className="aspect-[4/3] w-full rounded-md" />
             <div className="px-2 pb-2 pt-5">
               <p className="card-eyebrow">Profile moodboard</p>
-              <p className="font-sans text-body-md text-ink-soft">
-                A visual layer for your result: reflective, calm, and shaped around how you process
-                energy, people, pressure, and recovery.
-              </p>
+              <p className="font-sans text-body-md text-ink-soft">{moodboardCaption}</p>
             </div>
           </div>
         </section>

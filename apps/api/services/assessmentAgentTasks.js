@@ -19,10 +19,17 @@ import {
   personalityQuestionDomainHint,
 } from '@recharge/shared/questionLifeDomains';
 import { firstName } from '@recharge/shared/name';
+import { buildBurnoutNarrative } from '@recharge/shared/resultNarratives';
 
 const VALID_POLES = new Set(['E', 'I', 'S', 'N', 'T', 'F', 'J', 'P']);
 const VALID_SCALES = new Set(['agreement', 'frequency']);
 
+function formatDimensionLines(dimensions) {
+  if (!dimensions || typeof dimensions !== 'object') return '';
+  return Object.entries(dimensions)
+    .map(([key, score]) => `- ${key}: ${score}%`)
+    .join('\n');
+}
 function isIStatement(text) {
   return /^i\s/i.test(String(text ?? '').trim());
 }
@@ -283,25 +290,34 @@ Return JSON only: {"type":{"title":"...","archetype":"...","desc":"...","strengt
     id: 'writeBurnoutSummary',
     buildPrompt(input) {
       const { userContext, qaBlock, personality, calibrated } = input;
-      return `You are a burnout specialist explaining an already-computed check-in result.
+      const dimensionLines =
+        input.dimensionLines || formatDimensionLines(calibrated?.dimensions);
+      return `You are a burnout specialist explaining an already-computed personal strain check-in.
 
 ${userContext}
 
-Personality: ${personality?.typeCode ?? ''} — ${personality?.summary ?? ''}
+Personality profile (use only to explain how they experience load/rest):
+${personality?.typeCode ?? ''} — ${personality?.type?.title || personality?.type?.name || ''}
+${personality?.summary ? `Personality notes: ${String(personality.summary).slice(0, 400)}` : ''}
 
-LOCKED result (do not change numbers or class):
-- pct: ${calibrated.pct}
+LOCKED result (do not change numbers, class, or invent other scores):
+- burnout risk pct: ${calibrated.pct} (0 = low strain, 100 = high strain — NOT a performance target)
 - cls: ${calibrated.cls}
 - level: ${calibrated.level}
 - rawPct: ${calibrated.rawPct}
-${calibrated.calibrationNote ? `- note: ${calibrated.calibrationNote}` : ''}
+${calibrated.calibrationNote ? `- personality calibration: ${calibrated.calibrationNote}` : ''}
+${dimensionLines ? `\nPer-area scores from their answers (higher = more strain, except as noted):\n${dimensionLines}` : ''}
 
-Their answers:
+Their check-in answers (ground your explanation here):
 ${qaBlock}
 
 ${BURNOUT_SUMMARY_RULES}
 
-Write 2–3 warm sentences explaining what you see and why this level fits THEM (personality-aware). Do NOT invent a different pct or cls.
+Write 3–4 short sentences in second person that:
+1) State the score and level as burnout/strain risk
+2) Point to 1–2 themes from their answers (quote themes, not option labels by number)
+3) Connect briefly to how their personality tends to handle load or rest
+4) End with a gentle "what this means" line — not a diagnosis
 
 Return JSON only:
 {"summary":"..."}`;
@@ -309,7 +325,17 @@ Return JSON only:
     validate(parsed) {
       const summary = String(parsed?.summary ?? '').trim();
       const errors = [];
-      if (summary.length < 20) errors.push('summary too short');
+      if (summary.length < 60) errors.push('summary too short');
+      if (
+        /\b(performance|expected targets?|targets achieved|KPI|stakeholders?|leverage|synerg|optimal outcomes?|data indicates|level of performance)\b/i.test(
+          summary,
+        )
+      ) {
+        errors.push('summary sounds like a corporate performance report');
+      }
+      if (!/\b\d{1,3}%\b/.test(summary)) {
+        errors.push('summary should mention the burnout percentage');
+      }
       return {
         ok: errors.length === 0,
         errors,
@@ -317,16 +343,14 @@ Return JSON only:
       };
     },
     fallback(input) {
-      const c = input.calibrated;
       return {
-        summary: `Based on your check-in, your burnout score is ${c.pct}% (${c.level})${
-          c.calibrationNote ? ` — ${c.calibrationNote}` : ''
-        }.`,
+        summary: buildBurnoutNarrative(input.calibrated, input.personality),
       };
     },
     repairPrompt(errors, input) {
       return `Your previous JSON was invalid: ${errors.join('; ')}.
-Write summary only. Do not change pct=${input.calibrated.pct} or cls=${input.calibrated.cls}.
+Write a personal burnout explanation only. Never use corporate performance language.
+Mention pct=${input.calibrated.pct} and level=${input.calibrated.cls}. Use their answer themes.
 Return JSON only: {"summary":"..."}`;
     },
   },

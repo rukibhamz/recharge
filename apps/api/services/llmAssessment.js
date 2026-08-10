@@ -4,6 +4,7 @@ import {
   calibrateBurnout,
   scoreBurnoutByDimension,
 } from '@recharge/shared/burnoutCalibration';
+import { resolveBurnoutSummary } from '@recharge/shared/resultNarratives';
 import { llmFeatures } from '../config/llm.js';
 import {
   buildQuestionPromptContext,
@@ -314,7 +315,17 @@ export async function scoreBurnoutTest(
   const raw = scoreBurnoutByDimension(answers, questions);
   const calibrated = calibrateBurnout(raw, personality);
 
-  let summary = `Based on your check-in answers, your current burnout score is ${calibrated.pct}% (${calibrated.level}).`;
+  let summary = resolveBurnoutSummary(
+    {
+      pct: calibrated.pct,
+      cls: calibrated.cls,
+      level: calibrated.level,
+      dimensions: calibrated.dimensions,
+      summary: null,
+      calibrationNote: calibrated.calibrationNote,
+    },
+    personality,
+  );
   let source = 'scoring';
 
   if (llmFeatures.burnoutNarrative) {
@@ -326,7 +337,18 @@ export async function scoreBurnoutTest(
       personality,
       calibrated,
     });
-    summary = result.summary;
+    // Replace KPI-style or empty LLM output with structured narrative
+    summary = resolveBurnoutSummary(
+      {
+        pct: calibrated.pct,
+        cls: calibrated.cls,
+        level: calibrated.level,
+        dimensions: calibrated.dimensions,
+        summary: result?.summary,
+        calibrationNote: calibrated.calibrationNote,
+      },
+      personality,
+    );
     source = narrativeSource === 'bank-fallback' ? 'scoring' : narrativeSource;
   }
 

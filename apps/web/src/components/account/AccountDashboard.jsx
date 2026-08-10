@@ -2,21 +2,11 @@ import Button from '../shared/Button.jsx';
 import ScoreRing from '../results/ScoreRing.jsx';
 import TraitBars from '../results/TraitBars.jsx';
 import { normalizeRecommendationsList, DEFAULT_RECOVERY_TIPS } from '@recharge/shared/recommendations';
+import { resolveBurnoutSummary } from '@recharge/shared/resultNarratives';
 import { relativeAssessmentTime } from '../../lib/formatDate.js';
 
-function plainBurnoutSummary(burnout) {
-  if (burnout?.summary) return burnout.summary;
-  const cls = String(burnout?.cls || '').toLowerCase();
-  if (cls === 'healthy') {
-    return 'Your latest check-in sits in a healthier range. Keep protecting rest, boundaries, and recovery habits that are already working.';
-  }
-  if (cls === 'mild') {
-    return 'Your score points to mild strain. Small recovery habits now — short breaks, clearer boundaries, earlier wind-down — can stop load from building.';
-  }
-  if (cls === 'severe') {
-    return 'Your score signals high burnout risk. Prioritise rest and support this week; treat recovery tasks as non-negotiable, not optional.';
-  }
-  return 'Your score indicates moderate burnout risk. Focus on neural rest, sleep protection, and one clear boundary around work load this week.';
+function plainBurnoutSummary(burnout, personality) {
+  return resolveBurnoutSummary(burnout, personality);
 }
 
 function needsAction(cls) {
@@ -134,7 +124,7 @@ export default function AccountDashboard({
                   <span className="text-canopy">{burnout.level || '—'}</span>
                 </h2>
                 <p className="font-sans text-[16px] leading-relaxed text-ink-soft">
-                  {plainBurnoutSummary(burnout)}
+                  {plainBurnoutSummary(burnout, personality)}
                 </p>
                 {action ? (
                   <div className="inline-flex items-center gap-2 rounded-full border border-signal-amber/30 bg-signal-amber-tint/80 px-4 py-2 font-sans text-sm font-semibold text-signal-amber">

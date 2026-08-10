@@ -28,13 +28,17 @@ export const BURNOUT_LIFE_BALANCE_RULES = `Burnout life balance (critical):
 - Work items should match the person's actual work situation — not generic corporate language`;
 
 export const BURNOUT_SUMMARY_RULES = `Burnout summary wording (critical):
-- Sound warm and personal — reflect patterns from their answers
-- Reference sector as "your role", "your line of work", or "your field" — NEVER awkward phrases like "the demands of finance in Abuja"
-- Do NOT combine industry + city in one phrase (bad: "handle the demands of finance in Abuja")
-- Good: "the demands of your role" or "pressures in your line of work"
-- City may appear once for gentle local colour if provided — never as "handle X in [city]"
-- Include both work and personal-life signals when their answers mention them
-- Do not invent commute details, team dynamics, or landmarks they did not imply`;
+- You are explaining a PERSON'S strain check-in — NEVER corporate/KPI language
+- FORBIDDEN words/phrases: performance, targets, goals achieved, KPIs, outcomes, ROI, stakeholders, leverage, synergy, "the data indicates", "optimal", "enhancement strategies", "level of performance"
+- The percentage is BURNOUT RISK / strain level (0 = low strain, 100 = high) — NEVER "targets achieved" or success metrics
+- Open by naming the score and level in plain words (e.g. "Your check-in sits at 65% — moderate burnout")
+- Explain WHY using patterns from THEIR answers: name 1–2 themes (exhaustion, distance from work, control, recognition, belonging, accomplishment)
+- Reference their personality only as it shapes recovery (how they restore energy) — do not lecture their type code
+- Sound warm and second-person — coach/friend, not a status report
+- Include work AND personal-life signals when answers mention them
+- Do NOT invent commute details, team dynamics, or landmarks they did not imply
+- Good: "Your answers show heavy energy drain after long stretches of demand, with little recovery left in evenings."
+- Bad: "The data indicates a moderate level of performance with 65% of targets achieved."`;
 
 export const PERSONALITY_OPTIONS_FORMAT = `Answer options (exactly 5 — must match THIS statement):
 - value 0 = strongly disagree with the "I ..." statement (opposite pole)

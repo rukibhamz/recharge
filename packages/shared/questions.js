@@ -210,10 +210,10 @@ export function optionsForQuestion(question, phase = 'personality') {
 
 export const BURNOUT_LEVEL_COPY = {
   healthy:
-    'Your responses suggest you are in a healthy range right now. Keep protecting the habits that sustain you.',
-  mild: 'You may be carrying more than usual. This is useful information — not a verdict — and a signal to pay attention early.',
+    'Your check-in is in a healthier strain range. Keep protecting sleep, boundaries, and the recovery habits that leave you with enough energy for life beyond load.',
+  mild: 'Your answers show mild burnout risk — you can still function, but more of your day is running on strain than reserve. Small course-corrections now prevent a deeper slide.',
   moderate:
-    'Your answers point to sustained depletion. Many people at this level benefit from small, deliberate recovery steps starting this week.',
+    'Your answers point to moderate burnout risk: sustained depletion rather than a rough day. The score measures load on your system (0–100 strain), not targets or performance. Start deliberate recovery this week.',
   severe:
-    'What you are feeling is real and significant. This result is information that can guide your next step — not a label you have to carry alone.',
+    'Your answers point to high burnout risk. Across the check-in, drain, distance, and lack of recovery show through strongly. Treat rest and support as urgent — this is information to act on, not a label.',
 };
