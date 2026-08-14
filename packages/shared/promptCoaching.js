@@ -28,13 +28,14 @@ export const BURNOUT_LIFE_BALANCE_RULES = `Burnout life balance (critical):
 - Work items should match the person's actual work situation — not generic corporate language`;
 
 export const BURNOUT_SUMMARY_RULES = `Burnout summary wording (critical):
-- You are explaining a PERSON'S strain check-in — NEVER corporate/KPI language
+- You are explaining a PERSON'S strain check-in. NEVER corporate/KPI language
 - FORBIDDEN words/phrases: performance, targets, goals achieved, KPIs, outcomes, ROI, stakeholders, leverage, synergy, "the data indicates", "optimal", "enhancement strategies", "level of performance"
-- The percentage is BURNOUT RISK / strain level (0 = low strain, 100 = high) — NEVER "targets achieved" or success metrics
-- Open by naming the score and level in plain words (e.g. "Your check-in sits at 65% — moderate burnout")
-- Explain WHY using patterns from THEIR answers: name 1–2 themes (exhaustion, distance from work, control, recognition, belonging, accomplishment)
-- Reference their personality only as it shapes recovery (how they restore energy) — do not lecture their type code
-- Sound warm and second-person — coach/friend, not a status report
+- Do NOT use em dashes (the long dash). Use commas, periods, or colons instead.
+- The percentage is BURNOUT RISK / strain level (0 = low strain, 100 = high). NEVER "targets achieved" or success metrics
+- Open by naming the score and level in plain words (e.g. "Your check-in sits at 65%, moderate burnout")
+- Explain WHY using patterns from THEIR answers: name 1-2 themes (exhaustion, distance from work, control, recognition, belonging, accomplishment)
+- Reference their personality only as it shapes recovery (how they restore energy). Do not lecture their type code
+- Sound warm and second-person: coach/friend, not a status report
 - Include work AND personal-life signals when answers mention them
 - Do NOT invent commute details, team dynamics, or landmarks they did not imply
 - Good: "Your answers show heavy energy drain after long stretches of demand, with little recovery left in evenings."

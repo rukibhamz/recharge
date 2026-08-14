@@ -7,16 +7,14 @@ import ScoreRing from '../components/results/ScoreRing.jsx';
 import PersonalityCard from '../components/results/PersonalityCard.jsx';
 import TraitBars from '../components/results/TraitBars.jsx';
 import RecommendationCard from '../components/results/RecommendationCard.jsx';
-import { BURNOUT_LEVEL_COPY } from '@recharge/shared/questions';
 import {
   DEFAULT_RECOVERY_TIPS,
   normalizeRecommendationsList,
 } from '@recharge/shared/recommendations';
-import {
-  resolveBurnoutSummary,
-} from '@recharge/shared/resultNarratives';
+import { resolveBurnoutReport } from '@recharge/shared/resultNarratives';
 import EditorialArtwork from '../components/shared/EditorialArtwork.jsx';
 import PageLoadingState from '../components/shared/PageLoadingState.jsx';
+import StructuredCopy from '../components/results/StructuredCopy.jsx';
 
 export default function SharePage({ shareToken }) {
   const [data, setData] = useState(null);
@@ -64,8 +62,7 @@ export default function SharePage({ shareToken }) {
 
   const { burnout, personality, recommendations: rawRecommendations } = data;
   const recommendations = normalizeRecommendationsList(rawRecommendations ?? [], DEFAULT_RECOVERY_TIPS);
-  const burnoutCopy =
-    resolveBurnoutSummary(burnout, personality) || BURNOUT_LEVEL_COPY[burnout.cls];
+  const report = resolveBurnoutReport(burnout, personality);
   const personalitySummary = personality.summary || personality.type?.desc;
 
   return (
@@ -95,9 +92,7 @@ export default function SharePage({ shareToken }) {
           <h1 className="mt-4 font-display text-headline-md text-primary sm:mt-6 sm:text-headline-lg">
             {burnout.level}
           </h1>
-          <p className="mx-auto mt-3 max-w-md font-sans text-body-md text-on-surface-variant sm:mt-4 sm:text-body-md">
-            {burnoutCopy}
-          </p>
+          <StructuredCopy report={report} className="mx-auto mt-6 max-w-2xl" />
         </section>
 
         {/* Personality */}

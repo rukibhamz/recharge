@@ -1,11 +1,11 @@
-import { BURNOUT_LEVEL_COPY } from '@recharge/shared/questions';
 import {
   DEFAULT_RECOVERY_TIPS,
   normalizeRecommendationsList,
 } from '@recharge/shared/recommendations';
 import {
-  buildMoodboardCaption,
-  resolveBurnoutSummary,
+  buildMoodboardSections,
+  resolveBurnoutReport,
+  stripEmDashes,
 } from '@recharge/shared/resultNarratives';
 import Header from '../components/shared/Header.jsx';
 import Footer from '../components/shared/Footer.jsx';
@@ -14,6 +14,7 @@ import ScoreRing from '../components/results/ScoreRing.jsx';
 import TraitBars from '../components/results/TraitBars.jsx';
 import RecommendationCard from '../components/results/RecommendationCard.jsx';
 import ShareCard from '../components/results/ShareCard.jsx';
+import StructuredCopy, { MoodboardCopy } from '../components/results/StructuredCopy.jsx';
 import { useShareCard } from '../hooks/useShareCard.js';
 import SaveResultsSection from '../components/results/SaveResultsSection.jsx';
 import EditorialArtwork from '../components/shared/EditorialArtwork.jsx';
@@ -80,9 +81,8 @@ export default function Results({ data, error, onRetake, showSaveSection = true 
     linked,
   } = data;
   const recommendations = normalizeRecommendationsList(rawRecommendations ?? [], DEFAULT_RECOVERY_TIPS);
-  const copy =
-    resolveBurnoutSummary(burnout, personality) || BURNOUT_LEVEL_COPY[burnout.cls];
-  const moodboardCaption = buildMoodboardCaption(personality, burnout);
+  const report = resolveBurnoutReport(burnout, personality);
+  const moodboardSections = buildMoodboardSections(personality, burnout);
   const isPersonalised = aiSource && !['static', 'bank'].includes(aiSource);
   const cloudSaved = persisted !== false;
   const personalityTitle = personality.type?.title || personality.type?.name || 'Your profile';
@@ -119,7 +119,7 @@ export default function Results({ data, error, onRetake, showSaveSection = true 
                 )}
               </h1>
               <p className="mt-4 max-w-xl font-sans text-body-md text-ink-soft">
-                Your burnout pattern, personality profile, and recovery plan — framed as information,
+                Your burnout pattern, personality profile, and recovery plan, framed as information,
                 not a verdict.
               </p>
             </div>
@@ -127,18 +127,20 @@ export default function Results({ data, error, onRetake, showSaveSection = true 
           </div>
         </section>
 
-        <section className="surface-card p-gutter text-center">
-          <ScoreRing pct={burnout.pct} cls={burnout.cls} level={null} />
-          <div className="mt-5 flex justify-center">
-            <span className={badgeClass}>● {burnout.level}</span>
+        <section className="surface-card p-gutter">
+          <div className="text-center">
+            <ScoreRing pct={burnout.pct} cls={burnout.cls} level={null} />
+            <div className="mt-5 flex justify-center">
+              <span className={badgeClass}>● {burnout.level}</span>
+            </div>
+            {burnout.rawPct != null && burnout.rawPct !== burnout.pct ? (
+              <p className="mt-3 font-mono text-[12px] text-ink-faint">
+                Relative to your personality profile
+                {burnout.calibrationNote ? ` · ${burnout.calibrationNote}` : ''}
+              </p>
+            ) : null}
           </div>
-          {burnout.rawPct != null && burnout.rawPct !== burnout.pct ? (
-            <p className="mt-3 font-mono text-[12px] text-ink-faint">
-              Relative to your personality profile
-              {burnout.calibrationNote ? ` · ${burnout.calibrationNote}` : ''}
-            </p>
-          ) : null}
-          <p className="mx-auto mt-4 max-w-md font-sans text-body-md text-ink-soft">{copy}</p>
+          <StructuredCopy report={report} className="mx-auto mt-8 max-w-2xl" />
         </section>
 
         <ArcDivider />
@@ -157,7 +159,7 @@ export default function Results({ data, error, onRetake, showSaveSection = true 
               </div>
             </div>
             <p className="mb-8 font-sans text-body-md text-ink-soft">
-              {personality.summary || personality.type?.desc}
+              {stripEmDashes(personality.summary || personality.type?.desc)}
             </p>
             <TraitBars traits={personality.traits} />
           </div>
@@ -166,7 +168,7 @@ export default function Results({ data, error, onRetake, showSaveSection = true 
             <EditorialArtwork variant="reflection" className="aspect-[4/3] w-full rounded-md" />
             <div className="px-2 pb-2 pt-5">
               <p className="card-eyebrow">Profile moodboard</p>
-              <p className="font-sans text-body-md text-ink-soft">{moodboardCaption}</p>
+              <MoodboardCopy sections={moodboardSections} className="mt-3" />
             </div>
           </div>
         </section>
@@ -177,7 +179,7 @@ export default function Results({ data, error, onRetake, showSaveSection = true 
             <span className="ai-badge">{isPersonalised ? 'Personalised' : 'Curated'}</span>
           </div>
           <p className="font-sans text-body-md text-ink-soft">
-            Four practical steps for this week — start today, then protect your energy as you go.
+            Four practical steps for this week. Start today, then protect your energy as you go.
           </p>
           <div className="grid grid-cols-1 gap-gutter md:grid-cols-2">
             {recommendations.map((rec, i) => (

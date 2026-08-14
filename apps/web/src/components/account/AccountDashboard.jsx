@@ -2,12 +2,9 @@ import Button from '../shared/Button.jsx';
 import ScoreRing from '../results/ScoreRing.jsx';
 import TraitBars from '../results/TraitBars.jsx';
 import { normalizeRecommendationsList, DEFAULT_RECOVERY_TIPS } from '@recharge/shared/recommendations';
-import { resolveBurnoutSummary } from '@recharge/shared/resultNarratives';
+import { resolveBurnoutReport } from '@recharge/shared/resultNarratives';
 import { relativeAssessmentTime } from '../../lib/formatDate.js';
-
-function plainBurnoutSummary(burnout, personality) {
-  return resolveBurnoutSummary(burnout, personality);
-}
+import StructuredCopy from '../results/StructuredCopy.jsx';
 
 function needsAction(cls) {
   const c = String(cls || '').toLowerCase();
@@ -77,7 +74,7 @@ export default function AccountDashboard({
       ? 'Set a re-check cadence below'
       : daysLeft > 0
         ? `${daysLeft} day${daysLeft === 1 ? '' : 's'} until your next check-in`
-        : 'Check-in is due — retake when ready';
+        : 'Check-in is due. Retake when ready';
   const progressPct =
     daysLeft == null
       ? 33
@@ -121,11 +118,9 @@ export default function AccountDashboard({
               <div className="min-w-0 flex-1 space-y-4 text-center md:text-left">
                 <h2 className="font-display text-2xl font-medium text-ink sm:text-3xl">
                   Latest Burnout Score:{' '}
-                  <span className="text-canopy">{burnout.level || '—'}</span>
+                  <span className="text-canopy">{burnout.level || 'Moderate'}</span>
                 </h2>
-                <p className="font-sans text-[16px] leading-relaxed text-ink-soft">
-                  {plainBurnoutSummary(burnout, personality)}
-                </p>
+                <StructuredCopy report={resolveBurnoutReport(burnout, personality)} />
                 {action ? (
                   <div className="inline-flex items-center gap-2 rounded-full border border-signal-amber/30 bg-signal-amber-tint/80 px-4 py-2 font-sans text-sm font-semibold text-signal-amber">
                     <span aria-hidden="true">⚠</span>
