@@ -37,26 +37,26 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         skipWaiting: true,
         clientsClaim: true,
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp}'],
-        navigateFallback: 'index.html',
-        navigateFallbackDenylist: [/^\/api\//],
+        // Do not precache HTML — stale index.html is why phones keep the old design.
+        globPatterns: ['**/*.{js,css,ico,png,svg,jpg,jpeg,webp}'],
+        globIgnores: ['**/index.html'],
         runtimeCaching: [
           {
             urlPattern: ({ request }) => request.mode === 'navigate',
             handler: 'NetworkFirst',
             options: {
               cacheName: 'recharge-pages',
-              networkTimeoutSeconds: 4,
-              expiration: { maxEntries: 20, maxAgeSeconds: 60 * 30 },
+              networkTimeoutSeconds: 3,
+              expiration: { maxEntries: 8, maxAgeSeconds: 60 },
             },
           },
           {
             urlPattern: ({ request }) =>
-              request.destination === 'script' || request.destination === 'style',
+              request.destination === 'image',
             handler: 'StaleWhileRevalidate',
             options: {
-              cacheName: 'recharge-assets',
-              expiration: { maxEntries: 40, maxAgeSeconds: 60 * 60 * 12 },
+              cacheName: 'recharge-images',
+              expiration: { maxEntries: 40, maxAgeSeconds: 60 * 60 * 24 },
             },
           },
         ],
