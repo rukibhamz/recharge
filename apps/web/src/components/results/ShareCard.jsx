@@ -22,6 +22,7 @@ export default function ShareCard({ displayName, burnout, personality }) {
       id="share-card"
       style={{
         width: 400,
+        maxWidth: '100%',
         boxSizing: 'border-box',
         overflow: 'hidden',
         borderRadius: 14,

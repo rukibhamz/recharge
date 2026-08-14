@@ -3,8 +3,29 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    overflow-x: clip;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  #root {
+    width: 100%;
+    max-width: 100%;
+    min-height: 100%;
+    overflow-x: hidden;
+    overflow-x: clip;
+  }
+
   body {
     @apply min-h-screen text-ink antialiased;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    overflow-x: clip;
     /* Cool mist base + warm linen undertone — site-wide sanctuary atmosphere */
     background-color: #f0f4f5;
     background-image:
@@ -98,7 +119,7 @@
   }
 
   .field {
-    @apply w-full rounded-[10px] border-[1.5px] border-linen-sunken bg-linen-raised px-3.5 py-3 font-sans text-[14px] text-ink outline-none transition-colors duration-base ease-calm placeholder:text-ink-faint focus:border-canopy-600;
+    @apply w-full rounded-[10px] border-[1.5px] border-linen-sunken bg-linen-raised px-3.5 py-3 font-sans text-[16px] text-ink outline-none transition-colors duration-base ease-calm placeholder:text-ink-faint focus:border-canopy-600;
   }
 
   .badge {

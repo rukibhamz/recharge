@@ -78,7 +78,7 @@ export default function Hero({ onStart }) {
             </p>
 
             <div className="mt-10 flex justify-center lg:justify-start">
-              <Button size="lg" onClick={onStart} className="min-w-[220px]">
+              <Button size="lg" onClick={onStart} className="w-full max-w-[220px] sm:w-auto">
                 {content.cta}
               </Button>
             </div>

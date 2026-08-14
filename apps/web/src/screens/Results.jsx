@@ -223,7 +223,7 @@ export default function Results({ data, error, onRetake, showSaveSection = true 
         </section>
 
         {shareToken && cloudSaved ? (
-          <div className="flex justify-center overflow-hidden rounded-md border border-linen-sunken bg-linen-sunken/50 p-4">
+          <div className="flex w-full max-w-full justify-center overflow-x-auto overflow-y-hidden rounded-md border border-linen-sunken bg-linen-sunken/50 p-4">
             <ShareCard displayName={displayName} burnout={burnout} personality={personality} />
           </div>
         ) : null}

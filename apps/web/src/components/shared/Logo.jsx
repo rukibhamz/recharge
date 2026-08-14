@@ -12,8 +12,8 @@ export default function Logo({ className = '', variant = 'default' }) {
   // Stacked logo (mark + wordmark) needs taller slot than wide wordmarks
   const sizeClass =
     variant === 'compact'
-      ? 'h-[5.5rem] w-auto max-w-[11rem] sm:h-24 sm:max-w-[12.5rem]'
-      : 'h-20 w-auto max-w-[11rem] sm:h-24 sm:max-w-[13rem]';
+      ? 'h-12 w-auto max-w-[9.5rem] sm:h-16 sm:max-w-[12rem] lg:h-20 lg:max-w-[13rem]'
+      : 'h-11 w-auto max-w-[9rem] sm:h-16 sm:max-w-[12rem] lg:h-20 lg:max-w-[13rem]';
 
   return (
     <span className={`inline-flex items-center ${className}`}>
@@ -22,6 +22,8 @@ export default function Logo({ className = '', variant = 'default' }) {
         alt={brandName || 'recharge'}
         className={`${sizeClass} object-contain object-left`}
         decoding="async"
+        width="208"
+        height="80"
       />
     </span>
   );
