@@ -1,5 +1,6 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase.js';
 import { listWorkspaces } from './workspaces.js';
+import { countNewFeedback } from './feedback.js';
 
 function daysAgoIso(days) {
   const d = new Date();
@@ -264,6 +265,7 @@ export async function getAdminStats() {
   }));
 
   const volumeSeries = buildVolumeSeries(sessionRows, linkedSet, 14);
+  const feedbackNew = await countNewFeedback();
 
   return {
     generatedAt: new Date().toISOString(),
@@ -318,6 +320,7 @@ export async function getAdminStats() {
     })),
     organizations: orgOverview,
     organizationCount: workspaces?.length ?? 0,
+    feedbackNew,
     health: {
       database: {
         status: databaseOk ? 'up' : 'down',

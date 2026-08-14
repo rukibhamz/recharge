@@ -3,6 +3,8 @@ import { ensureProfile } from './sessions.js';
 import { resolveCoachAssessmentContext } from './coachContext.js';
 import { generateOmaReply, getOmaOpening } from './coachAgent.js';
 import { getCoachSettings } from './coachSettings.js';
+import { ingestCoachKnowledge } from './knowledgeBank.js';
+import { detectsAdviceAcknowledgement } from '@recharge/shared/coachPersona';
 
 function mapConversation(row) {
   if (!row) return null;
@@ -274,6 +276,15 @@ export async function sendCoachMessage(userId, email, conversationId, content) {
     session,
     history: historyRows ?? [],
     userMessage: trimmed,
+  });
+
+  ingestCoachKnowledge({
+    assistantReply: (historyRows ?? []).filter((m) => m.role === 'assistant').slice(-1)[0]?.content,
+    userMessage: trimmed,
+    burnoutCls: session?.burnout?.cls,
+    typeCode: session?.personality?.typeCode,
+    workContext: session?.demographics?.workContext,
+    adviceAcknowledged: detectsAdviceAcknowledgement(trimmed),
   });
 
   const { data: assistantRow, error: assistantError } = await supabase

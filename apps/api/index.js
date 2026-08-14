@@ -10,6 +10,7 @@ import accountRouter from './routes/account.js';
 import coachRouter from './routes/coach.js';
 import adminRouter from './routes/admin.js';
 import tenantRouter from './routes/tenant.js';
+import feedbackRouter from './routes/feedback.js';
 import { rateLimit } from './middleware/rateLimit.js';
 import { ENV_EXISTS, ENV_PATH } from './loadEnv.js';
 import { geminiKeyFormat, isGeminiAvailable } from './config/gemini.js';
@@ -19,6 +20,7 @@ import { checkOllamaConnection, isOllamaConfigured, ollamaStats } from './servic
 import { hasAnyLlmProvider, llmStats } from './services/llmProvider.js';
 import { isSupabaseConfigured, supabase } from './lib/supabase.js';
 import { checkQuestionBankHealth } from './services/questionBank.js';
+import { getKnowledgeBankStats } from './services/knowledgeBank.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -161,6 +163,7 @@ app.get('/health', async (_req, res) => {
   }
 
   const questionBank = await checkQuestionBankHealth();
+  const knowledgeBank = await getKnowledgeBankStats();
 
   res.json({
     status: 'ok',
@@ -168,6 +171,7 @@ app.get('/health', async (_req, res) => {
     llm,
     supabase: supabaseStatus,
     questionBank: { ...questionBank, role: 'fallback-only' },
+    knowledgeBank,
   });
 });
 
@@ -179,6 +183,7 @@ app.use('/api/account', accountRouter);
 app.use('/api/coach', coachRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/tenant', tenantRouter);
+app.use('/api/feedback', rateLimit, feedbackRouter);
 
 app.use((err, _req, res, _next) => {
   console.error(err);

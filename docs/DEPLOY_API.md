@@ -47,6 +47,13 @@ Set these in Render or Railway (not on Vercel):
 3. View per-model calls, success rate (uptime), latency (24h / 7d + live process).
 4. Use **Probe all models** to run a live health check against every enabled connector.
 
+### Self-improving knowledge bank (RAG)
+
+1. Run migration `017_ai_knowledge_bank.sql` in Supabase.
+2. Keep `LLM_KNOWLEDGE_LOOP=true` on the API (default).
+3. Completed assessments and acknowledged coach advice write anonymized patterns (no names or emails).
+4. Those patterns are retrieved into question, advice, and Oma prompts. Admin → AI monitoring shows entry counts.
+
 | `PORT` | Auto | Render/Railway set `PORT` — app reads `process.env.PORT` |
 | `GEMINI_MODEL` | Optional | Default in code: `gemini-2.5-flash-lite` |
 | `RATE_LIMIT_MAX` | Optional | Default `10` per window |

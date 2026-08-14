@@ -30,6 +30,11 @@ function formatDimensionLines(dimensions) {
     .map(([key, score]) => `- ${key}: ${score}%`)
     .join('\n');
 }
+
+function knowledgeBlock(input) {
+  const block = String(input?.knowledgeContext ?? '').trim();
+  return block ? `\n${block}\n` : '';
+}
 function isIStatement(text) {
   return /^i\s/i.test(String(text ?? '').trim());
 }
@@ -45,7 +50,7 @@ export const ASSESSMENT_TASKS = {
       return `Rewrite this personality interview statement for ${name || 'this person'}. Keep the SAME psychological meaning and scored pole.
 
 ${userContext}
-
+${knowledgeBlock(input)}
 ${domainGuide}
 
 ${COACH_VOICE_RULES}
@@ -130,6 +135,7 @@ Return JSON only: {"text":"I ...","scoredPole":"${input.anchor.scoredPole}","dic
       return `Rewrite this burnout check-in item for ${name || 'this person'}. Keep the SAME measurement intent and dimension.
 
 ${userContext}
+${knowledgeBlock(input)}
 ${dimensionGuide ? `\n${dimensionGuide}\n` : ''}
 ${lifeDomainGuide}
 
@@ -221,7 +227,7 @@ Return JSON only: {"text":"...","scale":"${input.anchor.scale}","dimension":"${i
       return `You are a skilled therapist reflecting on a personality interview. The type is ALREADY determined — do not change it.
 
 ${insightContext}
-
+${knowledgeBlock(input)}
 ${PERSONALITY_INSIGHT_RULES}
 
 LOCKED type (do not change): ${typeCode} — ${typeProfile?.title ?? ''}
@@ -295,7 +301,7 @@ Return JSON only: {"type":{"title":"...","archetype":"...","desc":"...","strengt
       return `You are a burnout specialist explaining an already-computed personal strain check-in.
 
 ${userContext}
-
+${knowledgeBlock(input)}
 Personality profile (use only to explain how they experience load/rest):
 ${personality?.typeCode ?? ''} — ${personality?.type?.title || personality?.type?.name || ''}
 ${personality?.summary ? `Personality notes: ${String(personality.summary).slice(0, 400)}` : ''}

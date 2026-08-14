@@ -120,6 +120,10 @@ export function buildOmaSystemPrompt(
   const unwind = recoveryPreferencesPromptContext(recoveryPreferences);
   if (unwind) lines.push(unwind);
 
+  if (session?.knowledgeContext) {
+    lines.push('', session.knowledgeContext);
+  }
+
   lines.push(`- Their recovery roadmap (only offer when they want advice):\n${formatRecommendations(session?.recommendations)}`);
   lines.push('');
   if (coachName && coachName !== COACH_NAME) {

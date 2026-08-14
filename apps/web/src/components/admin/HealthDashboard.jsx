@@ -272,6 +272,7 @@ export default function HealthDashboard({
   loading,
   onExport,
   onViewOrganizations,
+  onViewFeedback,
   variant = 'full',
 }) {
   if (loading && !stats) {
@@ -317,6 +318,20 @@ export default function HealthDashboard({
           </Button>
         </div>
       </header>
+
+      {!isAnalytics && (stats.feedbackNew ?? 0) > 0 && onViewFeedback ? (
+        <button
+          type="button"
+          onClick={onViewFeedback}
+          className="surface-card flex w-full items-center justify-between gap-3 p-4 text-left"
+        >
+          <span className="font-sans text-body-md text-ink">
+            {stats.feedbackNew} new product suggestion{stats.feedbackNew === 1 ? '' : 's'} waiting
+            in Feedback.
+          </span>
+          <span className="font-sans text-[13px] font-semibold text-canopy">Open inbox</span>
+        </button>
+      ) : null}
 
       {!isAnalytics ? (
         <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">

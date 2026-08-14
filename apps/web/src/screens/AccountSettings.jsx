@@ -11,6 +11,7 @@ import { COACH_NAME } from '@recharge/shared/coachPersona';
 import PageLoadingState from '../components/shared/PageLoadingState.jsx';
 import CoachChatPanel from '../components/account/CoachChatPanel.jsx';
 import AccountDashboard from '../components/account/AccountDashboard.jsx';
+import FeedbackForm from '../components/shared/FeedbackForm.jsx';
 import { useRefreshOnFocus } from '../hooks/useRefreshOnFocus.js';
 import { useIsAdmin } from '../hooks/useIsAdmin.js';
 
@@ -350,6 +351,11 @@ export default function AccountSettings() {
                         </button>
                       </div>
                     </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <h3 className="font-display text-lg text-ink">Improve Recharge</h3>
+                    <FeedbackForm page="account" compact />
                   </div>
 
                   <div className="space-y-3">

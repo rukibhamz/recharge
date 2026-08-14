@@ -33,6 +33,7 @@ import LegalPage from './screens/LegalPage.jsx';
 import AdminDashboard from './screens/AdminDashboard.jsx';
 import AboutPage from './screens/AboutPage.jsx';
 import FaqPage from './screens/FaqPage.jsx';
+import FeedbackPage from './screens/FeedbackPage.jsx';
 
 function usePathRoute() {
   const [path, setPath] = useState(() =>
@@ -57,6 +58,7 @@ export default function App() {
   if (route.kind === 'admin') return <AdminDashboard />;
   if (route.kind === 'about') return <AboutPage />;
   if (route.kind === 'faq') return <FaqPage />;
+  if (route.kind === 'feedback') return <FeedbackPage />;
   if (route.kind === 'legal') return <LegalPage kind={route.legal} />;
   if (route.kind === 'history') return <HistoryRedirect />;
   if (route.kind === 'history-detail') return <SavedResult sessionId={route.sessionId} />;

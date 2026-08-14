@@ -20,6 +20,7 @@ import {
   selectPersonalityAnchors,
 } from './questionBank.js';
 import { personalizeAnchorBatch, runAgentTask } from './assessmentAgent.js';
+import { retrieveKnowledgeContext } from './knowledgeBank.js';
 
 function bankFallbackEnabled() {
   const raw = process.env.LLM_ASSESSMENT_BANK_FALLBACK;
@@ -173,12 +174,17 @@ export async function generatePersonalityTest(userName, demographics) {
 
   const anchors = await selectPersonalityAnchors();
   const userContext = buildQuestionPromptContext({ userName, demographics });
+  const { block: knowledgeContext } = await retrieveKnowledgeContext({
+    kinds: ['question_pattern'],
+    workContext: demographics?.workContext,
+    queryText: 'personality interview statement',
+  });
 
   try {
     const { items, source } = await personalizeAnchorBatch(
       'rewritePersonalityQuestion',
       anchors,
-      { userContext, userName, workContext: demographics?.workContext },
+      { userContext, userName, workContext: demographics?.workContext, knowledgeContext },
     );
     const questions = formatPersonalityQuestions(items);
     return { questions, count: questions.length, source };
@@ -257,6 +263,13 @@ export async function scorePersonalityTest(
           typeCode: mbti.typeCode,
           traits: mbti.traits,
           typeProfile: profile ?? { code: mbti.typeCode, title: typeFormatted.title },
+          knowledgeContext: (
+            await retrieveKnowledgeContext({
+              kinds: ['quality_rule', 'question_pattern'],
+              typeCode: mbti.typeCode,
+              queryText: `${mbti.typeCode} personality reflection`,
+            })
+          ).block,
         },
       );
       narrative = result;
@@ -285,12 +298,18 @@ export async function generateBurnoutTest(userName, demographics, personality) {
 
   const anchors = await selectBurnoutAnchors();
   const userContext = buildQuestionPromptContext({ userName, demographics });
+  const { block: knowledgeContext } = await retrieveKnowledgeContext({
+    kinds: ['question_pattern'],
+    typeCode: personality?.typeCode,
+    workContext: demographics?.workContext,
+    queryText: 'burnout check-in energy drain support',
+  });
 
   try {
     const { items, source } = await personalizeAnchorBatch(
       'rewriteBurnoutQuestion',
       anchors,
-      { userContext, userName, personality, workContext: demographics?.workContext },
+      { userContext, userName, personality, workContext: demographics?.workContext, knowledgeContext },
     );
     const questions = formatBurnoutQuestions(items);
     return { questions, count: questions.length, source };
@@ -336,6 +355,14 @@ export async function scoreBurnoutTest(
       qaBlock,
       personality,
       calibrated,
+      knowledgeContext: (
+        await retrieveKnowledgeContext({
+          kinds: ['quality_rule', 'advice_pattern'],
+          burnoutCls: calibrated.cls,
+          typeCode: personality?.typeCode,
+          queryText: `${calibrated.level} burnout explanation`,
+        })
+      ).block,
     });
     // Replace KPI-style or empty LLM output with structured narrative
     summary = resolveBurnoutSummary(

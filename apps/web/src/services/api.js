@@ -353,6 +353,37 @@ export async function probeAdminLlmMonitor(accessToken) {
   return data;
 }
 
+export async function submitFeedback(payload, accessToken) {
+  const res = await safeFetch(apiUrl('/api/feedback'), {
+    method: 'POST',
+    headers: await authHeaders(accessToken),
+    body: JSON.stringify(payload),
+  });
+  const data = await parseJsonResponse(res, 'Could not send feedback');
+  if (!res.ok) throw new Error(data.error || 'Could not send feedback');
+  return data;
+}
+
+export async function fetchAdminFeedback(accessToken, status = 'new') {
+  const res = await safeFetch(apiUrl(`/api/admin/feedback?status=${encodeURIComponent(status)}`), {
+    headers: await authHeaders(accessToken),
+  });
+  const data = await parseJsonResponse(res, 'Could not load feedback');
+  if (!res.ok) throw new Error(data.error || 'Could not load feedback');
+  return data;
+}
+
+export async function updateAdminFeedback(accessToken, id, payload) {
+  const res = await safeFetch(apiUrl(`/api/admin/feedback/${id}`), {
+    method: 'PATCH',
+    headers: await authHeaders(accessToken),
+    body: JSON.stringify(payload),
+  });
+  const data = await parseJsonResponse(res, 'Could not update feedback');
+  if (!res.ok) throw new Error(data.error || 'Could not update feedback');
+  return data;
+}
+
 export async function fetchCoachStatus(accessToken) {
   const res = await safeFetch(apiUrl('/api/coach/status'), {
     headers: await authHeaders(accessToken),

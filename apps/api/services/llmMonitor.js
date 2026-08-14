@@ -2,6 +2,7 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase.js';
 import { getRuntimeConnectors, listConnectors } from './connectors.js';
 import { isCircuitOpen, geminiStats } from './geminiClient.js';
 import { checkOllamaConnection, ollamaStats } from './ollamaClient.js';
+import { getKnowledgeBankStats } from './knowledgeBank.js';
 
 /** In-process rolling counters (survive until API restart). */
 const live = new Map();
@@ -287,6 +288,7 @@ export async function getLlmMonitorSnapshot() {
     },
     models,
     logPersistence: isSupabaseConfigured() && !tableMissing,
+    knowledgeBank: await getKnowledgeBankStats().catch(() => ({ ready: false, total: 0 })),
   };
 }
 

@@ -9,10 +9,11 @@ import ConnectorsManager from '../components/admin/ConnectorsManager.jsx';
 import LlmMonitorPanel from '../components/admin/LlmMonitorPanel.jsx';
 import CoachSettingsPanel from '../components/admin/CoachSettingsPanel.jsx';
 import HealthDashboard from '../components/admin/HealthDashboard.jsx';
+import FeedbackInbox from '../components/admin/FeedbackInbox.jsx';
 import { firstName } from '@recharge/shared/name';
 
 const ADMIN_TAB_KEY = 'recharge-admin-tab';
-const VALID_TABS = new Set(['dashboard', 'organizations', 'analytics', 'settings', 'monitor']);
+const VALID_TABS = new Set(['dashboard', 'organizations', 'analytics', 'settings', 'monitor', 'feedback']);
 
 /** Map legacy tab ids from bookmarks / older localStorage values. */
 const LEGACY_TAB_MAP = {
@@ -208,6 +209,13 @@ export default function AdminDashboard() {
         onClick: () => setTab('monitor'),
       },
       {
+        id: 'feedback',
+        label: 'Feedback',
+        icon: 'chat',
+        active: tab === 'feedback',
+        onClick: () => setTab('feedback'),
+      },
+      {
         id: 'settings',
         label: 'Settings',
         icon: 'settings',
@@ -283,6 +291,7 @@ export default function AdminDashboard() {
               loading={loading}
               onExport={exportSnapshot}
               onViewOrganizations={() => setTab('organizations')}
+              onViewFeedback={() => setTab('feedback')}
             />
           ) : null}
 
@@ -323,6 +332,8 @@ export default function AdminDashboard() {
               <LlmMonitorPanel getAccessToken={getAccessToken} />
             </div>
           ) : null}
+
+          {!error && tab === 'feedback' ? <FeedbackInbox getAccessToken={getAccessToken} /> : null}
 
           {!error && tab === 'settings' ? (
             <SettingsHub

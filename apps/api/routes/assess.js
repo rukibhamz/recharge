@@ -12,6 +12,7 @@ import {
 } from '@recharge/shared/recoveryPreferences';
 import { optionalAuth } from '../middleware/requireAuth.js';
 import { saveSession, getLatestPersonalityTypeForUser } from '../services/sessions.js';
+import { ingestAssessmentKnowledge } from '../services/knowledgeBank.js';
 import {
   completeAssessment,
   generateBurnoutTest,
@@ -180,6 +181,17 @@ router.post('/complete', optionalAuth, async (req, res) => {
       recommendations,
       userId: req.user?.id,
       email: req.user?.email,
+    });
+
+    ingestAssessmentKnowledge({
+      burnout: safeBurnout,
+      personality,
+      burnoutQuestions,
+      burnoutAnswers,
+      personalityQuestions,
+      recommendations,
+      workContext: demographics?.workContext,
+      aiSource,
     });
 
     res.json({

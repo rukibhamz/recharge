@@ -10,6 +10,7 @@ import {
 import { runAgentTask } from './assessmentAgent.js';
 import { buildQuestionPromptContext } from './promptContext.js';
 import { inferBurnoutLifeDomain } from '@recharge/shared/questionLifeDomains';
+import { retrieveKnowledgeContext } from './knowledgeBank.js';
 
 const TOTAL = 12;
 
@@ -56,6 +57,13 @@ export async function generateNextBurnoutQuestion({
   }
 
   const userContext = buildQuestionPromptContext({ userName, demographics });
+  const { block: knowledgeContext } = await retrieveKnowledgeContext({
+    kinds: ['question_pattern'],
+    typeCode: personalityProfile?.typeCode,
+    dimension: anchor.dimension,
+    workContext: demographics?.workContext,
+    queryText: anchor.seedText || anchor.text || 'burnout question',
+  });
   const { result, source } = await runAgentTask('rewriteBurnoutQuestion', {
     anchor: {
       ...anchor,
@@ -66,6 +74,7 @@ export async function generateNextBurnoutQuestion({
     personality: personalityProfile,
     workContext: demographics?.workContext,
     anchorIndex: index,
+    knowledgeContext,
   });
 
   const question = {

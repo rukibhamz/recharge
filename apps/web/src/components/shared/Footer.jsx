@@ -20,6 +20,9 @@ export default function Footer({ compact = false }) {
           </p>
         </div>
         <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2 font-sans text-sm font-medium text-on-surface-variant">
+          <a href="/feedback" className="transition hover:text-primary">
+            Share feedback
+          </a>
           <a href="/privacy" className="transition hover:text-primary">
             Privacy Policy
           </a>

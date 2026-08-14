@@ -21,6 +21,8 @@ import { testConnectorRuntime } from '../services/llmProvider.js';
 import { getLlmMonitorSnapshot, probeConnectorAvailability } from '../services/llmMonitor.js';
 import { LLM_PROVIDERS } from '@recharge/shared/llmConnectors';
 import { getCoachSettings, updateCoachSettings } from '../services/coachSettings.js';
+import { listFeedback, updateFeedback, countNewFeedback } from '../services/feedback.js';
+import { FEEDBACK_STATUSES } from '@recharge/shared/feedback';
 
 const router = Router();
 
@@ -188,6 +190,41 @@ router.post('/llm-monitor/probe', requireAdmin, async (_req, res) => {
   } catch (err) {
     console.error('LLM probe failed:', err.message);
     res.status(500).json({ error: err.message || 'Could not probe connectors.' });
+  }
+});
+
+router.get('/feedback', requireAdmin, async (req, res) => {
+  try {
+    const status = String(req.query.status || 'all').toLowerCase();
+    const { data, error } = await listFeedback({ status });
+    if (error) throw error;
+    const unread = await countNewFeedback();
+    res.json({ submissions: data, unread });
+  } catch (err) {
+    console.error('Admin feedback list failed:', err.message);
+    res.status(500).json({ error: err.message || 'Could not load feedback.' });
+  }
+});
+
+router.patch('/feedback/:id', requireAdmin, async (req, res) => {
+  const { id } = req.params;
+  if (!/^[0-9a-f-]{36}$/i.test(id)) {
+    return res.status(400).json({ error: 'Invalid feedback id.' });
+  }
+  const status = req.body?.status ? String(req.body.status).toLowerCase() : undefined;
+  if (status && !FEEDBACK_STATUSES.includes(status)) {
+    return res.status(400).json({ error: 'Invalid status.' });
+  }
+  try {
+    const { data, error } = await updateFeedback(id, {
+      status,
+      adminNote: req.body?.adminNote,
+    });
+    if (error) throw error;
+    res.json({ submission: data });
+  } catch (err) {
+    console.error('Admin feedback update failed:', err.message);
+    res.status(500).json({ error: err.message || 'Could not update feedback.' });
   }
 });
 

@@ -22,9 +22,11 @@
     "./recommendations": "./recommendations.js",
     "./coachPersona": "./coachPersona.js",
     "./personalitySelection": "./personalitySelection.js",
-    "./resultNarratives": "./resultNarratives.js"
+    "./resultNarratives": "./resultNarratives.js",
+    "./knowledgeBank": "./knowledgeBank.js",
+    "./feedback": "./feedback.js"
   },
   "scripts": {
-    "test": "node --test scoring.test.js mbtiScoring.test.js demographics.test.js questionOptions.test.js questions.test.js burnoutCalibration.test.js llmConnectors.test.js workContextCoaching.test.js questionLifeDomains.test.js recommendations.test.js coachPersona.test.js personalitySelection.test.js resultNarratives.test.js"
+    "test": "node --test scoring.test.js mbtiScoring.test.js demographics.test.js questionOptions.test.js questions.test.js burnoutCalibration.test.js llmConnectors.test.js workContextCoaching.test.js questionLifeDomains.test.js recommendations.test.js coachPersona.test.js personalitySelection.test.js resultNarratives.test.js knowledgeBank.test.js feedback.test.js"
   }
 }

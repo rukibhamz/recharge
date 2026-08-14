@@ -21,6 +21,7 @@ export function parsePathRoute(pathname) {
   if (path === '/history') return { kind: 'history' };
   if (path === '/about') return { kind: 'about' };
   if (path === '/faq') return { kind: 'faq' };
+  if (path === '/feedback') return { kind: 'feedback' };
   if (path === '/privacy') return { kind: 'legal', legal: 'privacy' };
   if (path === '/terms') return { kind: 'legal', legal: 'terms' };
   if (path === '/security') return { kind: 'legal', legal: 'security' };

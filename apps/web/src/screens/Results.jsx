@@ -18,6 +18,7 @@ import StructuredCopy, { MoodboardCopy } from '../components/results/StructuredC
 import { useShareCard } from '../hooks/useShareCard.js';
 import SaveResultsSection from '../components/results/SaveResultsSection.jsx';
 import EditorialArtwork from '../components/shared/EditorialArtwork.jsx';
+import FeedbackForm from '../components/shared/FeedbackForm.jsx';
 import { ArcDivider } from '../components/shared/Arc.jsx';
 import { BURNOUT_BADGE_CLASSES } from '../lib/design.js';
 export default function Results({ data, error, onRetake, showSaveSection = true }) {
@@ -187,6 +188,8 @@ export default function Results({ data, error, onRetake, showSaveSection = true 
             ))}
           </div>
         </section>
+
+        <FeedbackForm page="results" compact />
 
         <section className="flex flex-col gap-3">
           {shareToken && cloudSaved ? (

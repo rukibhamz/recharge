@@ -12,6 +12,7 @@ import { llmFeatures } from '../config/llm.js';
 import { generateChat, hasAnyLlmProvider } from './llmProvider.js';
 import { buildOmaSystemPrompt } from './coachContext.js';
 import { getCoachSettings } from './coachSettings.js';
+import { retrieveKnowledgeContext } from './knowledgeBank.js';
 
 const MAX_HISTORY = 20;
 
@@ -59,11 +60,21 @@ export async function generateOmaReply({ session, history, userMessage }) {
 
   const userTurnCount = history.filter((m) => m.role === 'user').length + 1;
   const adviceAcknowledged = detectsAdviceAcknowledgement(trimmed);
-  const system = buildOmaSystemPrompt(session, {
-    userTurnCount,
-    adviceAcknowledged,
-    coachName,
+  const { block: knowledgeContext } = await retrieveKnowledgeContext({
+    kinds: ['coach_pattern', 'advice_pattern'],
+    burnoutCls: String(session?.burnout?.cls || '').toLowerCase(),
+    typeCode: session?.personality?.typeCode,
+    workContext: session?.demographics?.workContext,
+    queryText: trimmed,
   });
+  const system = buildOmaSystemPrompt(
+    { ...session, knowledgeContext },
+    {
+      userTurnCount,
+      adviceAcknowledged,
+      coachName,
+    },
+  );
   const messages = [
     ...history
       .filter((m) => m.role === 'user' || m.role === 'assistant')

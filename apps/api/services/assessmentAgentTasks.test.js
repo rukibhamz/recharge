@@ -97,4 +97,20 @@ describe('assessmentAgentTasks validators', () => {
     );
     assert.equal(check.ok, false);
   });
+
+  it('injects learned knowledge into question rewrite prompts', () => {
+    const task = getAssessmentTask('rewritePersonalityQuestion');
+    const prompt = task.buildPrompt({
+      anchor: {
+        seedText: 'I feel energised after spending time with a large group of people.',
+        scoredPole: 'E',
+        dichotomy: 'E/I',
+      },
+      userContext: 'Name: Sam',
+      userName: 'Sam',
+      knowledgeContext: 'Learned patterns from similar anonymized check-ins.\n- (question_pattern) I feel restored after collaborative days.',
+    });
+    assert.match(prompt, /Learned patterns/);
+    assert.match(prompt, /collaborative days/);
+  });
 });

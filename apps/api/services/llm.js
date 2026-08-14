@@ -8,6 +8,7 @@ import {
 import { generateJson, getLastLlmProvider, hasAnyLlmProvider } from './llmProvider.js';
 import { buildUserPromptContext } from './promptContext.js';
 import { COACH_VOICE_RULES, LOCATION_RULES } from '@recharge/shared/promptCoaching';
+import { retrieveKnowledgeContext } from './knowledgeBank.js';
 
 export const STATIC_FALLBACK = {
   'Healthy Range': [
@@ -116,14 +117,16 @@ export const STATIC_FALLBACK = {
   ],
 };
 
-function buildPrompt(burnoutLevel, personality, userName, demographics, recoveryPreferences) {
+function buildPrompt(burnoutLevel, personality, userName, demographics, recoveryPreferences, knowledgeContext = '') {
   const userContext = buildUserPromptContext({ userName, demographics });
   const recoveryProfile = personalityRecoveryProfile(personality);
   const explicitRecoveryStyle = recoveryPreferencesPromptContext(recoveryPreferences);
+  const learned = knowledgeContext ? `\n${knowledgeContext}\n` : '';
 
   return `You are a culturally aware wellbeing coach speaking privately to one person.
 
 ${userContext}
+${learned}
 
 ${recoveryProfile}
 
@@ -177,8 +180,17 @@ export async function generateRecommendations(
   }
 
   try {
+    const level = String(burnoutLevel || '').toLowerCase();
+    const burnoutCls = ['severe', 'moderate', 'mild', 'healthy'].find((c) => level.includes(c)) || '';
+    const { block } = await retrieveKnowledgeContext({
+      kinds: ['advice_pattern', 'quality_rule'],
+      burnoutCls,
+      typeCode: personality?.typeCode,
+      workContext: demographics?.workContext,
+      queryText: `${burnoutLevel} ${personality?.typeCode || ''} recovery`,
+    });
     const parsed = await generateJson(
-      buildPrompt(burnoutLevel, personality, userName, demographics, recoveryPreferences),
+      buildPrompt(burnoutLevel, personality, userName, demographics, recoveryPreferences, block),
     );
     const recommendations = normalizeRecommendations(parsed, fallback);
     return { recommendations, source: getLastLlmProvider() ?? 'llm' };

@@ -122,6 +122,32 @@ export default function LlmMonitorPanel({ getAccessToken }) {
             />
           </div>
 
+          {monitor.knowledgeBank ? (
+            <div className="surface-card p-5">
+              <p className="card-eyebrow">Self-improving loop</p>
+              <h3 className="font-display text-headline-md font-normal text-ink">Knowledge bank</h3>
+              <p className="mt-2 font-sans text-body-md text-ink-soft">
+                Anonymized patterns from completed tests and coach chats. Retrieved into prompts so
+                questions and advice get sharper over time.
+              </p>
+              <p className="mt-3 font-mono text-[14px] text-ink">
+                {monitor.knowledgeBank.total ?? 0} entries
+                {monitor.knowledgeBank.ready === false ? ' · not ready' : ''}
+                {monitor.knowledgeBank.enabled === false ? ' · loop off' : ''}
+              </p>
+              {monitor.knowledgeBank.hint ? (
+                <p className="mt-1 font-sans text-[12px] text-ink-faint">{monitor.knowledgeBank.hint}</p>
+              ) : (
+                <p className="mt-1 font-mono text-[12px] text-ink-faint">
+                  questions {monitor.knowledgeBank.byKind?.question_pattern ?? 0} · advice{' '}
+                  {monitor.knowledgeBank.byKind?.advice_pattern ?? 0} · coach{' '}
+                  {monitor.knowledgeBank.byKind?.coach_pattern ?? 0} · rules{' '}
+                  {monitor.knowledgeBank.byKind?.quality_rule ?? 0}
+                </p>
+              )}
+            </div>
+          ) : null}
+
           <div className="surface-card p-4 font-sans text-[14px] text-ink-soft">
             <p>
               API process uptime:{' '}

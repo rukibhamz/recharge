@@ -20,6 +20,7 @@ export const llmFeatures = {
   personalityNarrative: featureFlag('LLM_PERSONALITY_NARRATIVE', 'LLM_PERSONALITY_NARRATIVE', true),
   burnoutNarrative: featureFlag('LLM_BURNOUT_NARRATIVE', 'LLM_BURNOUT_NARRATIVE', true),
   coachChat: featureFlag('LLM_COACH_CHAT', 'LLM_COACH_CHAT', true),
+  knowledgeLoop: featureFlag('LLM_KNOWLEDGE_LOOP', 'LLM_KNOWLEDGE_LOOP', true),
 };
 
 export function assessmentAgentMaxRetries() {
