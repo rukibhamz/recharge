@@ -112,12 +112,26 @@ function AssessmentFlow() {
     burnoutAnswers.every((answer) => answer !== null);
 
   // Completed results should not stick when returning to `/` after visiting another page.
+  // Abandoned in-progress tests expire after 12 hours (also when the tab is shown again).
   useEffect(() => {
-    const state = useAssessmentStore.getState();
-    if (state.phase === 'results' || state.results) {
-      clearFetchGuards();
-      state.reset();
-    }
+    const dropStale = () => {
+      const state = useAssessmentStore.getState();
+      if (state.phase === 'results' || state.results) {
+        clearFetchGuards();
+        state.reset();
+        return;
+      }
+      if (state.expireIfStale()) {
+        clearFetchGuards();
+      }
+    };
+    dropStale();
+    window.addEventListener('focus', dropStale);
+    document.addEventListener('visibilitychange', dropStale);
+    return () => {
+      window.removeEventListener('focus', dropStale);
+      document.removeEventListener('visibilitychange', dropStale);
+    };
   }, []);
 
   // Recover from stale persisted state that would otherwise render a blank screen

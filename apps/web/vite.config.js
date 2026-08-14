@@ -18,6 +18,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      injectRegister: null,
       includeAssets: ['favicon.png', 'recharge-logo.png'],
       manifest: {
         name: 'Recharge',
@@ -33,7 +34,32 @@ export default defineConfig({
         ],
       },
       workbox: {
+        cleanupOutdatedCaches: true,
+        skipWaiting: true,
+        clientsClaim: true,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp}'],
+        navigateFallback: 'index.html',
+        navigateFallbackDenylist: [/^\/api\//],
+        runtimeCaching: [
+          {
+            urlPattern: ({ request }) => request.mode === 'navigate',
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'recharge-pages',
+              networkTimeoutSeconds: 4,
+              expiration: { maxEntries: 20, maxAgeSeconds: 60 * 30 },
+            },
+          },
+          {
+            urlPattern: ({ request }) =>
+              request.destination === 'script' || request.destination === 'style',
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'recharge-assets',
+              expiration: { maxEntries: 40, maxAgeSeconds: 60 * 60 * 12 },
+            },
+          },
+        ],
       },
     }),
   ],

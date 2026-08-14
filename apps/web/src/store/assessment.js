@@ -1,7 +1,12 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { createJSONStorage, persist } from 'zustand/middleware';
 import { isValidDemographics } from '@recharge/shared/demographics';
 import { isValidRecoveryPreferences } from '@recharge/shared/recoveryPreferences';
+
+/** Abandoned in-progress assessments expire after 12 hours. */
+export const ASSESSMENT_TTL_MS = 12 * 60 * 60 * 1000;
+const STORAGE_KEY = 'recharge-assessment-v18';
+const LEGACY_KEYS = ['recharge-assessment-v17', 'recharge-assessment-v16'];
 
 const emptyAnswers = (n = 0) => Array(n).fill(null);
 const emptyDemographics = () => ({
@@ -18,23 +23,86 @@ const emptyRecoveryPreferences = () => ({
   setting: '',
 });
 
+function isExpired(updatedAt) {
+  if (!updatedAt) return true;
+  return Date.now() - Number(updatedAt) > ASSESSMENT_TTL_MS;
+}
+
+function memoryStorage() {
+  const map = new Map();
+  return {
+    getItem: (name) => map.get(name) ?? null,
+    setItem: (name, value) => map.set(name, value),
+    removeItem: (name) => map.delete(name),
+  };
+}
+
+function expiringLocalStorage() {
+  if (typeof window === 'undefined' || !window.localStorage) return memoryStorage();
+  return {
+    getItem(name) {
+      try {
+        const raw = window.localStorage.getItem(name);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        const updatedAt = parsed?.state?.updatedAt;
+        if (isExpired(updatedAt)) {
+          window.localStorage.removeItem(name);
+          return null;
+        }
+        return raw;
+      } catch {
+        window.localStorage.removeItem(name);
+        return null;
+      }
+    },
+    setItem(name, value) {
+      try {
+        const parsed = JSON.parse(value);
+        if (parsed?.state) parsed.state.updatedAt = Date.now();
+        window.localStorage.setItem(name, JSON.stringify(parsed));
+      } catch {
+        window.localStorage.setItem(name, value);
+      }
+    },
+    removeItem(name) {
+      window.localStorage.removeItem(name);
+    },
+  };
+}
+
+if (typeof window !== 'undefined') {
+  for (const key of LEGACY_KEYS) {
+    try {
+      window.localStorage.removeItem(key);
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
+const initialState = {
+  phase: 'hero',
+  userName: '',
+  demographics: emptyDemographics(),
+  recoveryPreferences: emptyRecoveryPreferences(),
+  burnoutIndex: 0,
+  personalityIndex: 0,
+  burnoutAnswers: [],
+  personalityAnswers: [],
+  personalityQuestions: [],
+  burnoutQuestions: [],
+  personalityResult: null,
+  results: null,
+  error: null,
+  errorPhase: null,
+  updatedAt: 0,
+};
+
 export const useAssessmentStore = create(
   persist(
     (set, get) => ({
-      phase: 'hero',
-      userName: '',
-      demographics: emptyDemographics(),
-      recoveryPreferences: emptyRecoveryPreferences(),
-      burnoutIndex: 0,
-      personalityIndex: 0,
-      burnoutAnswers: [],
-      personalityAnswers: [],
-      personalityQuestions: [],
-      burnoutQuestions: [],
-      personalityResult: null,
-      results: null,
-      error: null,
-      errorPhase: null,
+      ...initialState,
 
       setPhase: (phase) => set({ phase }),
       setUserName: (userName) => set({ userName }),
@@ -75,23 +143,16 @@ export const useAssessmentStore = create(
       setError: (error, errorPhase = null) =>
         set({ error, errorPhase, phase: 'error' }),
       clearError: () => set({ error: null, errorPhase: null }),
-      reset: () =>
-        set({
-          phase: 'hero',
-          userName: '',
-          demographics: emptyDemographics(),
-          recoveryPreferences: emptyRecoveryPreferences(),
-          burnoutIndex: 0,
-          personalityIndex: 0,
-          burnoutAnswers: [],
-          personalityAnswers: [],
-          personalityQuestions: [],
-          burnoutQuestions: [],
-          personalityResult: null,
-          results: null,
-          error: null,
-          errorPhase: null,
-        }),
+      reset: () => set({ ...initialState, updatedAt: 0 }),
+      expireIfStale: () => {
+        const { updatedAt, phase } = get();
+        if (phase === 'hero' || phase === 'results') return false;
+        if (isExpired(updatedAt)) {
+          get().reset();
+          return true;
+        }
+        return false;
+      },
       getPayload: () => {
         const state = get();
         return {
@@ -123,7 +184,8 @@ export const useAssessmentStore = create(
       },
     }),
     {
-      name: 'recharge-assessment-v17',
+      name: STORAGE_KEY,
+      storage: createJSONStorage(() => expiringLocalStorage()),
       partialize: (s) => ({
         userName: s.userName,
         demographics: s.demographics,
@@ -135,9 +197,12 @@ export const useAssessmentStore = create(
         personalityQuestions: s.personalityQuestions,
         burnoutQuestions: s.burnoutQuestions,
         personalityResult: s.personalityResult,
-        // Do not persist completed results — returning to `/` should feel fresh.
+        updatedAt: s.updatedAt,
       }),
       merge: (persisted, current) => {
+        if (!persisted || isExpired(persisted.updatedAt)) {
+          return { ...current, ...initialState };
+        }
         const merged = {
           ...current,
           ...persisted,
