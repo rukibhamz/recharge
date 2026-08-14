@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { scoreMbti, formatMbtiType, pickDichotomyLetter } from './mbtiScoring.js';
+import { scoreMbti, formatMbtiType, pickDichotomyLetter, displayTraitLean } from './mbtiScoring.js';
 
 describe('scoreMbti', () => {
   it('derives ESTJ when E/S/T/J poles dominate', () => {
@@ -72,6 +72,30 @@ describe('pickDichotomyLetter', () => {
     const clearE = pickDichotomyLetter(8, 2, 'E', 'I', 'I');
     assert.equal(clearE.letter, 'E');
     assert.equal(clearE.clear, true);
+  });
+});
+
+describe('displayTraitLean', () => {
+  it('shows the winning pole, not always pole A', () => {
+    const infpE = displayTraitLean({
+      name: 'Extraversion / Introversion',
+      poleA: 'E',
+      poleB: 'I',
+      pct: 25,
+      letter: 'I',
+    });
+    assert.equal(infpE.letter, 'I');
+    assert.equal(infpE.pct, 75);
+
+    const estjE = displayTraitLean({
+      name: 'Extraversion / Introversion',
+      poleA: 'E',
+      poleB: 'I',
+      pct: 70,
+      letter: 'E',
+    });
+    assert.equal(estjE.letter, 'E');
+    assert.equal(estjE.pct, 70);
   });
 });
 

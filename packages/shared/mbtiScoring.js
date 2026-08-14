@@ -99,6 +99,27 @@ export function scoreMbti(answers, questions, options = {}) {
   };
 }
 
+/** Label and fill the bar toward the winning letter (I/N/F/P), not always pole A (E/S/T/J). */
+export function displayTraitLean(trait) {
+  const pctTowardA = Math.min(100, Math.max(0, Number(trait?.pct) || 50));
+  const poleA = trait?.poleA || 'E';
+  const poleB = trait?.poleB || 'I';
+  const letter =
+    trait?.letter === poleA || trait?.letter === poleB
+      ? trait.letter
+      : pctTowardA >= 50
+        ? poleA
+        : poleB;
+  const pct = letter === poleA ? pctTowardA : 100 - pctTowardA;
+  return {
+    name: trait?.name || `${poleA} / ${poleB}`,
+    poleA,
+    poleB,
+    letter,
+    pct,
+  };
+}
+
 export function formatMbtiType(profile) {
   if (!profile) {
     return {

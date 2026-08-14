@@ -5,8 +5,8 @@ import { isValidRecoveryPreferences } from '@recharge/shared/recoveryPreferences
 
 /** Abandoned in-progress assessments expire after 12 hours. */
 export const ASSESSMENT_TTL_MS = 12 * 60 * 60 * 1000;
-const STORAGE_KEY = 'recharge-assessment-v18';
-const LEGACY_KEYS = ['recharge-assessment-v17', 'recharge-assessment-v16'];
+export const STORAGE_KEY = 'recharge-assessment-v19';
+const LEGACY_KEYS = ['recharge-assessment-v18', 'recharge-assessment-v17', 'recharge-assessment-v16'];
 
 const emptyAnswers = (n = 0) => Array(n).fill(null);
 const emptyDemographics = () => ({
@@ -145,8 +145,15 @@ export const useAssessmentStore = create(
       clearError: () => set({ error: null, errorPhase: null }),
       reset: () => set({ ...initialState, updatedAt: 0 }),
       expireIfStale: () => {
-        const { updatedAt, phase } = get();
-        if (phase === 'hero' || phase === 'results') return false;
+        const { updatedAt, phase, results } = get();
+        if (phase === 'hero') return false;
+        if (phase === 'results' || results?.burnout) {
+          if (isExpired(updatedAt)) {
+            get().reset();
+            return true;
+          }
+          return false;
+        }
         if (isExpired(updatedAt)) {
           get().reset();
           return true;
@@ -187,6 +194,7 @@ export const useAssessmentStore = create(
       name: STORAGE_KEY,
       storage: createJSONStorage(() => expiringLocalStorage()),
       partialize: (s) => ({
+        phase: s.phase,
         userName: s.userName,
         demographics: s.demographics,
         recoveryPreferences: s.recoveryPreferences,
@@ -197,6 +205,7 @@ export const useAssessmentStore = create(
         personalityQuestions: s.personalityQuestions,
         burnoutQuestions: s.burnoutQuestions,
         personalityResult: s.personalityResult,
+        results: s.results,
         updatedAt: s.updatedAt,
       }),
       merge: (persisted, current) => {
@@ -211,6 +220,15 @@ export const useAssessmentStore = create(
             ...(persisted?.recoveryPreferences ?? {}),
           },
         };
+
+        if (persisted.results?.burnout && persisted.results?.personality) {
+          merged.phase = 'results';
+          merged.results = persisted.results;
+          merged.error = null;
+          merged.errorPhase = null;
+          return merged;
+        }
+
         const hasName = Boolean(merged.userName?.trim());
         const hasProfile = isValidDemographics(merged.demographics);
         const hasRecoveryPreferences = isValidRecoveryPreferences(merged.recoveryPreferences);
@@ -227,7 +245,25 @@ export const useAssessmentStore = create(
           merged.burnoutAnswers?.length === merged.burnoutQuestions?.length &&
           merged.burnoutAnswers?.every((a) => a !== null);
 
-        if (personalityDone && burnoutDone && !hasRecoveryPreferences) {
+        const keepPhases = new Set([
+          'hero',
+          'name',
+          'profile',
+          'personality',
+          'personality-insight',
+          'burnout',
+          'recovery-preferences',
+        ]);
+        if (keepPhases.has(persisted.phase)) {
+          merged.phase = persisted.phase;
+          if (merged.phase === 'personality' && !hasPersonalityTest) {
+            merged.phase = 'loading-personality-test';
+          } else if (merged.phase === 'burnout' && !hasBurnoutTest) {
+            merged.phase = 'loading-burnout-test';
+          } else if (merged.phase === 'personality-insight' && !hasPersonalityResult) {
+            merged.phase = personalityDone ? 'scoring-personality' : 'personality';
+          }
+        } else if (personalityDone && burnoutDone && !hasRecoveryPreferences) {
           merged.phase = 'recovery-preferences';
         } else if (personalityDone && burnoutDone) {
           merged.phase = 'processing';

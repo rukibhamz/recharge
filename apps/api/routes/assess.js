@@ -173,7 +173,7 @@ router.post('/complete', optionalAuth, async (req, res) => {
     const safeBurnout = normalizeBurnoutResult(burnout);
     const profileForStorage = { ...demographics, recoveryPreferences };
 
-    const { sessionId, shareToken, persisted, linked, persistError } = await saveSession({
+    const { sessionId, shareToken, persisted, linked, persistError, reused } = await saveSession({
       displayName: name,
       demographics: profileForStorage,
       burnout: safeBurnout,
@@ -183,16 +183,18 @@ router.post('/complete', optionalAuth, async (req, res) => {
       email: req.user?.email,
     });
 
-    ingestAssessmentKnowledge({
-      burnout: safeBurnout,
-      personality,
-      burnoutQuestions,
-      burnoutAnswers,
-      personalityQuestions,
-      recommendations,
-      workContext: demographics?.workContext,
-      aiSource,
-    });
+    if (!reused) {
+      ingestAssessmentKnowledge({
+        burnout: safeBurnout,
+        personality,
+        burnoutQuestions,
+        burnoutAnswers,
+        personalityQuestions,
+        recommendations,
+        workContext: demographics?.workContext,
+        aiSource,
+      });
+    }
 
     res.json({
       sessionId,

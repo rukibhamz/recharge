@@ -141,6 +141,50 @@ export async function buildSessionResponse(row) {
   };
 }
 
+async function findRecentDuplicateSession({ userId, displayName, burnoutPct, personalityType }) {
+  const since = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+
+  if (userId) {
+    const { data: links, error: linkError } = await supabase
+      .from('user_sessions')
+      .select('session_id')
+      .eq('user_id', userId)
+      .gte('created_at', since)
+      .order('created_at', { ascending: false })
+      .limit(8);
+    if (!linkError && links?.length) {
+      const { data } = await supabase
+        .from('sessions')
+        .select('id, share_token')
+        .in(
+          'id',
+          links.map((row) => row.session_id),
+        )
+        .eq('burnout_pct', burnoutPct)
+        .eq('personality_type', personalityType)
+        .order('created_at', { ascending: false })
+        .limit(1);
+      if (data?.[0]) return data[0];
+    }
+  }
+
+  const name = String(displayName ?? '').trim();
+  if (!name) return null;
+
+  const { data, error } = await supabase
+    .from('sessions')
+    .select('id, share_token')
+    .eq('display_name', name)
+    .eq('burnout_pct', burnoutPct)
+    .eq('personality_type', personalityType)
+    .gte('created_at', since)
+    .order('created_at', { ascending: false })
+    .limit(1);
+
+  if (error) return null;
+  return data?.[0] ?? null;
+}
+
 export async function saveSession({
   displayName,
   demographics,
@@ -160,6 +204,28 @@ export async function saveSession({
   const burnoutRow = sanitizeBurnoutForDb(burnout);
   const personalityRow = sanitizePersonalityForDb(personality);
   const recommendationsRow = sanitizeRecommendationsForDb(recommendations);
+
+  const duplicate = await findRecentDuplicateSession({
+    userId,
+    displayName,
+    burnoutPct: burnoutRow.pct,
+    personalityType: personalityRow.typeCode,
+  });
+  if (duplicate) {
+    let linked = false;
+    if (userId) {
+      const linkResult = await linkSessionToUser(userId, duplicate.id, email);
+      linked = linkResult.linked;
+    }
+    return {
+      sessionId: duplicate.id,
+      shareToken: duplicate.share_token,
+      persisted: true,
+      linked,
+      persistError: null,
+      reused: true,
+    };
+  }
 
   const baseRow = {
     id: sessionId,

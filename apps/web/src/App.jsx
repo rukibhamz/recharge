@@ -113,16 +113,11 @@ function AssessmentFlow() {
     burnoutAnswers.length === burnoutQuestions.length &&
     burnoutAnswers.every((answer) => answer !== null);
 
-  // Completed results should not stick when returning to `/` after visiting another page.
   // Abandoned in-progress tests expire after 12 hours (also when the tab is shown again).
+  // Completed results stay on this page until Retake or TTL.
   useEffect(() => {
     const dropStale = () => {
       const state = useAssessmentStore.getState();
-      if (state.phase === 'results' || state.results) {
-        clearFetchGuards();
-        state.reset();
-        return;
-      }
       if (state.expireIfStale()) {
         clearFetchGuards();
       }
@@ -251,6 +246,11 @@ function AssessmentFlow() {
   ]);
 
   const handleComplete = useCallback(() => {
+    const existing = useAssessmentStore.getState().results;
+    if (existing?.burnout && existing?.personality) {
+      setResults(existing);
+      return;
+    }
     runOnce('complete', async () => {
       try {
         const payload = getPayload();
