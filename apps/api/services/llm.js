@@ -5,6 +5,11 @@ import {
   hasDisplayableRecommendations,
   normalizeRecommendationsList,
 } from '@recharge/shared/recommendations';
+import {
+  buildRecoveryRoadmap,
+  mergeRoadmapCopy,
+  roadmapToRecommendations,
+} from '@recharge/shared/recoveryRoadmap';
 import { generateJson, getLastLlmProvider, hasAnyLlmProvider } from './llmProvider.js';
 import { buildUserPromptContext } from './promptContext.js';
 import { COACH_VOICE_RULES, LOCATION_RULES } from '@recharge/shared/promptCoaching';
@@ -159,6 +164,57 @@ Return JSON only as an object with a recommendations array:
 Each item MUST include non-empty icon, when, title, and tip fields.`;
 }
 
+function skeletonPhaseBlock(roadmap) {
+  return (roadmap.phases ?? [])
+    .map((phase) => {
+      const steps = (phase.steps ?? [])
+        .map((s, i) => `    ${i + 1}. [${s.when}] ${s.title} — ${s.tip}`)
+        .join('\n');
+      return `- id: ${phase.id}\n  label: ${phase.label}\n  title: ${phase.title}\n  focus: ${phase.focus}\n  steps:\n${steps}`;
+    })
+    .join('\n');
+}
+
+function buildRoadmapPrompt(burnout, personality, userName, demographics, recoveryPreferences, skeleton, knowledgeContext = '') {
+  const userContext = buildUserPromptContext({ userName, demographics });
+  const recoveryProfile = personalityRecoveryProfile(personality);
+  const explicitRecoveryStyle = recoveryPreferencesPromptContext(recoveryPreferences);
+  const learned = knowledgeContext ? `\n${knowledgeContext}\n` : '';
+  const phaseIds = skeleton.phases.map((p) => p.id).join(', ');
+
+  return `You are a culturally aware wellbeing coach writing a ${skeleton.horizonDays}-day recovery plan for one person.
+
+${userContext}
+${learned}
+
+${recoveryProfile}
+
+${explicitRecoveryStyle}
+
+Burnout level: ${burnout?.level || skeleton.cls} (${skeleton.horizonLabel})
+Plan intent: ${skeleton.intent}
+
+LOCKED phase skeleton (keep every phase id and the same number of steps). Rewrite titles and tips to feel written for THIS person:
+${skeletonPhaseBlock(skeleton)}
+
+Rules:
+- Keep every phase id exactly: ${phaseIds}
+- Keep the same number of steps in each phase, in the same order
+- Each tip must be a concrete action with when/how (timebox, script, or constraint)
+- If protocol rules appear in the skeleton, keep them as constraints — do not replace them with vague wellness
+- Title should sound like an action ("Mute work chat after 7pm"), not a theme
+- Match OCEAN / recovery preferences for HOW they recharge
+- Use their city ONLY if provided; never invent cities
+- Never mention app or product names
+- FORBIDDEN: "take a break", "meditate", "drink water", "practice self-care", "be mindful" without a specific constraint
+
+${COACH_VOICE_RULES}
+${LOCATION_RULES}
+
+Return JSON only:
+{"intent":"1-2 sentences","phases":[{"id":"${skeleton.phases[0]?.id || 'stabilize'}","title":"...","focus":"...","steps":[{"icon":"emoji","when":"...","title":"max 6 words","tip":"1-2 concrete sentences, max 55 words"}]}]}`;
+}
+
 function normalizeRecommendations(parsed, fallback) {
   const recommendations = normalizeRecommendationsList(parsed, fallback);
   if (!recommendations.length || !hasDisplayableRecommendations(recommendations)) {
@@ -173,30 +229,72 @@ export async function generateRecommendations(
   userName = null,
   demographics = null,
   recoveryPreferences = null,
+  burnout = null,
 ) {
-  const fallback = STATIC_FALLBACK[burnoutLevel] ?? STATIC_FALLBACK['Moderate Burnout'];
+  const skeleton = buildRecoveryRoadmap({
+    burnout: burnout ?? { level: burnoutLevel, cls: String(burnoutLevel || '').toLowerCase() },
+    personality,
+    psychometricProfile: personality?.psychometricProfile,
+    recoveryPreferences,
+  });
+  const fallbackCards =
+    STATIC_FALLBACK[burnoutLevel] ??
+    STATIC_FALLBACK['Moderate Burnout'] ??
+    roadmapToRecommendations(skeleton);
 
   if (!llmFeatures.recommendations || !(await hasAnyLlmProvider())) {
-    return { recommendations: fallback, source: 'static' };
+    return {
+      recommendations: roadmapToRecommendations(skeleton),
+      recoveryRoadmap: skeleton,
+      source: 'static',
+    };
   }
 
   try {
     const level = String(burnoutLevel || '').toLowerCase();
-    const burnoutCls = ['severe', 'moderate', 'mild', 'healthy'].find((c) => level.includes(c)) || '';
+    const burnoutCls = ['severe', 'moderate', 'mild', 'healthy'].find((c) => level.includes(c)) || skeleton.cls;
     const { block } = await retrieveKnowledgeContext({
       kinds: ['advice_pattern', 'quality_rule'],
       burnoutCls,
       typeCode: personality?.typeCode,
       workContext: demographics?.workContext,
-      queryText: `${burnoutLevel} ${personality?.typeCode || ''} recovery`,
+      queryText: `${burnoutLevel} ${personality?.typeCode || ''} ${skeleton.horizonLabel} recovery`,
     });
     const parsed = await generateJson(
-      buildPrompt(burnoutLevel, personality, userName, demographics, recoveryPreferences, block),
+      buildRoadmapPrompt(
+        burnout ?? { level: burnoutLevel },
+        personality,
+        userName,
+        demographics,
+        recoveryPreferences,
+        skeleton,
+        block,
+      ),
     );
-    const recommendations = normalizeRecommendations(parsed, fallback);
-    return { recommendations, source: getLastLlmProvider() ?? 'llm' };
+    const recoveryRoadmap = mergeRoadmapCopy(skeleton, parsed);
+    const recommendations = roadmapToRecommendations(recoveryRoadmap);
+    if (!hasDisplayableRecommendations(recommendations)) {
+      throw new Error('Roadmap copy was empty');
+    }
+    return { recommendations, recoveryRoadmap, source: getLastLlmProvider() ?? 'llm' };
   } catch (err) {
     console.error('Recommendations LLM failed:', err.message);
-    return { recommendations: fallback, source: 'static' };
+    try {
+      const parsed = await generateJson(
+        buildPrompt(burnoutLevel, personality, userName, demographics, recoveryPreferences, ''),
+      );
+      const recommendations = normalizeRecommendations(parsed, fallbackCards);
+      return {
+        recommendations,
+        recoveryRoadmap: skeleton,
+        source: getLastLlmProvider() ?? 'llm',
+      };
+    } catch {
+      return {
+        recommendations: roadmapToRecommendations(skeleton),
+        recoveryRoadmap: skeleton,
+        source: 'static',
+      };
+    }
   }
 }

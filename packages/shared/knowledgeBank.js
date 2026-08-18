@@ -174,7 +174,7 @@ export function buildAssessmentKnowledgeRecords({
 
   (recommendations ?? []).slice(0, 4).forEach((rec) => {
     const title = stripPii(rec?.title || '');
-    const tip = stripPii(rec?.tip || '');
+    const tip = stripPii(rec?.tip || rec?.protocol_rule || '');
     if (title.length < 4 || tip.length < 20) return;
     records.push({
       kind: 'advice_pattern',

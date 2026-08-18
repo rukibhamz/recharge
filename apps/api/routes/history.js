@@ -31,7 +31,13 @@ router.post('/link', async (req, res) => {
     return res.status(500).json({ error: 'Could not save result to your account.' });
   }
 
-  res.json({ linked: true, alreadyLinked: Boolean(alreadyLinked) });
+  const { data: session } = await getSessionForUser(req.user.id, sessionId);
+
+  res.json({
+    linked: true,
+    alreadyLinked: Boolean(alreadyLinked),
+    session: session ?? null,
+  });
 });
 
 router.get('/', async (req, res) => {

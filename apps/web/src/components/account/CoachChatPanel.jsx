@@ -31,7 +31,9 @@ export default function CoachChatPanel({ getAccessToken }) {
       const data = await fetchCoachStatus(token);
       setStatus(data);
       setSelectedSessionId(data.activeSessionId || data.assessments?.[0]?.sessionId || '');
-      setSelectedConversationId(data.conversation?.id || data.conversations?.[0]?.id || '');
+      const liveId = data.conversation?.id;
+      const archivedId = (data.conversations ?? []).find((c) => c.archived)?.id;
+      setSelectedConversationId(liveId || archivedId || '');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -199,7 +201,7 @@ export default function CoachChatPanel({ getAccessToken }) {
 
         {conversationOptions.length > 0 ? (
           <div className="space-y-2">
-            <span className="field-label">Continue previous chat</span>
+            <span className="field-label">Earlier chats</span>
             <div className="flex gap-2">
               <select
                 className="field flex-1"
@@ -208,6 +210,7 @@ export default function CoachChatPanel({ getAccessToken }) {
               >
                 {conversationOptions.map((c) => (
                   <option key={c.id} value={c.id}>
+                    {c.archived ? 'Archived · ' : ''}
                     {formatDate(c.updatedAt)} · {c.messageCount || 0} msgs
                     {c.lastMessageSnippet ? ` · ${c.lastMessageSnippet}` : ''}
                   </option>
@@ -219,11 +222,12 @@ export default function CoachChatPanel({ getAccessToken }) {
                 onClick={handleContinueConversation}
                 disabled={starting || !selectedConversationId}
               >
-                Continue
+                Open
               </Button>
             </div>
             <p className="font-sans text-label-sm text-on-surface-variant">
-              Choose an old thread to continue, or start a new one below.
+              Chats go quiet after a while. A new login starts a fresh thread. Open an earlier one
+              if you want to pick it back up.
             </p>
           </div>
         ) : null}
@@ -261,7 +265,9 @@ export default function CoachChatPanel({ getAccessToken }) {
       {!conversation ? (
         <div className="glass-card space-y-4 p-gutter text-center">
           <p className="font-sans text-body-md text-on-surface-variant">
-            Ready when you are. Start a new chat, or continue an old one from above.
+            {conversationOptions.some((c) => c.archived)
+              ? `Last chat is archived. Start a new one with ${coachName}, or open an earlier thread above.`
+              : `Ready when you are. Start a new chat, or continue an old one from above.`}
           </p>
           <Button onClick={handleStart} disabled={starting}>
             {starting ? 'Connecting…' : `Start talking to ${coachName}`}

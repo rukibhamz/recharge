@@ -7,6 +7,7 @@ import {
   OMA_PERSONA,
   omaTurnGuidance,
 } from '@recharge/shared/coachPersona';
+import { flattenRoadmapSteps } from '@recharge/shared/recoveryRoadmap';
 import { normalizeRecommendationsList } from '@recharge/shared/recommendations';
 import { getSessionForUser, getSessionsForUser } from './sessions.js';
 import { supabase, isSupabaseConfigured } from '../lib/supabase.js';
@@ -34,8 +35,11 @@ async function loadSessionWithDemographics(userId, sessionId) {
   };
 }
 
-function formatRecommendations(recommendations) {
-  const list = normalizeRecommendationsList(recommendations ?? [], []).slice(0, 4);
+function formatRecommendations(session) {
+  const steps = flattenRoadmapSteps(session?.recoveryRoadmap);
+  const list = steps.length
+    ? steps
+    : normalizeRecommendationsList(session?.recommendations ?? [], []).slice(0, 4);
   if (!list.length) return 'No recovery tips on file yet.';
   return list
     .map((rec, i) => {
@@ -124,7 +128,7 @@ export function buildOmaSystemPrompt(
     lines.push('', session.knowledgeContext);
   }
 
-  lines.push(`- Their recovery roadmap (only offer when they want advice):\n${formatRecommendations(session?.recommendations)}`);
+  lines.push(`- Their recovery roadmap (only offer when they want advice):\n${formatRecommendations(session)}`);
   lines.push('');
   if (coachName && coachName !== COACH_NAME) {
     lines.push(`For this conversation, your name is ${coachName}. Introduce yourself with this name.`);

@@ -10,6 +10,7 @@ import {
   sanitizeOmaReply,
   omaTurnGuidance,
   omaWrapUpReply,
+  isCoachConversationStale,
 } from './coachPersona.js';
 
 describe('coachPersona', () => {
@@ -47,9 +48,13 @@ describe('coachPersona', () => {
   it('keeps early turns conversational before advice', () => {
     assert.match(OMA_PERSONA, /warm friend/i);
     assert.match(OMA_PERSONA, /Do not jump to a full plan early/i);
-    assert.match(OMA_PERSONA, /Do NOT end every message with a question/i);
-    assert.match(omaTurnGuidance({ userTurnCount: 1 }), /Do not give advice yet/i);
-    assert.match(omaTurnGuidance({ userTurnCount: 1 }), /Do not force a question/i);
+    assert.match(OMA_PERSONA, /vary how you open/i);
+    assert.match(OMA_PERSONA, /One-liners should be common/i);
+    assert.match(OMA_PERSONA, /Do not announce it/i);
+    assert.match(OMA_PERSONA, /interiority/i);
+    assert.match(OMA_PERSONA, /last reply or two/i);
+    assert.match(omaTurnGuidance({ userTurnCount: 1 }), /Advice usually waits/i);
+    assert.match(omaTurnGuidance({ userTurnCount: 1 }), /Most replies should not end in a question/i);
     assert.match(omaTurnGuidance({ userTurnCount: 4 }), /small suggestion/i);
   });
 
@@ -67,7 +72,15 @@ describe('coachPersona', () => {
 
   it('switches to wrap-up guidance after acknowledgement', () => {
     const guidance = omaTurnGuidance({ userTurnCount: 4, adviceAcknowledged: true });
-    assert.match(guidance, /Stop probing/i);
+    assert.match(guidance, /wrap-up/i);
+    assert.match(guidance, /probing/i);
     assert.match(omaWrapUpReply(), /Glad that helped/i);
+  });
+
+  it('archives idle coach threads after twelve hours', () => {
+    const now = Date.parse('2026-08-18T17:00:00Z');
+    assert.equal(isCoachConversationStale(new Date(now - 11 * 60 * 60 * 1000).toISOString(), now), false);
+    assert.equal(isCoachConversationStale(new Date(now - 12 * 60 * 60 * 1000).toISOString(), now), true);
+    assert.equal(isCoachConversationStale(null, now), false);
   });
 });

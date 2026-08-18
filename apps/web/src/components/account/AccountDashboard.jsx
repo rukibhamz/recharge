@@ -4,7 +4,7 @@ import TraitBars from '../results/TraitBars.jsx';
 import { normalizeRecommendationsList, DEFAULT_RECOVERY_TIPS } from '@recharge/shared/recommendations';
 import { resolveBurnoutReport } from '@recharge/shared/resultNarratives';
 import { relativeAssessmentTime } from '../../lib/formatDate.js';
-import StructuredCopy from '../results/StructuredCopy.jsx';
+import RecoveryRoadmap from '../results/RecoveryRoadmap.jsx';
 
 function needsAction(cls) {
   const c = String(cls || '').toLowerCase();
@@ -136,36 +136,45 @@ export default function AccountDashboard({
             </div>
           </section>
 
-          {/* AI recommendations */}
           <section className="space-y-5">
-            <h2 className="font-display text-2xl font-medium text-ink">AI Recommendations</h2>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {recommendations.map((rec, i) => (
-                <button
-                  key={`${rec.title}-${i}`}
-                  type="button"
-                  onClick={onOpenCoach}
-                  className="glass-card group flex cursor-pointer gap-4 p-5 text-left transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/95"
-                >
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-fern-tint bg-white text-xl shadow-sm transition-colors group-hover:bg-canopy group-hover:text-white">
-                    <span aria-hidden="true">{rec.icon || '✨'}</span>
-                  </div>
-                  <div className="min-w-0">
-                    <h3 className="font-sans text-[16px] font-semibold text-ink transition-colors group-hover:text-canopy">
-                      {rec.title}
-                    </h3>
-                    <p className="mt-1 font-sans text-[13px] leading-relaxed text-ink-soft">
-                      {rec.tip}
-                    </p>
-                    {rec.when ? (
-                      <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.06em] text-fern">
-                        {rec.when}
-                      </p>
-                    ) : null}
-                  </div>
-                </button>
-              ))}
-            </div>
+            {latest.recoveryRoadmap?.phases?.length ? (
+              <RecoveryRoadmap
+                roadmap={latest.recoveryRoadmap}
+                locked={false}
+                isPersonalised
+              />
+            ) : (
+              <>
+                <h2 className="font-display text-2xl font-medium text-ink">AI Recommendations</h2>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  {recommendations.map((rec, i) => (
+                    <button
+                      key={`${rec.title}-${i}`}
+                      type="button"
+                      onClick={onOpenCoach}
+                      className="glass-card group flex cursor-pointer gap-4 p-5 text-left transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/95"
+                    >
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-fern-tint bg-white text-xl shadow-sm transition-colors group-hover:bg-canopy group-hover:text-white">
+                        <span aria-hidden="true">{rec.icon || '✨'}</span>
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="font-sans text-[16px] font-semibold text-ink transition-colors group-hover:text-canopy">
+                          {rec.title}
+                        </h3>
+                        <p className="mt-1 font-sans text-[13px] leading-relaxed text-ink-soft">
+                          {rec.tip}
+                        </p>
+                        {rec.when ? (
+                          <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.06em] text-fern">
+                            {rec.when}
+                          </p>
+                        ) : null}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </section>
         </div>
 

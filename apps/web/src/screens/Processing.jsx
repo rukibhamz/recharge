@@ -9,7 +9,7 @@ const DEFAULT_MESSAGES = [
   'Creating your personal recovery map.',
   'Mapping your personality type…',
   'Analyzing burnout dimensions…',
-  'Generating your personalised recommendations…',
+  'Generating your personalised recovery plan…',
 ];
 
 function ProcessingIcon() {

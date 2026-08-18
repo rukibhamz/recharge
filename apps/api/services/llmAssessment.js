@@ -547,12 +547,13 @@ export async function completeAssessment({
     summary: psychometricProfile.diagnostic_summary.core_conflict,
   });
 
-  const { recommendations, source } = await generateRecommendations(
+  const { recommendations, recoveryRoadmap, source } = await generateRecommendations(
     burnout.level,
     enrichedPersonality,
     userName,
     demographics,
     recoveryPreferences,
+    burnout,
   );
 
   return {
@@ -560,6 +561,7 @@ export async function completeAssessment({
     personality: enrichedPersonality,
     psychometricProfile,
     recommendations,
+    recoveryRoadmap,
     aiSource: source,
     burnoutQuestions,
     personalityQuestions,

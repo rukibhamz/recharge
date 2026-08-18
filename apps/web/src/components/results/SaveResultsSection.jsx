@@ -4,7 +4,14 @@ import { linkSessionToAccount } from '../../services/api.js';
 import { setPendingSessionLink } from '../../screens/Login.jsx';
 import Button from '../shared/Button.jsx';
 
-export default function SaveResultsSection({ sessionId, initiallyLinked, cloudSaved = true }) {
+export default function SaveResultsSection({
+  sessionId,
+  initiallyLinked,
+  cloudSaved = true,
+  heading = 'Save to history (optional)',
+  description = 'Keep this roadmap, compare future check-ins, and talk it through with Oma in your account.',
+  onUnlocked,
+}) {
   const { user, loading: authLoading, getAccessToken, isConfigured, signInWithOtp } = useAuth();
   const [linked, setLinked] = useState(Boolean(initiallyLinked));
   const [linking, setLinking] = useState(false);
@@ -22,8 +29,10 @@ export default function SaveResultsSection({ sessionId, initiallyLinked, cloudSa
     (async () => {
       try {
         const token = await getAccessToken();
-        await linkSessionToAccount(sessionId, token);
-        if (mounted) setLinked(true);
+        const result = await linkSessionToAccount(sessionId, token);
+        if (!mounted) return;
+        setLinked(true);
+        if (onUnlocked && result?.session) onUnlocked(result.session);
       } catch (err) {
         if (mounted) setError(err.message);
       } finally {
@@ -34,7 +43,7 @@ export default function SaveResultsSection({ sessionId, initiallyLinked, cloudSa
     return () => {
       mounted = false;
     };
-  }, [user, authLoading, sessionId, linked, getAccessToken, cloudSaved]);
+  }, [user, authLoading, sessionId, linked, getAccessToken, cloudSaved, onUnlocked]);
 
   if (!isConfigured || !sessionId) return null;
 
@@ -104,10 +113,10 @@ export default function SaveResultsSection({ sessionId, initiallyLinked, cloudSa
   return (
     <div className="glass-card mt-4 flex flex-col gap-4 p-gutter">
       <label className="font-sans text-label-sm uppercase tracking-wide text-on-surface-variant">
-        Save to history (optional)
+        {heading}
       </label>
       <p className="font-sans text-body-md text-on-surface-variant">
-        Keep this roadmap, compare future check-ins, and talk it through with Oma in your account.
+        {description}
       </p>
 
       {sent ? (

@@ -1,6 +1,12 @@
 import { randomBytes, randomUUID } from 'crypto';
 import { formatMbtiType } from '@recharge/shared/mbtiScoring';
 import { normalizeRecommendationsList } from '@recharge/shared/recommendations';
+import {
+  packRecommendationsPayload,
+  unpackRecommendationsPayload,
+  teaseRecoveryRoadmap,
+  buildRecoveryRoadmap,
+} from '@recharge/shared/recoveryRoadmap';
 import { supabase, isSupabaseConfigured } from '../lib/supabase.js';
 import { getMbtiTypeProfile } from './questionBank.js';
 
@@ -52,7 +58,14 @@ function sanitizePersonalityForDb(personality) {
   return { typeCode, name, traits };
 }
 
-function sanitizeRecommendationsForDb(recommendations) {
+function sanitizeRecommendationsForDb(recommendations, recoveryRoadmap = null) {
+  if (recoveryRoadmap) {
+    return packRecommendationsPayload(recommendations, recoveryRoadmap);
+  }
+  const unpacked = unpackRecommendationsPayload(recommendations);
+  if (unpacked.recoveryRoadmap) {
+    return packRecommendationsPayload(unpacked.recommendations, unpacked.recoveryRoadmap);
+  }
   return normalizeRecommendationsList(recommendations, []);
 }
 
@@ -123,8 +136,24 @@ async function buildPersonalityFromRow(row) {
   };
 }
 
-export async function buildSessionResponse(row) {
+export async function buildSessionResponse(row, { includeFullRoadmap = true } = {}) {
   const personality = await buildPersonalityFromRow(row);
+  const unpacked = unpackRecommendationsPayload(row.recommendations ?? []);
+  let recoveryRoadmap = unpacked.recoveryRoadmap;
+  if (!recoveryRoadmap && includeFullRoadmap) {
+    recoveryRoadmap = buildRecoveryRoadmap({
+      burnout: {
+        pct: row.burnout_pct,
+        level: row.burnout_level,
+        cls: row.burnout_cls,
+      },
+      personality,
+      psychometricProfile: personality?.psychometricProfile,
+      recoveryPreferences: row.demographics?.recoveryPreferences,
+    });
+  } else if (recoveryRoadmap && !includeFullRoadmap) {
+    recoveryRoadmap = teaseRecoveryRoadmap(recoveryRoadmap);
+  }
   return {
     sessionId: row.id,
     shareToken: row.share_token,
@@ -137,7 +166,9 @@ export async function buildSessionResponse(row) {
       summary: row.burnout_summary ?? null,
     },
     personality,
-    recommendations: sanitizeRecommendationsForDb(row.recommendations ?? []),
+    recommendations: unpacked.recommendations,
+    recoveryRoadmap,
+    roadmapLocked: Boolean(recoveryRoadmap?.guestPreview),
   };
 }
 
@@ -191,6 +222,7 @@ export async function saveSession({
   burnout,
   personality,
   recommendations,
+  recoveryRoadmap = null,
   userId,
   email,
 }) {
@@ -203,7 +235,7 @@ export async function saveSession({
 
   const burnoutRow = sanitizeBurnoutForDb(burnout);
   const personalityRow = sanitizePersonalityForDb(personality);
-  const recommendationsRow = sanitizeRecommendationsForDb(recommendations);
+  const recommendationsRow = sanitizeRecommendationsForDb(recommendations, recoveryRoadmap);
 
   const duplicate = await findRecentDuplicateSession({
     userId,
@@ -312,7 +344,7 @@ export async function getSharedSessionResponse(shareToken) {
   const { data, error } = await getSessionByShareToken(shareToken);
   if (error) return { data: null, error };
   if (!data) return { data: null, error: null };
-  const response = await buildSessionResponse(data);
+  const response = await buildSessionResponse(data, { includeFullRoadmap: false });
   return { data: response, error: null };
 }
 

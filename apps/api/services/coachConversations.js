@@ -4,7 +4,7 @@ import { resolveCoachAssessmentContext } from './coachContext.js';
 import { generateOmaReply, getOmaOpening } from './coachAgent.js';
 import { getCoachSettings } from './coachSettings.js';
 import { ingestCoachKnowledge } from './knowledgeBank.js';
-import { detectsAdviceAcknowledgement } from '@recharge/shared/coachPersona';
+import { detectsAdviceAcknowledgement, isCoachConversationStale } from '@recharge/shared/coachPersona';
 
 function mapConversation(row) {
   if (!row) return null;
@@ -51,11 +51,13 @@ async function listConversationsForUser(userId, limit = 20) {
     if (countError) return { data: [], error: countError };
 
     const latest = latestRows?.[0] ?? null;
+    const lastActivityAt = latest?.created_at ?? row.updated_at;
     conversations.push({
       ...mapConversation(row),
       lastMessageSnippet: snippet(latest?.content),
-      lastMessageAt: latest?.created_at ?? row.updated_at,
+      lastMessageAt: lastActivityAt,
       messageCount: count ?? 0,
+      archived: isCoachConversationStale(lastActivityAt),
     });
   }
 
@@ -88,14 +90,19 @@ export async function getCoachStatus(userId, email) {
   if (convError && !/coach_conversations/i.test(convError.message) && convError.code !== '42P01') {
     return { data: null, error: convError };
   }
-  const conversation = conversations?.[0] ?? null;
+  const conversationList = conversations ?? [];
+  const liveConversation = conversationList.find((c) => !c.archived) ?? null;
+
+  if (!liveConversation && session && conversationList.some((c) => c.archived)) {
+    return startCoachConversation(userId, email, session.sessionId);
+  }
 
   let messages = [];
-  if (conversation?.id) {
+  if (liveConversation?.id) {
     const { data: rows, error: msgError } = await supabase
       .from('coach_messages')
       .select('id, role, content, created_at')
-      .eq('conversation_id', conversation.id)
+      .eq('conversation_id', liveConversation.id)
       .order('created_at', { ascending: true })
       .limit(100);
 
@@ -117,8 +124,8 @@ export async function getCoachStatus(userId, email) {
         createdAt: a.createdAt,
       })),
       activeSessionId: session?.sessionId ?? null,
-      conversations: conversations ?? [],
-      conversation: conversation ? mapConversation(conversation) : null,
+      conversations: conversationList,
+      conversation: liveConversation ? mapConversation(liveConversation) : null,
       messages,
       opening: await getOmaOpening(),
     },

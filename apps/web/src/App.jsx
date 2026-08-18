@@ -455,7 +455,7 @@ function AssessmentFlow() {
           phase="processing"
           messages={[
             'Assessing your energy and stress levels…',
-            'Crafting personalised recommendations…',
+            'Crafting your recovery plan…',
           ]}
         />
       )}

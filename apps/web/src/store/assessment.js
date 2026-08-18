@@ -140,6 +140,10 @@ export const useAssessmentStore = create(
       prevPersonality: () =>
         set((s) => ({ personalityIndex: Math.max(0, s.personalityIndex - 1) })),
       setResults: (results) => set({ results, phase: 'results', error: null, errorPhase: null }),
+      mergeResults: (patch) =>
+        set((s) => ({
+          results: s.results ? { ...s.results, ...patch } : patch,
+        })),
       setError: (error, errorPhase = null) =>
         set({ error, errorPhase, phase: 'error' }),
       clearError: () => set({ error: null, errorPhase: null }),

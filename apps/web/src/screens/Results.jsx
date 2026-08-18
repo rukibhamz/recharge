@@ -17,13 +17,14 @@ import TraitBars from '../components/results/TraitBars.jsx';
 import RecommendationCard from '../components/results/RecommendationCard.jsx';
 import ShareCard from '../components/results/ShareCard.jsx';
 import StructuredCopy, { MoodboardCopy } from '../components/results/StructuredCopy.jsx';
-import PsychometricProfile from '../components/results/PsychometricProfile.jsx';
+import RecoveryRoadmap from '../components/results/RecoveryRoadmap.jsx';
 import { useShareCard } from '../hooks/useShareCard.js';
 import SaveResultsSection from '../components/results/SaveResultsSection.jsx';
 import EditorialArtwork from '../components/shared/EditorialArtwork.jsx';
 import FeedbackForm from '../components/shared/FeedbackForm.jsx';
 import { ArcDivider } from '../components/shared/Arc.jsx';
 import { BURNOUT_BADGE_CLASSES } from '../lib/design.js';
+import { useAssessmentStore } from '../store/assessment.js';
 export default function Results({ data, error, onRetake, showSaveSection = true }) {
   const shareToken = data?.shareToken ?? null;
   const shareCardPayload =
@@ -83,7 +84,10 @@ export default function Results({ data, error, onRetake, showSaveSection = true 
     persistError,
     sessionId,
     linked,
+    recoveryRoadmap,
+    roadmapLocked,
   } = data;
+  const mergeResults = useAssessmentStore((s) => s.mergeResults);
   const recommendations = normalizeRecommendationsList(rawRecommendations ?? [], DEFAULT_RECOVERY_TIPS);
   const report = resolveBurnoutReport(burnout, personality);
   const moodboardSections = buildMoodboardSections(personality, burnout);
@@ -103,10 +107,6 @@ export default function Results({ data, error, onRetake, showSaveSection = true 
     personality.type?.title ||
     personality.type?.name ||
     'Your profile';
-  const personalitySubtitle =
-    psychometricProfile?.diagnostic_summary?.burnout_stage ||
-    personality.type?.archetype ||
-    'Personality pattern';
   const badgeClass = BURNOUT_BADGE_CLASSES[burnout.cls] ?? BURNOUT_BADGE_CLASSES.moderate;
 
   return (
@@ -201,18 +201,40 @@ export default function Results({ data, error, onRetake, showSaveSection = true 
         </section>
 
         <section className="space-y-gutter">
-          <div className="flex items-center justify-between gap-3">
-            <h3 className="font-display text-headline-md font-normal text-ink">Your recovery roadmap</h3>
-            <span className="ai-badge">{isPersonalised ? 'Personalised' : 'Curated'}</span>
-          </div>
-          <p className="font-sans text-body-md text-ink-soft">
-            Four practical steps for this week. Start today, then protect your energy as you go.
-          </p>
-          <div className="grid grid-cols-1 gap-gutter md:grid-cols-2">
-            {recommendations.map((rec, i) => (
-              <RecommendationCard key={i} {...rec} />
-            ))}
-          </div>
+          {recoveryRoadmap?.phases?.length ? (
+            <RecoveryRoadmap
+              roadmap={recoveryRoadmap}
+              locked={Boolean(roadmapLocked || recoveryRoadmap.guestPreview)}
+              sessionId={sessionId}
+              linked={linked}
+              cloudSaved={cloudSaved}
+              isPersonalised={isPersonalised}
+              onUnlocked={(session) => {
+                if (!session) return;
+                mergeResults({
+                  recommendations: session.recommendations ?? data.recommendations,
+                  recoveryRoadmap: session.recoveryRoadmap,
+                  roadmapLocked: false,
+                  linked: true,
+                });
+              }}
+            />
+          ) : (
+            <>
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="font-display text-headline-md font-normal text-ink">Your recovery roadmap</h3>
+                <span className="ai-badge">{isPersonalised ? 'Personalised' : 'Curated'}</span>
+              </div>
+              <p className="font-sans text-body-md text-ink-soft">
+                Four practical steps for this week. Start today, then protect your energy as you go.
+              </p>
+              <div className="grid grid-cols-1 gap-gutter md:grid-cols-2">
+                {recommendations.map((rec, i) => (
+                  <RecommendationCard key={i} {...rec} />
+                ))}
+              </div>
+            </>
+          )}
         </section>
 
         <FeedbackForm page="results" compact />
@@ -239,7 +261,7 @@ export default function Results({ data, error, onRetake, showSaveSection = true 
             </>
           ) : null}
 
-          {showSaveSection && sessionId ? (
+          {showSaveSection && sessionId && !(roadmapLocked || recoveryRoadmap?.guestPreview) ? (
             <SaveResultsSection
               sessionId={sessionId}
               initiallyLinked={linked}

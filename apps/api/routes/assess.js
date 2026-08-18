@@ -10,6 +10,7 @@ import {
   isValidRecoveryPreferences,
   sanitizeRecoveryPreferences,
 } from '@recharge/shared/recoveryPreferences';
+import { teaseRecoveryRoadmap } from '@recharge/shared/recoveryRoadmap';
 import { optionalAuth } from '../middleware/requireAuth.js';
 import { saveSession, getLatestPersonalityTypeForUser } from '../services/sessions.js';
 import { ingestAssessmentKnowledge } from '../services/knowledgeBank.js';
@@ -160,7 +161,7 @@ router.post('/complete', optionalAuth, async (req, res) => {
       burnoutAnswers,
     );
 
-    const { recommendations, aiSource, personality: enrichedPersonality } = await completeAssessment({
+    const { recommendations, aiSource, personality: enrichedPersonality, recoveryRoadmap } = await completeAssessment({
       userName: name,
       demographics,
       recoveryPreferences,
@@ -179,6 +180,7 @@ router.post('/complete', optionalAuth, async (req, res) => {
       burnout: safeBurnout,
       personality: enrichedPersonality ?? personality,
       recommendations,
+      recoveryRoadmap,
       userId: req.user?.id,
       email: req.user?.email,
     });
@@ -196,17 +198,34 @@ router.post('/complete', optionalAuth, async (req, res) => {
       });
     }
 
+    const signedIn = Boolean(linked);
+    const publicRoadmap = recoveryRoadmap
+      ? signedIn
+        ? recoveryRoadmap
+        : teaseRecoveryRoadmap(recoveryRoadmap)
+      : null;
+    const publicRecommendations = signedIn
+      ? recommendations
+      : (publicRoadmap?.phases?.[0]?.steps ?? recommendations).slice(0, 4).map((s) => ({
+          icon: s.icon,
+          when: s.when,
+          title: s.title,
+          tip: s.tip,
+        }));
+
     res.json({
       sessionId,
       shareToken,
       persisted,
       persistError: persistError ?? null,
-      linked: Boolean(linked),
+      linked: signedIn,
       displayName: name,
       profileContext: demographicsLabels(demographics),
       burnout: safeBurnout,
       personality: enrichedPersonality ?? personality,
-      recommendations,
+      recommendations: publicRecommendations,
+      recoveryRoadmap: publicRoadmap,
+      roadmapLocked: Boolean(publicRoadmap?.guestPreview),
       aiSource: aiSource ?? burnoutSource,
     });
   } catch (err) {
