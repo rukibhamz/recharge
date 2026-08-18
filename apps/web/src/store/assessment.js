@@ -5,8 +5,8 @@ import { isValidRecoveryPreferences } from '@recharge/shared/recoveryPreferences
 
 /** Abandoned in-progress assessments expire after 12 hours. */
 export const ASSESSMENT_TTL_MS = 12 * 60 * 60 * 1000;
-export const STORAGE_KEY = 'recharge-assessment-v19';
-const LEGACY_KEYS = ['recharge-assessment-v18', 'recharge-assessment-v17', 'recharge-assessment-v16'];
+export const STORAGE_KEY = 'recharge-assessment-v20';
+const LEGACY_KEYS = ['recharge-assessment-v19', 'recharge-assessment-v18', 'recharge-assessment-v17', 'recharge-assessment-v16'];
 
 const emptyAnswers = (n = 0) => Array(n).fill(null);
 const emptyDemographics = () => ({
@@ -209,6 +209,7 @@ export const useAssessmentStore = create(
         updatedAt: s.updatedAt,
       }),
       merge: (persisted, current) => {
+        try {
         if (!persisted || isExpired(persisted.updatedAt)) {
           return { ...current, ...initialState };
         }
@@ -235,15 +236,19 @@ export const useAssessmentStore = create(
         const hasPersonalityTest = merged.personalityQuestions?.length >= 10;
         const hasBurnoutTest = merged.burnoutQuestions?.length >= 10;
         const hasPersonalityResult = Boolean(merged.personalityResult?.typeCode);
+        const personalityAnswers = Array.isArray(merged.personalityAnswers)
+          ? merged.personalityAnswers
+          : [];
+        const burnoutAnswers = Array.isArray(merged.burnoutAnswers) ? merged.burnoutAnswers : [];
         const personalityDone =
           hasPersonalityTest &&
-          merged.personalityAnswers?.length === merged.personalityQuestions?.length &&
-          merged.personalityAnswers?.every((a) => a !== null);
-        const burnoutStarted = merged.burnoutAnswers?.some((a) => a !== null);
+          personalityAnswers.length === merged.personalityQuestions?.length &&
+          personalityAnswers.every((a) => a !== null);
+        const burnoutStarted = burnoutAnswers.some((a) => a !== null);
         const burnoutDone =
           hasBurnoutTest &&
-          merged.burnoutAnswers?.length === merged.burnoutQuestions?.length &&
-          merged.burnoutAnswers?.every((a) => a !== null);
+          burnoutAnswers.length === merged.burnoutQuestions?.length &&
+          burnoutAnswers.every((a) => a !== null);
 
         const keepPhases = new Set([
           'hero',
@@ -287,6 +292,10 @@ export const useAssessmentStore = create(
         merged.error = null;
         merged.errorPhase = null;
         return merged;
+        } catch (err) {
+          console.warn('Could not restore assessment session:', err);
+          return { ...current, ...initialState };
+        }
       },
     },
   ),

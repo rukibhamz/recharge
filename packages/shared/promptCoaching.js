@@ -176,6 +176,59 @@ export function burnoutSlot(index) {
 export function personalityRecoveryProfile(personality) {
   if (!personality) return '';
 
+  const oceanTraits = (personality.traits ?? []).filter((t) =>
+    ['O', 'C', 'E', 'A', 'N'].includes(t.key),
+  );
+  const oceanScores = personality.ocean?.scores;
+  const protocols = personality.psychometricProfile?.actionable_protocol ?? [];
+
+  if (oceanTraits.length >= 3 || oceanScores) {
+    const score = (key) =>
+      oceanScores?.[key] ?? oceanTraits.find((t) => t.key === key)?.pct ?? 50;
+    const lines = [
+      `OCEAN profile: O ${score('O')}%, C ${score('C')}%, E ${score('E')}%, A ${score('A')}%, N ${score('N')}%`,
+      personality.psychometricProfile?.diagnostic_summary?.core_conflict
+        ? `Core conflict: ${personality.psychometricProfile.diagnostic_summary.core_conflict}`
+        : '',
+    ].filter(Boolean);
+
+    if (score('E') >= 55) {
+      lines.push(
+        `Energy (Extraversion ${score('E')}%): recharge through people — concrete social plans with clear start/end times.`,
+      );
+    } else if (score('E') <= 45) {
+      lines.push(
+        `Energy (Introversion ${100 - score('E')}%): recharge through solitude or one trusted person — not crowds.`,
+      );
+    }
+
+    if (score('C') >= 55) {
+      lines.push(`Structure (Conscientiousness ${score('C')}%): give time-bound, written micro-rules — not vague goals.`);
+    } else {
+      lines.push(`Structure (lower Conscientiousness): allow flexible windows, not rigid timetables.`);
+    }
+
+    if (score('A') >= 55) {
+      lines.push(`Boundaries (Agreeableness ${score('A')}%): include scripts for saying no or delaying yes.`);
+    }
+
+    if (score('N') >= 55) {
+      lines.push(`Threat sensitivity (Neuroticism ${score('N')}%): close cognitive loops with written handoffs, not rumination.`);
+    }
+
+    if (protocols.length) {
+      lines.push('Locked protocol rules (prefer these over generic tips):');
+      protocols.slice(0, 3).forEach((p) => {
+        lines.push(`- When: ${p.trigger} → Rule: ${p.protocol_rule}`);
+      });
+    }
+
+    lines.push(
+      'Each recommendation must cite a trait mechanism. No generic wellness platitudes (meditate, self-care, drink water).',
+    );
+    return lines.join('\n');
+  }
+
   const typeCode = personality.typeCode ?? personality.type?.code ?? '';
   const traits = personality.traits ?? [];
   const findTrait = (poleA) => traits.find((t) => t.poleA === poleA);

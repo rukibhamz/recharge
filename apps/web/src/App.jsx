@@ -214,7 +214,7 @@ function AssessmentFlow() {
   ]);
 
   const handleLoadBurnoutTest = useCallback(() => {
-    if (!personalityResult?.typeCode) {
+    if (!personalityResult?.traits?.length && !personalityResult?.ocean?.scores) {
       setPhase('scoring-personality');
       return;
     }

@@ -1,22 +1,19 @@
 import {
   buildFallbackBurnoutQuestions,
-  buildFallbackPersonalityQuestions,
+  buildFallbackOceanQuestions,
 } from '@recharge/shared/fallbackQuestions';
 import {
   ensureLifeSocialBurnoutMix,
   inferBurnoutLifeDomain,
 } from '@recharge/shared/questionLifeDomains';
-import {
-  PERSONALITY_PER_DICHOTOMY,
-  selectPoleBalancedPersonalityQuestions,
-} from '@recharge/shared/personalitySelection';
+import { selectBalancedOceanQuestions } from '@recharge/shared/oceanSelection';
 import { optionsForScale, resolveQuestionScale } from '@recharge/shared/questions';
 import { supabase, isSupabaseConfigured } from '../lib/supabase.js';
 
 const CACHE_MS = Number(process.env.QUESTION_BANK_CACHE_MS) || 300_000;
 const BURNOUT_COUNT = 12;
 const BURNOUT_PER_DIMENSION = 2;
-const MIN_PERSONALITY_BANK = 120;
+const MIN_OCEAN_BANK = 20;
 
 const DIMENSION_SLUGS = {
   Exhaustion: 'exhaustion',
@@ -46,22 +43,16 @@ function shuffle(arr) {
 }
 
 function selectBalancedPersonalityQuestions(allQuestions) {
-  return selectPoleBalancedPersonalityQuestions(allQuestions, {
-    stable: true,
-    perPole: PERSONALITY_PER_DICHOTOMY / 2,
-    scoredPoleKey: 'scored_pole',
-    dichotomyKey: 'dichotomy',
-    numberKey: 'question_number',
-  });
+  return selectBalancedOceanQuestions(allQuestions, { stable: true });
 }
 
 function formatPersonalitySelection(questions, options) {
   return questions.map((q, i) => ({
     id: `bank-p${i + 1}`,
     bankId: q.id,
-    text: q.question_text,
-    scoredPole: q.scored_pole,
-    dichotomy: q.dichotomy,
+    text: q.question_text ?? q.text,
+    scoredTrait: q.scored_trait ?? q.scoredTrait,
+    reverseScored: Boolean(q.reverse_scored ?? q.reverseScored),
     scale: 'agreement',
     options: options.map((o) => ({ value: o.value, label: o.label })),
   }));
@@ -132,20 +123,19 @@ async function loadPersonalityBank() {
   if (optErr) throw optErr;
   if (!options?.length) throw new Error('No personality options in bank');
 
-  const { data: questions, error: qErr } = await supabase
-    .from('personality_questions_full')
-    .select('id, question_number, question_text, scored_pole, dichotomy');
+  const { data: oceanRows, error: oceanErr } = await supabase
+    .from('ocean_questions')
+    .select('id, question_number, question_text, scored_trait, reverse_scored')
+    .order('question_number', { ascending: true });
 
-  if (qErr) throw qErr;
-  if ((questions?.length ?? 0) < MIN_PERSONALITY_BANK) {
-    throw new Error(`Personality bank has ${questions?.length ?? 0} questions`);
+  if (!oceanErr && (oceanRows?.length ?? 0) >= MIN_OCEAN_BANK) {
+    cache.personalityQuestions = oceanRows;
+    cache.personalityOptions = options;
+    cache.fetchedAt = now;
+    return { questions: oceanRows, options };
   }
 
-  cache.personalityQuestions = questions;
-  cache.personalityOptions = options;
-  cache.fetchedAt = now;
-
-  return { questions, options };
+  throw new Error('OCEAN question bank not available — use static fallback');
 }
 
 async function loadBurnoutBank() {
@@ -218,7 +208,7 @@ export async function getMbtiTypeProfile(typeCode) {
 export async function getPersonalityBankQuestions() {
   if (!isSupabaseConfigured()) {
     console.warn('Question bank unavailable — Supabase not configured');
-    return { questions: buildFallbackPersonalityQuestions(), source: 'static-fallback' };
+    return { questions: buildFallbackOceanQuestions(), source: 'ocean-fallback' };
   }
 
   try {
@@ -226,11 +216,11 @@ export async function getPersonalityBankQuestions() {
     const picked = selectBalancedPersonalityQuestions(questions);
     return {
       questions: formatPersonalitySelection(picked, options),
-      source: 'bank',
+      source: 'ocean-bank',
     };
   } catch (err) {
     console.error('Personality question bank failed:', err.message);
-    return { questions: buildFallbackPersonalityQuestions(), source: 'static-fallback' };
+    return { questions: buildFallbackOceanQuestions(), source: 'ocean-fallback' };
   }
 }
 
@@ -259,11 +249,11 @@ export async function getBurnoutBankQuestions() {
  */
 export async function selectPersonalityAnchors() {
   if (!isSupabaseConfigured()) {
-    return buildFallbackPersonalityQuestions().map((q, i) => ({
-      bankId: q.id ?? `fp-${i}`,
+    return buildFallbackOceanQuestions().map((q, i) => ({
+      bankId: q.id ?? `fo-${i}`,
       seedText: q.text,
-      scoredPole: q.scoredPole,
-      dichotomy: q.dichotomy,
+      scoredTrait: q.scoredTrait,
+      reverseScored: Boolean(q.reverseScored),
       scale: 'agreement',
       options: q.options,
     }));
@@ -274,19 +264,19 @@ export async function selectPersonalityAnchors() {
     const picked = selectBalancedPersonalityQuestions(questions);
     return picked.map((q) => ({
       bankId: q.id,
-      seedText: q.question_text,
-      scoredPole: q.scored_pole,
-      dichotomy: q.dichotomy,
+      seedText: q.question_text ?? q.text,
+      scoredTrait: q.scored_trait ?? q.scoredTrait,
+      reverseScored: Boolean(q.reverse_scored ?? q.reverseScored),
       scale: 'agreement',
       options: options.map((o) => ({ value: o.value, label: o.label })),
     }));
   } catch (err) {
     console.error('Personality anchors failed:', err.message);
-    return buildFallbackPersonalityQuestions().map((q, i) => ({
-      bankId: q.id ?? `fp-${i}`,
+    return buildFallbackOceanQuestions().map((q, i) => ({
+      bankId: q.id ?? `fo-${i}`,
       seedText: q.text,
-      scoredPole: q.scoredPole,
-      dichotomy: q.dichotomy,
+      scoredTrait: q.scoredTrait,
+      reverseScored: Boolean(q.reverseScored),
       scale: 'agreement',
       options: q.options,
     }));

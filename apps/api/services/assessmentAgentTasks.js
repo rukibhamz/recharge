@@ -22,7 +22,20 @@ import { firstName } from '@recharge/shared/name';
 import { buildBurnoutNarrative } from '@recharge/shared/resultNarratives';
 
 const VALID_POLES = new Set(['E', 'I', 'S', 'N', 'T', 'F', 'J', 'P']);
+const VALID_OCEAN = new Set(['O', 'C', 'E', 'A', 'N']);
 const VALID_SCALES = new Set(['agreement', 'frequency']);
+
+const OCEAN_TRAIT_NAMES = {
+  O: 'Openness',
+  C: 'Conscientiousness',
+  E: 'Extraversion',
+  A: 'Agreeableness',
+  N: 'Neuroticism',
+};
+
+function isOceanAnchor(anchor) {
+  return VALID_OCEAN.has(String(anchor?.scoredTrait ?? '').toUpperCase());
+}
 
 function formatDimensionLines(dimensions) {
   if (!dimensions || typeof dimensions !== 'object') return '';
@@ -45,6 +58,39 @@ export const ASSESSMENT_TASKS = {
     buildPrompt(input) {
       const { anchor, userContext, userName, anchorIndex = 0 } = input;
       const name = firstName(userName);
+
+      if (isOceanAnchor(anchor)) {
+        const trait = String(anchor.scoredTrait).toUpperCase();
+        const traitName = OCEAN_TRAIT_NAMES[trait] ?? trait;
+        return `Rewrite this Big Five (OCEAN) personality statement for ${name || 'this person'}. Keep the SAME psychological meaning and scored trait.
+
+${userContext}
+${knowledgeBlock(input)}
+
+${COACH_VOICE_RULES}
+${PERSONALITY_QUESTION_FORMAT}
+${PERSONALITY_LIFE_BALANCE_RULES}
+${QUESTION_NO_LOCATION_RULES}
+${WORK_CONTEXT_REWRITE_RULES}
+
+Seed statement (do not change meaning):
+"${anchor.seedText}"
+
+Locked scoring metadata (echo exactly):
+- scoredTrait: ${trait}
+- reverseScored: ${Boolean(anchor.reverseScored)}
+- trait measured: ${traitName}
+
+Rules:
+- Output ONE first-person "I ..." statement
+- Frame around everyday life and personality — not only work
+- Personalise lightly to their life stage and situation — no place names
+- Do NOT invent a new trait; keep the seed meaning and keying direction
+
+Return JSON only:
+{"text":"I ...","scoredTrait":"${trait}","reverseScored":${Boolean(anchor.reverseScored)}}`;
+      }
+
       const dichotomySlot = anchorIndex % 3;
       const domainGuide = personalityQuestionDomainHint(anchor.dichotomy, dichotomySlot);
       return `Rewrite this personality interview statement for ${name || 'this person'}. Keep the SAME psychological meaning and scored pole.
@@ -81,13 +127,37 @@ Return JSON only:
       const text = String(parsed?.text ?? parsed?.question ?? '').trim();
       if (text.length < 8) errors.push('text too short');
       if (!isIStatement(text)) errors.push('text must start with "I "');
+      const contextError = workContextLanguageViolation(text, input.workContext);
+      if (contextError) errors.push(contextError);
+
+      if (isOceanAnchor(input.anchor)) {
+        const scoredTrait = String(parsed?.scoredTrait ?? parsed?.scored_trait ?? '').toUpperCase();
+        if (scoredTrait !== input.anchor.scoredTrait) {
+          errors.push(`scoredTrait must be ${input.anchor.scoredTrait}`);
+        }
+        if (!VALID_OCEAN.has(scoredTrait)) errors.push('invalid scoredTrait');
+        const reverseScored = Boolean(parsed?.reverseScored ?? parsed?.reverse_scored);
+        if (reverseScored !== Boolean(input.anchor.reverseScored)) {
+          errors.push(`reverseScored must be ${Boolean(input.anchor.reverseScored)}`);
+        }
+        return {
+          ok: errors.length === 0,
+          errors,
+          value: errors.length
+            ? null
+            : {
+                text,
+                scoredTrait: input.anchor.scoredTrait,
+                reverseScored: Boolean(input.anchor.reverseScored),
+              },
+        };
+      }
+
       const scoredPole = String(parsed?.scoredPole ?? parsed?.scored_pole ?? '').toUpperCase();
       if (scoredPole !== input.anchor.scoredPole) {
         errors.push(`scoredPole must be ${input.anchor.scoredPole}`);
       }
       if (!VALID_POLES.has(scoredPole)) errors.push('invalid scoredPole');
-      const contextError = workContextLanguageViolation(text, input.workContext);
-      if (contextError) errors.push(contextError);
       const dichotomy = String(parsed?.dichotomy ?? input.anchor.dichotomy);
       if (dichotomy !== input.anchor.dichotomy) {
         errors.push(`dichotomy must be ${input.anchor.dichotomy}`);
@@ -105,6 +175,13 @@ Return JSON only:
       };
     },
     fallback(input) {
+      if (isOceanAnchor(input.anchor)) {
+        return {
+          text: input.anchor.seedText,
+          scoredTrait: input.anchor.scoredTrait,
+          reverseScored: Boolean(input.anchor.reverseScored),
+        };
+      }
       return {
         text: input.anchor.seedText,
         scoredPole: input.anchor.scoredPole,
@@ -112,6 +189,12 @@ Return JSON only:
       };
     },
     repairPrompt(errors, input) {
+      if (isOceanAnchor(input.anchor)) {
+        return `Your previous JSON was invalid: ${errors.join('; ')}.
+Rewrite again. Echo scoredTrait="${input.anchor.scoredTrait}" and reverseScored=${Boolean(input.anchor.reverseScored)} exactly.
+Seed: "${input.anchor.seedText}"
+Return JSON only: {"text":"I ...","scoredTrait":"${input.anchor.scoredTrait}","reverseScored":${Boolean(input.anchor.reverseScored)}}`;
+      }
       return `Your previous JSON was invalid: ${errors.join('; ')}.
 Rewrite again. Echo scoredPole="${input.anchor.scoredPole}" and dichotomy="${input.anchor.dichotomy}" exactly.
 Seed: "${input.anchor.seedText}"
@@ -213,6 +296,57 @@ Return JSON only:
 Rewrite again. Echo scale="${input.anchor.scale}" and dimension="${input.anchor.dimension}".${contextFix}
 Seed: "${input.anchor.seedText}"
 Return JSON only: {"text":"...","scale":"${input.anchor.scale}","dimension":"${input.anchor.dimension}","reverseScored":${Boolean(input.anchor.reverseScored)}}`;
+    },
+  },
+
+  writeOceanNarrative: {
+    id: 'writeOceanNarrative',
+    buildPrompt(input) {
+      const { insightContext, qaBlock, traitLines, scores } = input;
+      return `You are a skilled therapist reflecting on a Big Five (OCEAN) personality interview. Trait percentages are LOCKED — do not change them.
+
+${insightContext}
+${knowledgeBlock(input)}
+${PERSONALITY_INSIGHT_RULES}
+
+LOCKED OCEAN scores:
+${traitLines}
+
+Interview:
+${qaBlock}
+
+Write warm, second-person copy only. Reference their specific answers and trait pattern (Openness ${scores?.O}%, Conscientiousness ${scores?.C}%, Extraversion ${scores?.E}%, Agreeableness ${scores?.A}%, Neuroticism ${scores?.N}%).
+Do NOT give generic wellness advice. Do NOT change percentages.
+
+Return JSON only:
+{"type":{"title":"Your OCEAN profile","archetype":"short pattern label (e.g. Structured and people-forward)","desc":"2-3 sentences tied to their answers","strengths":"One sentence on how they operate under normal load","growthAreas":"One sentence on friction points","icon":"🧭"},"summary":"2-4 reflective sentences — themes from their answers, no jargon"}`;
+    },
+    validate(parsed) {
+      const errors = [];
+      const type = parsed?.type ?? {};
+      const desc = String(type.desc ?? type.description ?? '').trim();
+      const summary = String(parsed?.summary ?? '').trim();
+      if (desc.length < 40) errors.push('desc too short');
+      if (summary.length < 40) errors.push('summary too short');
+      return { ok: errors.length === 0, errors, value: parsed };
+    },
+    fallback(input) {
+      return {
+        type: {
+          title: 'Your OCEAN profile',
+          archetype: 'Balanced operator',
+          desc: 'Your answers sketch a personality pattern we will cross-correlate with burnout next.',
+          strengths: '',
+          growthAreas: '',
+          icon: '🧭',
+        },
+        summary: 'Your trait pattern is locked in. The burnout check-in next will map how these mechanics interact with your current load.',
+      };
+    },
+    repairPrompt(errors) {
+      return `Your previous JSON was invalid: ${errors.join('; ')}.
+Return narrative only — do not include trait percentages.
+Return JSON only: {"type":{"title":"...","archetype":"...","desc":"...","strengths":"...","growthAreas":"...","icon":"..."},"summary":"..."}`;
     },
   },
 

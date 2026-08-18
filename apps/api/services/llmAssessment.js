@@ -1,6 +1,15 @@
 import { optionLabelForValue } from '@recharge/shared/questionOptions';
 import { scoreMbti, formatMbtiType } from '@recharge/shared/mbtiScoring';
 import {
+  scoreOcean,
+  questionsSupportOceanScoring,
+  summarizeOceanProfile,
+  oceanArchetypeLabel,
+  dominantTraitLetters,
+  deriveOceanFromMbti,
+} from '@recharge/shared/oceanScoring';
+import { buildPsychometricProfile } from '@recharge/shared/psychometricEngine';
+import {
   calibrateBurnout,
   scoreBurnoutByDimension,
 } from '@recharge/shared/burnoutCalibration';
@@ -33,6 +42,10 @@ function questionsSupportMbtiScoring(questions) {
   return questions.every((q) => q.scoredPole ?? q.scored_pole);
 }
 
+function questionsSupportPersonalityScoring(questions) {
+  return questionsSupportOceanScoring(questions) || questionsSupportMbtiScoring(questions);
+}
+
 function formatQaBlock(questions, answers) {
   return questions
     .map((q, i) => {
@@ -43,15 +56,29 @@ function formatQaBlock(questions, answers) {
 }
 
 function formatPersonalityQuestions(items) {
-  return items.map((item, i) => ({
-    id: `p${i + 1}`,
-    bankId: item.anchor?.bankId ?? null,
-    text: item.text,
-    scoredPole: item.scoredPole ?? item.anchor?.scoredPole,
-    dichotomy: item.dichotomy ?? item.anchor?.dichotomy,
-    scale: 'agreement',
-    options: item.anchor?.options ?? [],
-  }));
+  return items.map((item, i) => {
+    const scoredTrait = item.scoredTrait ?? item.anchor?.scoredTrait;
+    const scoredPole = item.scoredPole ?? item.anchor?.scoredPole;
+    const base = {
+      id: `p${i + 1}`,
+      bankId: item.anchor?.bankId ?? null,
+      text: item.text,
+      scale: 'agreement',
+      options: item.anchor?.options ?? [],
+    };
+    if (scoredTrait) {
+      return {
+        ...base,
+        scoredTrait,
+        reverseScored: Boolean(item.reverseScored ?? item.anchor?.reverseScored),
+      };
+    }
+    return {
+      ...base,
+      scoredPole,
+      dichotomy: item.dichotomy ?? item.anchor?.dichotomy,
+    };
+  });
 }
 
 function formatBurnoutQuestions(items) {
@@ -69,6 +96,44 @@ function formatBurnoutQuestions(items) {
 }
 
 export function normalizePersonalityResult(parsed) {
+  const oceanScores = parsed.ocean?.scores ?? parsed.scores;
+  const isOcean =
+    oceanScores &&
+    oceanScores.O != null &&
+    Array.isArray(parsed.traits) &&
+    parsed.traits.some((tr) => ['O', 'C', 'E', 'A', 'N'].includes(tr.key ?? tr.poleA));
+
+  if (isOcean) {
+    const typeCode = String(parsed.typeCode ?? parsed.pattern_code ?? dominantTraitLetters(oceanScores) ?? 'OCEAN');
+    const t = parsed.type ?? {};
+    return {
+      typeCode,
+      ocean: {
+        scores: oceanScores,
+        derived: Boolean(parsed.ocean?.derived),
+      },
+      psychometricProfile: parsed.psychometricProfile ?? null,
+      type: {
+        id: parsed.pattern_code ?? typeCode.toLowerCase(),
+        code: typeCode,
+        name: t.title || t.name || 'Your OCEAN profile',
+        title: t.title ?? 'Your OCEAN profile',
+        archetype: t.archetype ?? oceanArchetypeLabel(oceanScores),
+        desc: t.desc ?? t.description ?? parsed.summary ?? '',
+        strengths: t.strengths ?? '',
+        growthAreas: t.growthAreas ?? t.growth_areas ?? '',
+        icon: t.icon ?? '🧭',
+      },
+      traits: parsed.traits.map((tr) => ({
+        key: tr.key ?? tr.poleA,
+        name: tr.name ?? '',
+        label: tr.label ?? tr.name ?? '',
+        pct: Math.min(100, Math.max(0, Number(tr.pct ?? 50))),
+      })),
+      summary: parsed.summary ?? '',
+    };
+  }
+
   const typeCode = String(parsed.typeCode ?? parsed.type_code ?? 'INTJ')
     .toUpperCase()
     .replace(/[^A-Z]/g, '')
@@ -129,6 +194,64 @@ export function normalizeBurnoutResult(parsed) {
     calibrationNote: parsed.calibrationNote ?? null,
     dimensions: parsed.dimensions ?? undefined,
   };
+}
+
+async function scoreOceanPersonality(userName, demographics, questions, answers) {
+  const ocean = scoreOcean(answers, questions);
+  const summary = summarizeOceanProfile(ocean.scores);
+  const archetype = oceanArchetypeLabel(ocean.scores);
+  const patternCode = dominantTraitLetters(ocean.scores) || 'ocean';
+
+  let narrative = {
+    type: {
+      title: 'Your OCEAN profile',
+      archetype,
+      desc: summary,
+      strengths: '',
+      growthAreas: '',
+      icon: '🧭',
+    },
+    summary,
+  };
+  let source = 'scoring';
+
+  if (llmFeatures.personalityNarrative) {
+    const insightContext = buildPersonalityInsightPromptContext({
+      userName,
+      demographics,
+    });
+    const qaBlock = formatQaBlock(questions, answers);
+    const traitLines = ocean.traits.map((t) => `- ${t.name}: ${t.pct}%`).join('\n');
+    try {
+      const { result, source: narrativeSource } = await runAgentTask('writeOceanNarrative', {
+        insightContext,
+        qaBlock,
+        traitLines,
+        scores: ocean.scores,
+        knowledgeContext: (
+          await retrieveKnowledgeContext({
+            kinds: ['quality_rule', 'question_pattern'],
+            queryText: 'OCEAN personality reflection',
+          })
+        ).block,
+      });
+      narrative = result;
+      source = narrativeSource === 'bank-fallback' ? 'scoring' : narrativeSource;
+    } catch (err) {
+      console.warn('OCEAN narrative agent failed:', err.message);
+    }
+  }
+
+  const personality = normalizePersonalityResult({
+    typeCode: patternCode,
+    pattern_code: patternCode,
+    ocean: { scores: ocean.scores, derived: false },
+    type: narrative.type,
+    traits: ocean.traits,
+    summary: narrative.summary ?? summary,
+  });
+
+  return { personality, source };
 }
 
 async function scorePersonalityFromBank(questions, answers, priorTypeCode = null) {
@@ -208,12 +331,15 @@ export async function scorePersonalityTest(
   answers,
   priorTypeCode = null,
 ) {
-  if (!questionsSupportMbtiScoring(questions)) {
+  if (!questionsSupportPersonalityScoring(questions)) {
     if (!bankFallbackEnabled()) {
-      throw new Error('Personality questions missing scoring metadata (scoredPole).');
+      throw new Error('Personality questions missing scoring metadata.');
     }
-    // Legacy LLM-invented questions without poles — cannot guarantee consistency
-    console.warn('Personality questions lack scoredPole — falling back to bank-style if possible');
+    console.warn('Personality questions lack scoring metadata — falling back to bank-style if possible');
+  }
+
+  if (questionsSupportOceanScoring(questions)) {
+    return scoreOceanPersonality(userName, demographics, questions, answers);
   }
 
   if (questionsSupportMbtiScoring(questions)) {
@@ -281,6 +407,7 @@ export async function scorePersonalityTest(
       type: narrative.type,
       traits: mbti.traits,
       summary: narrative.summary,
+      ocean: { ...deriveOceanFromMbti(mbti.traits), derived: true },
     });
 
     return { personality, source };
@@ -402,9 +529,27 @@ export async function completeAssessment({
   burnoutQuestions,
   personalityQuestions,
 }) {
+  const oceanScores =
+    personality?.ocean?.scores ?? deriveOceanFromMbti(personality?.traits ?? []).scores;
+  const psychometricProfile = buildPsychometricProfile({ scores: oceanScores }, burnout);
+
+  const enrichedPersonality = normalizePersonalityResult({
+    ...personality,
+    typeCode: psychometricProfile.pattern_code || personality?.typeCode,
+    pattern_code: psychometricProfile.pattern_code,
+    psychometricProfile,
+    type: {
+      ...(personality?.type ?? {}),
+      title: psychometricProfile.diagnostic_summary.primary_archetype,
+      archetype: psychometricProfile.diagnostic_summary.burnout_stage,
+      icon: psychometricProfile.diagnostic_summary.archetype_icon ?? personality?.type?.icon,
+    },
+    summary: psychometricProfile.diagnostic_summary.core_conflict,
+  });
+
   const { recommendations, source } = await generateRecommendations(
     burnout.level,
-    personality,
+    enrichedPersonality,
     userName,
     demographics,
     recoveryPreferences,
@@ -412,7 +557,8 @@ export async function completeAssessment({
 
   return {
     burnout,
-    personality,
+    personality: enrichedPersonality,
+    psychometricProfile,
     recommendations,
     aiSource: source,
     burnoutQuestions,

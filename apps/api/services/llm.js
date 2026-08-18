@@ -144,11 +144,12 @@ Order them as a sequence:
 Rules:
 - Each tip must be a concrete action with when/how (timebox, place, or script), not a vague wellness slogan
 - Title should sound like an action ("Mute work chat after 7pm"), not a theme ("Protect your rhythm")
-- Match their personality type for HOW they recharge (social vs solo, lively vs calm venues, practical vs reflective)
+- If protocol rules are listed above, at least 2 recommendations must extend those protocols (same trigger situation)
+- Match their OCEAN profile for HOW they recharge (social vs solo, structure vs flexibility)
 - If stated unwind preferences are present, prioritize them over personality assumptions when they conflict
 - Use their city ONLY if provided; never invent cities
 - Never mention app or product names
-- Avoid generic lines like "practice self-care", "be mindful", or "listen to your body" without a specific next step
+- FORBIDDEN: "take a break", "meditate", "drink water", "practice self-care", "be mindful" without a specific constraint
 
 ${COACH_VOICE_RULES}
 ${LOCATION_RULES}

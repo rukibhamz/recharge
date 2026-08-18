@@ -142,7 +142,7 @@ router.post('/complete', optionalAuth, async (req, res) => {
   if (!isValidRecoveryPreferences(recoveryPreferences)) {
     return res.status(400).json({ error: 'Recovery preferences are required.' });
   }
-  if (!personality?.typeCode) {
+  if (!personality?.traits?.length && !personality?.ocean?.scores) {
     return res.status(400).json({ error: 'Personality result is required.' });
   }
 
@@ -160,7 +160,7 @@ router.post('/complete', optionalAuth, async (req, res) => {
       burnoutAnswers,
     );
 
-    const { recommendations, aiSource } = await completeAssessment({
+    const { recommendations, aiSource, personality: enrichedPersonality } = await completeAssessment({
       userName: name,
       demographics,
       recoveryPreferences,
@@ -177,7 +177,7 @@ router.post('/complete', optionalAuth, async (req, res) => {
       displayName: name,
       demographics: profileForStorage,
       burnout: safeBurnout,
-      personality,
+      personality: enrichedPersonality ?? personality,
       recommendations,
       userId: req.user?.id,
       email: req.user?.email,
@@ -186,7 +186,7 @@ router.post('/complete', optionalAuth, async (req, res) => {
     if (!reused) {
       ingestAssessmentKnowledge({
         burnout: safeBurnout,
-        personality,
+        personality: enrichedPersonality ?? personality,
         burnoutQuestions,
         burnoutAnswers,
         personalityQuestions,
@@ -205,7 +205,7 @@ router.post('/complete', optionalAuth, async (req, res) => {
       displayName: name,
       profileContext: demographicsLabels(demographics),
       burnout: safeBurnout,
-      personality,
+      personality: enrichedPersonality ?? personality,
       recommendations,
       aiSource: aiSource ?? burnoutSource,
     });

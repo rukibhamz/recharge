@@ -1,12 +1,25 @@
 import { displayTraitLean } from '@recharge/shared/mbtiScoring';
 
+function formatTrait(trait) {
+  if (trait?.key && ['O', 'C', 'E', 'A', 'N'].includes(trait.key)) {
+    return {
+      name: trait.label || trait.name,
+      pct: trait.pct ?? 50,
+      letter: trait.key,
+      poleA: null,
+      poleB: null,
+    };
+  }
+  return displayTraitLean(trait);
+}
+
 export default function TraitBars({ traits }) {
   return (
     <div className="space-y-4">
-      {(traits ?? []).map((trait) => {
-        const lean = displayTraitLean(trait);
+      {(Array.isArray(traits) ? traits : []).map((trait) => {
+        const lean = formatTrait(trait);
         return (
-          <div key={lean.name}>
+          <div key={lean.name + (lean.letter ?? '')}>
             <div className="mb-1.5 flex justify-between gap-3">
               <span className="font-sans text-[14px] text-ink-soft">{lean.name}</span>
               <span className="font-mono text-[12px] font-medium text-canopy">

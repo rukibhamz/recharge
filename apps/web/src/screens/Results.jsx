@@ -7,6 +7,8 @@ import {
   resolveBurnoutReport,
   stripEmDashes,
 } from '@recharge/shared/resultNarratives';
+import { buildPsychometricProfile } from '@recharge/shared/psychometricEngine';
+import { resolveOcean } from '@recharge/shared/oceanScoring';
 import Header from '../components/shared/Header.jsx';
 import Footer from '../components/shared/Footer.jsx';
 import Button from '../components/shared/Button.jsx';
@@ -15,6 +17,7 @@ import TraitBars from '../components/results/TraitBars.jsx';
 import RecommendationCard from '../components/results/RecommendationCard.jsx';
 import ShareCard from '../components/results/ShareCard.jsx';
 import StructuredCopy, { MoodboardCopy } from '../components/results/StructuredCopy.jsx';
+import PsychometricProfile from '../components/results/PsychometricProfile.jsx';
 import { useShareCard } from '../hooks/useShareCard.js';
 import SaveResultsSection from '../components/results/SaveResultsSection.jsx';
 import EditorialArtwork from '../components/shared/EditorialArtwork.jsx';
@@ -72,8 +75,8 @@ export default function Results({ data, error, onRetake, showSaveSection = true 
 
   const {
     displayName,
-    burnout,
-    personality,
+    burnout = {},
+    personality = {},
     recommendations: rawRecommendations,
     aiSource,
     persisted,
@@ -84,10 +87,26 @@ export default function Results({ data, error, onRetake, showSaveSection = true 
   const recommendations = normalizeRecommendationsList(rawRecommendations ?? [], DEFAULT_RECOVERY_TIPS);
   const report = resolveBurnoutReport(burnout, personality);
   const moodboardSections = buildMoodboardSections(personality, burnout);
+  const psychometricProfile =
+    personality.psychometricProfile ??
+    (() => {
+      const { scores } = resolveOcean(personality);
+      if (scores?.O != null && burnout?.dimensions) {
+        return buildPsychometricProfile({ scores }, burnout);
+      }
+      return null;
+    })();
   const isPersonalised = aiSource && !['static', 'bank'].includes(aiSource);
   const cloudSaved = persisted !== false;
-  const personalityTitle = personality.type?.title || personality.type?.name || 'Your profile';
-  const personalitySubtitle = personality.type?.archetype || 'Personality archetype';
+  const personalityTitle =
+    psychometricProfile?.diagnostic_summary?.primary_archetype ||
+    personality.type?.title ||
+    personality.type?.name ||
+    'Your profile';
+  const personalitySubtitle =
+    psychometricProfile?.diagnostic_summary?.burnout_stage ||
+    personality.type?.archetype ||
+    'Personality pattern';
   const badgeClass = BURNOUT_BADGE_CLASSES[burnout.cls] ?? BURNOUT_BADGE_CLASSES.moderate;
 
   return (
@@ -142,6 +161,9 @@ export default function Results({ data, error, onRetake, showSaveSection = true 
             ) : null}
           </div>
           <StructuredCopy report={report} className="mx-auto mt-8 max-w-2xl" />
+          {psychometricProfile ? (
+            <PsychometricProfile profile={psychometricProfile} className="mx-auto mt-10 max-w-2xl" />
+          ) : null}
         </section>
 
         <ArcDivider />
@@ -155,12 +177,16 @@ export default function Results({ data, error, onRetake, showSaveSection = true 
               <div>
                 <h3 className="font-display text-headline-md font-normal text-ink">{personalityTitle}</h3>
                 <span className="font-mono text-[11px] uppercase tracking-[0.06em] text-ink-faint">
-                  {personalitySubtitle}
+                  Big Five (OCEAN)
                 </span>
               </div>
             </div>
             <p className="mb-8 font-sans text-body-md text-ink-soft">
-              {stripEmDashes(personality.summary || personality.type?.desc)}
+              {stripEmDashes(
+                psychometricProfile?.diagnostic_summary?.core_conflict ||
+                  personality.summary ||
+                  personality.type?.desc,
+              )}
             </p>
             <TraitBars traits={personality.traits} />
           </div>
