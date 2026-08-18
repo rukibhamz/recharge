@@ -91,6 +91,161 @@ function dayLabel(start, end) {
   return `Days ${start}–${end}`;
 }
 
+function dayOnlyLabel(day) {
+  return `Day ${day}`;
+}
+
+/** Parse explicit day numbers referenced in a step's when field. Empty = recurring within the phase. */
+function explicitDaysInWhen(when, phaseStart, phaseEnd) {
+  const text = String(when ?? '');
+  const days = new Set();
+
+  for (const match of text.matchAll(/Days?\s+(\d+)\s*[–-]\s*(\d+)/gi)) {
+    const a = Number(match[1]);
+    const b = Number(match[2]);
+    for (let d = Math.min(a, b); d <= Math.max(a, b); d += 1) {
+      if (d >= phaseStart && d <= phaseEnd) days.add(d);
+    }
+  }
+  for (const match of text.matchAll(/(?:By\s+)?Day\s+(\d+)/gi)) {
+    const d = Number(match[1]);
+    if (d >= phaseStart && d <= phaseEnd) days.add(d);
+  }
+
+  return days;
+}
+
+function isRecurringWhen(when) {
+  const text = String(when ?? '').toLowerCase();
+  if (!text) return true;
+  if (/^day\s+\d+(\s*[–-]\s*\d+)?$/i.test(text.trim())) return false;
+  if (/^days\s+\d+\s*[–-]\s*\d+$/i.test(text.trim())) return false;
+  if (/^by day\s+\d+$/i.test(text.trim())) return false;
+  return true;
+}
+
+function stepAppliesToDay(step, day, phaseStart, phaseEnd) {
+  const explicit = explicitDaysInWhen(step.when, phaseStart, phaseEnd);
+  if (explicit.size) return explicit.has(day);
+  if (!isRecurringWhen(step.when)) {
+    return day === phaseStart;
+  }
+  return true;
+}
+
+function adaptStepForDay(step, day, phaseStart, phaseEnd) {
+  const span = phaseEnd - phaseStart + 1;
+  const adapted = { ...step };
+  const when = String(step.when ?? '');
+
+  if (span === 1) {
+    adapted.when = when || dayOnlyLabel(day);
+    return adapted;
+  }
+
+  if (/both days|each morning|daily|mornings|evenings|nights|when asked|this morning|today|tonight|before bed|afternoon|meals|each day/i.test(when)) {
+    adapted.when = when.replace(/both days/gi, 'Today').replace(/each morning/gi, 'Morning').replace(/each day/gi, 'Today');
+  } else if (/^day\s+\d+/i.test(when.trim())) {
+    adapted.when = dayOnlyLabel(day);
+  } else {
+    adapted.when = when || dayOnlyLabel(day);
+  }
+
+  if (adapted.check) {
+    adapted.check = String(adapted.check)
+      .replace(/both days/gi, 'today')
+      .replace(/both nights/gi, 'tonight')
+      .replace(/at least two of these three days/gi, 'today')
+      .replace(/at least four of these six days/gi, 'today')
+      .replace(/at least three of these four days/gi, 'today')
+      .replace(/on at least two of these three days/gi, 'today')
+      .replace(/in this window/gi, 'today');
+  }
+
+  if (day > phaseStart && /hold yesterday|same as day 1|repeat|continue|keep running|keep the/i.test(`${step.title} ${step.tip}`)) {
+    adapted.why = adapted.why ? `${adapted.why} Day ${day} is about repeating, not reinventing.` : adapted.why;
+  }
+
+  return adapted;
+}
+
+function dailyTitleForPhase(phase, day, phaseStart, phaseEnd) {
+  const span = phaseEnd - phaseStart + 1;
+  if (span === 1) return phase.title;
+  const n = day - phaseStart + 1;
+  if (n === 1) return phase.title;
+  if (day === phaseEnd) return `${phase.title} · finish`;
+  return `${phase.title} · day ${n} of ${span}`;
+}
+
+function dailyFocusForPhase(phase, day, phaseStart, phaseEnd) {
+  const span = phaseEnd - phaseStart + 1;
+  if (span === 1 || day === phaseStart) return phase.focus;
+  if (day === phaseEnd) return `Last day of this stretch. ${phase.focus}`;
+  return `Same rules as yesterday. ${phase.focus}`;
+}
+
+/** Split grouped day ranges into one checklist phase per calendar day. */
+export function expandToDailyPhases(phases, totalDays) {
+  const buckets = Array.from({ length: totalDays }, () => ({
+    title: '',
+    focus: '',
+    outcome: '',
+    steps: [],
+    sourceId: '',
+  }));
+
+  for (const phaseItem of phases ?? []) {
+    const start = Number(phaseItem.dayStart) || 1;
+    const end = Number(phaseItem.dayEnd) || start;
+
+    for (let day = start; day <= end; day += 1) {
+      const idx = day - 1;
+      if (!buckets[idx]) continue;
+
+      buckets[idx].sourceId = buckets[idx].sourceId || phaseItem.id;
+      buckets[idx].title = buckets[idx].title || dailyTitleForPhase(phaseItem, day, start, end);
+      buckets[idx].focus = buckets[idx].focus || dailyFocusForPhase(phaseItem, day, start, end);
+      if (day === end && phaseItem.outcome) {
+        buckets[idx].outcome = phaseItem.outcome;
+      }
+
+      for (const s of phaseItem.steps ?? []) {
+        if (!stepAppliesToDay(s, day, start, end)) continue;
+        buckets[idx].steps.push(adaptStepForDay(s, day, start, end));
+      }
+    }
+  }
+
+  return buckets.map((bucket, idx) => {
+    const day = idx + 1;
+    return phase(
+      bucket.sourceId ? `${bucket.sourceId}-d${day}` : `day-${day}`,
+      day,
+      day,
+      dayOnlyLabel(day),
+      bucket.title || dayOnlyLabel(day),
+      bucket.focus,
+      bucket.steps,
+      bucket.outcome || (bucket.steps.length ? 'Today’s checklist is complete when every done-when line is true.' : ''),
+    );
+  });
+}
+
+function isDailyPhasePlan(phases, horizonDays) {
+  const list = phases ?? [];
+  if (!list.length || !horizonDays) return false;
+  if (list.length !== horizonDays) return false;
+  return list.every((p) => Number(p.dayStart) === Number(p.dayEnd));
+}
+
+export function isGroupedRecoveryRoadmap(roadmap) {
+  const horizon = Number(roadmap?.horizonDays) || 0;
+  const phases = (roadmap?.phases ?? []).filter((p) => p && !p.locked);
+  if (!horizon || !phases.length) return false;
+  return !isDailyPhasePlan(phases, horizon);
+}
+
 function ruleOf(protocol, fallback) {
   return protocol?.protocol_rule || fallback;
 }
@@ -801,15 +956,15 @@ const BUILDERS = {
 function intentFor(cls, horizon, ctx) {
   const who = ctx.archetype ? ` Built for ${ctx.archetype}.` : '';
   if (cls === 'healthy') {
-    return `A ${horizon.days}-day protocol to keep strain low: stop times, a three-item cap, and one delay rule.${who} The job is protection, not an overhaul.`;
+    return `A ${horizon.days}-day day-by-day protocol to keep strain low: stop times, a three-item cap, and one delay rule.${who} One checklist per day.`;
   }
   if (cls === 'mild') {
-    return `A ${horizon.days}-day protocol to cut rising load: one visible demand comes off Day 1, inputs get edges, then one constraint stays on.${who}`;
+    return `A ${horizon.days}-day day-by-day protocol to cut rising load: one visible demand comes off Day 1, then one checklist per day.${who}`;
   }
   if (cls === 'severe') {
-    return `A ${horizon.days}-day protocol for high strain: tell someone today, run a minimum viable day, then build cover. This is not a diagnosis.${who}`;
+    return `A ${horizon.days}-day day-by-day protocol for high strain: tell someone today, run a minimum viable day each day, then build cover.${who} This is not a diagnosis.`;
   }
-  return `A ${horizon.days}-day protocol for sustained strain: stabilize 24 hours, shrink the plate, get one person in the loop, then hold the floor for a second week.${who}`;
+  return `A ${horizon.days}-day day-by-day protocol for sustained strain: stabilize, shrink the plate, get one person in the loop, then hold the floor.${who}`;
 }
 
 function buildCtx(profile, flavor, p1, p2) {
@@ -827,13 +982,17 @@ function buildCtx(profile, flavor, p1, p2) {
 
 /**
  * Deterministic full recovery roadmap from burnout + psychometric protocols.
+ * Pass `{ daily: false }` for the grouped skeleton used by the LLM rewriter.
  */
-export function buildRecoveryRoadmap({
-  burnout,
-  personality,
-  psychometricProfile,
-  recoveryPreferences,
-} = {}) {
+export function buildRecoveryRoadmap(
+  {
+    burnout,
+    personality,
+    psychometricProfile,
+    recoveryPreferences,
+  } = {},
+  { daily = true } = {},
+) {
   const cls = clsOf(burnout);
   const horizon = ROADMAP_HORIZON[cls];
   const profile = psychometricProfile ?? personality?.psychometricProfile ?? null;
@@ -841,7 +1000,8 @@ export function buildRecoveryRoadmap({
   const p1 = protocolAt(profile, 0);
   const p2 = protocolAt(profile, 1);
   const ctx = buildCtx(profile, flavor, p1, p2);
-  const phases = BUILDERS[cls](flavor, p1, p2, ctx);
+  const grouped = BUILDERS[cls](flavor, p1, p2, ctx);
+  const phases = daily ? expandToDailyPhases(grouped, horizon.days) : grouped;
 
   return {
     cls,
@@ -853,6 +1013,16 @@ export function buildRecoveryRoadmap({
     locked: false,
     lockedPhaseCount: 0,
     guestPreview: false,
+  };
+}
+
+/** Expand a grouped roadmap (or re-expand after LLM copy merge) into one phase per day. */
+export function expandRoadmapToDaily(roadmap) {
+  if (!roadmap?.phases?.length) return roadmap;
+  if (isDailyPhasePlan(roadmap.phases, roadmap.horizonDays)) return roadmap;
+  return {
+    ...roadmap,
+    phases: expandToDailyPhases(roadmap.phases, roadmap.horizonDays),
   };
 }
 
@@ -924,7 +1094,9 @@ export function isThinRecoveryRoadmap(roadmap) {
 }
 
 export function hydrateRecoveryRoadmap(roadmap, ctx = {}, { guestPreview = false } = {}) {
-  const full = !roadmap || isThinRecoveryRoadmap(roadmap) ? buildRecoveryRoadmap(ctx) : roadmap;
+  const needsRebuild =
+    !roadmap || isThinRecoveryRoadmap(roadmap) || isGroupedRecoveryRoadmap(roadmap);
+  const full = needsRebuild ? buildRecoveryRoadmap(ctx) : roadmap;
   if (!full) return roadmap;
   return guestPreview ? teaseRecoveryRoadmap(full) : full;
 }

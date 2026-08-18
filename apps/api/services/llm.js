@@ -7,6 +7,7 @@ import {
 } from '@recharge/shared/recommendations';
 import {
   buildRecoveryRoadmap,
+  expandRoadmapToDaily,
   mergeRoadmapCopy,
   roadmapToRecommendations,
 } from '@recharge/shared/recoveryRoadmap';
@@ -246,21 +247,25 @@ export async function generateRecommendations(
   recoveryPreferences = null,
   burnout = null,
 ) {
-  const skeleton = buildRecoveryRoadmap({
-    burnout: burnout ?? { level: burnoutLevel, cls: String(burnoutLevel || '').toLowerCase() },
-    personality,
-    psychometricProfile: personality?.psychometricProfile,
-    recoveryPreferences,
-  });
+  const skeleton = buildRecoveryRoadmap(
+    {
+      burnout: burnout ?? { level: burnoutLevel, cls: String(burnoutLevel || '').toLowerCase() },
+      personality,
+      psychometricProfile: personality?.psychometricProfile,
+      recoveryPreferences,
+    },
+    { daily: false },
+  );
+  const dailySkeleton = expandRoadmapToDaily(skeleton);
   const fallbackCards =
     STATIC_FALLBACK[burnoutLevel] ??
     STATIC_FALLBACK['Moderate Burnout'] ??
-    roadmapToRecommendations(skeleton);
+    roadmapToRecommendations(dailySkeleton);
 
   if (!llmFeatures.recommendations || !(await hasAnyLlmProvider())) {
     return {
-      recommendations: roadmapToRecommendations(skeleton),
-      recoveryRoadmap: skeleton,
+      recommendations: roadmapToRecommendations(dailySkeleton),
+      recoveryRoadmap: dailySkeleton,
       source: 'static',
     };
   }
@@ -286,7 +291,7 @@ export async function generateRecommendations(
         block,
       ),
     );
-    const recoveryRoadmap = mergeRoadmapCopy(skeleton, parsed);
+    const recoveryRoadmap = expandRoadmapToDaily(mergeRoadmapCopy(skeleton, parsed));
     const recommendations = roadmapToRecommendations(recoveryRoadmap);
     if (!hasDisplayableRecommendations(recommendations)) {
       throw new Error('Roadmap copy was empty');
@@ -301,13 +306,13 @@ export async function generateRecommendations(
       const recommendations = normalizeRecommendations(parsed, fallbackCards);
       return {
         recommendations,
-        recoveryRoadmap: skeleton,
+        recoveryRoadmap: dailySkeleton,
         source: getLastLlmProvider() ?? 'llm',
       };
     } catch {
       return {
-        recommendations: roadmapToRecommendations(skeleton),
-        recoveryRoadmap: skeleton,
+        recommendations: roadmapToRecommendations(dailySkeleton),
+        recoveryRoadmap: dailySkeleton,
         source: 'static',
       };
     }

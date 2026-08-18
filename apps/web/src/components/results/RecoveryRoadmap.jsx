@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import SaveResultsSection from './SaveResultsSection.jsx';
 
 function ProtocolStep({ step }) {
@@ -48,7 +49,9 @@ function ProtocolStep({ step }) {
   );
 }
 
-function PhaseCard({ phase, index }) {
+function PhaseCard({ phase, index, defaultOpen = true }) {
+  const [open, setOpen] = useState(defaultOpen);
+
   if (!phase) return null;
   if (phase.locked) {
     return (
@@ -71,30 +74,51 @@ function PhaseCard({ phase, index }) {
   }
 
   const steps = phase.steps ?? [];
+  const stepPreview = steps.slice(0, 2).map((s) => s.title).filter(Boolean).join(' · ');
 
   return (
-    <article className="space-y-4">
-      <header>
-        <p className="font-mono text-[11px] uppercase tracking-[0.06em] text-ink-faint">
-          {phase.label}
-          {index === 0 ? ' · Start here' : ''}
-        </p>
-        <h4 className="mt-1 font-display text-headline-md font-normal text-ink">{phase.title}</h4>
-        {phase.focus ? (
-          <p className="mt-2 font-sans text-body-md text-ink-soft">{phase.focus}</p>
-        ) : null}
-        {phase.outcome ? (
-          <p className="mt-2 font-sans text-[14px] text-ink">
-            <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-fern">This phase is done when </span>
-            {phase.outcome}
+    <article className="rounded-md border border-linen-sunken bg-surface/60">
+      <button
+        type="button"
+        className="flex w-full items-start justify-between gap-3 p-4 text-left sm:p-5"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+      >
+        <div className="min-w-0 flex-1">
+          <p className="font-mono text-[11px] uppercase tracking-[0.06em] text-ink-faint">
+            {phase.label}
+            {index === 0 ? ' · Start here' : ''}
           </p>
-        ) : null}
-      </header>
-      <div className="grid grid-cols-1 gap-3">
-        {steps.map((item, i) => (
-          <ProtocolStep key={`${phase.id}-${item.title}-${i}`} step={item} />
-        ))}
-      </div>
+          <h4 className="mt-1 font-display text-[1.05rem] font-normal text-ink sm:text-headline-md">
+            {phase.title}
+          </h4>
+          {!open && stepPreview ? (
+            <p className="mt-2 truncate font-sans text-[14px] text-ink-soft">{stepPreview}</p>
+          ) : null}
+        </div>
+        <span className="mt-1 shrink-0 font-mono text-[11px] uppercase tracking-[0.06em] text-canopy">
+          {steps.length} step{steps.length === 1 ? '' : 's'} {open ? '−' : '+'}
+        </span>
+      </button>
+
+      {open ? (
+        <div className="space-y-4 border-t border-linen-sunken px-4 pb-4 pt-3 sm:px-5 sm:pb-5">
+          {phase.focus ? (
+            <p className="font-sans text-body-md text-ink-soft">{phase.focus}</p>
+          ) : null}
+          {phase.outcome ? (
+            <p className="font-sans text-[14px] text-ink">
+              <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-fern">Day is done when </span>
+              {phase.outcome}
+            </p>
+          ) : null}
+          <div className="grid grid-cols-1 gap-3">
+            {steps.map((item, i) => (
+              <ProtocolStep key={`${phase.id}-${item.title}-${i}`} step={item} />
+            ))}
+          </div>
+        </div>
+      ) : null}
     </article>
   );
 }
@@ -114,6 +138,7 @@ export default function RecoveryRoadmap({
   const lockedCount = roadmap.lockedPhaseCount || phases.filter((p) => p.locked).length;
   const showGate = locked || roadmap.guestPreview;
   const stepCount = phases.reduce((n, p) => n + (p.steps?.length || 0), 0);
+  const dayCount = roadmap.horizonDays || phases.length;
 
   return (
     <section className="space-y-gutter">
@@ -128,28 +153,33 @@ export default function RecoveryRoadmap({
           <span className="ai-badge">{isPersonalised ? 'Personalised' : 'Curated'}</span>
           <span className="font-mono text-[11px] uppercase tracking-[0.06em] text-ink-faint">
             {roadmap.horizonLabel}
-            {stepCount > 0 && !showGate ? ` · ${stepCount} steps` : ''}
+            {stepCount > 0 && !showGate ? ` · ${dayCount} days · ${stepCount} steps` : ''}
           </span>
         </div>
       </div>
 
-      <div className="space-y-10">
+      <div className="space-y-3">
         {phases.map((phase, i) => (
-          <PhaseCard key={phase.id || phase.label || i} phase={phase} index={i} />
+          <PhaseCard
+            key={phase.id || phase.label || i}
+            phase={phase}
+            index={i}
+            defaultOpen={i === 0}
+          />
         ))}
       </div>
 
       {showGate && lockedCount > 0 ? (
         <div className="rounded-md border border-canopy/20 bg-fern-tint/50 p-5 sm:p-6">
           <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-canopy">
-            {lockedCount} more phase{lockedCount === 1 ? '' : 's'} locked
+            {lockedCount} more day{lockedCount === 1 ? '' : 's'} locked
           </p>
           <h4 className="mt-2 font-display text-xl font-medium text-ink">
             {roadmap.unlockLabel || `Sign in to unlock the rest of your ${roadmap.horizonLabel}`}
           </h4>
           <p className="mt-2 max-w-xl font-sans text-body-md text-ink-soft">
-            Day 1 is yours to start now. The remaining days are a sequenced protocol: what to do,
-            how to do it, what to say, and when each stretch is actually done.
+            Day 1 is yours to start now. Each remaining day is its own checklist: what to do,
+            how to do it, what to say, and when that day is actually done.
           </p>
           {sessionId ? (
             <SaveResultsSection

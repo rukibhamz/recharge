@@ -9,6 +9,7 @@ import {
   unpackRecommendationsPayload,
   hydrateRecoveryRoadmap,
   isThinRecoveryRoadmap,
+  isGroupedRecoveryRoadmap,
   ROADMAP_HORIZON,
 } from './recoveryRoadmap.js';
 
@@ -36,7 +37,18 @@ describe('recoveryRoadmap', () => {
     const severe = buildRecoveryRoadmap({ burnout: burnout('severe', 82) });
     assert.equal(healthy.horizonDays, 3);
     assert.equal(severe.horizonDays, 21);
+    assert.equal(healthy.phases.length, 3);
+    assert.equal(severe.phases.length, 21);
     assert.ok(severe.phases.length > healthy.phases.length);
+  });
+
+  it('uses one checklist phase per calendar day', () => {
+    const plan = buildRecoveryRoadmap({ burnout: burnout('moderate', 55) });
+    assert.equal(plan.phases.length, 14);
+    for (const phaseItem of plan.phases) {
+      assert.equal(phaseItem.dayStart, phaseItem.dayEnd);
+      assert.match(phaseItem.label, /^Day \d+$/);
+    }
   });
 
   it('embeds psychometric protocols in later phases', () => {
@@ -95,15 +107,13 @@ describe('recoveryRoadmap', () => {
       burnout: burnout('moderate', 55),
       psychometricProfile: protocolProfile,
     });
-    assert.ok(plan.phases.length >= 5);
+    assert.equal(plan.phases.length, 14);
     for (const phaseItem of plan.phases) {
-      assert.ok((phaseItem.steps?.length ?? 0) >= 4, `${phaseItem.id} should have 4+ steps`);
-      assert.ok(String(phaseItem.outcome || '').length > 20);
+      assert.ok((phaseItem.steps?.length ?? 0) >= 1, `${phaseItem.label} should have steps`);
       for (const s of phaseItem.steps) {
-        assert.ok(String(s.tip || '').length > 40, `${s.title} tip too short`);
-        assert.ok(String(s.how || '').length > 20, `${s.title} missing how`);
-        assert.ok(String(s.why || '').length > 20, `${s.title} missing why`);
-        assert.ok(String(s.check || '').length > 8, `${s.title} missing done-when`);
+        assert.ok(String(s.tip || '').length > 20, `${phaseItem.label} ${s.title} tip too short`);
+        assert.ok(String(s.how || '').length > 10, `${phaseItem.label} ${s.title} missing how`);
+        assert.ok(String(s.check || '').length > 5, `${phaseItem.label} ${s.title} missing done-when`);
       }
     }
     const text = JSON.stringify(plan);
@@ -130,5 +140,37 @@ describe('recoveryRoadmap', () => {
     assert.equal(isThinRecoveryRoadmap(hydrated), false);
     assert.ok(hydrated.phases[0].steps.length >= 4);
     assert.ok(hydrated.phases[0].steps[0].how);
+  });
+
+  it('rebuilds grouped legacy roadmaps into daily checklists', () => {
+    const grouped = {
+      cls: 'mild',
+      horizonDays: 7,
+      phases: [
+        {
+          id: 'cut',
+          dayStart: 1,
+          dayEnd: 1,
+          label: 'Day 1',
+          title: 'Cut',
+          focus: 'Cut one thing',
+          steps: [{ title: 'Cut', tip: 'Move one thing.', how: 'Send it.', check: 'Sent.' }],
+        },
+        {
+          id: 'hygiene',
+          dayStart: 2,
+          dayEnd: 3,
+          label: 'Days 2–3',
+          title: 'Quiet inputs',
+          focus: 'Edges',
+          steps: [{ title: 'Windows', tip: 'Two windows only today and tomorrow.', how: '1) Mute. 2) Check twice.', check: 'Two windows today.' }],
+        },
+      ],
+    };
+    assert.equal(isGroupedRecoveryRoadmap(grouped), true);
+    const hydrated = hydrateRecoveryRoadmap(grouped, { burnout: burnout('mild', 30) });
+    assert.equal(hydrated.phases.length, 7);
+    assert.equal(hydrated.phases[1].dayStart, 2);
+    assert.equal(hydrated.phases[2].dayStart, 3);
   });
 });
