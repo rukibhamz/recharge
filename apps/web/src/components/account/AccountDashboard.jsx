@@ -4,6 +4,7 @@ import TraitBars from '../results/TraitBars.jsx';
 import { normalizeRecommendationsList, DEFAULT_RECOVERY_TIPS } from '@recharge/shared/recommendations';
 import { resolveBurnoutReport } from '@recharge/shared/resultNarratives';
 import { relativeAssessmentTime } from '../../lib/formatDate.js';
+import StructuredCopy from '../results/StructuredCopy.jsx';
 import RecoveryRoadmap from '../results/RecoveryRoadmap.jsx';
 
 function needsAction(cls) {

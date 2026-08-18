@@ -2,6 +2,7 @@ import RecommendationCard from './RecommendationCard.jsx';
 import SaveResultsSection from './SaveResultsSection.jsx';
 
 function PhaseCard({ phase, index }) {
+  if (!phase) return null;
   if (phase.locked) {
     return (
       <div className="relative overflow-hidden rounded-md border border-linen-sunken bg-surface/80 p-4">
@@ -59,7 +60,8 @@ export default function RecoveryRoadmap({
 }) {
   if (!roadmap?.phases?.length) return null;
 
-  const lockedCount = roadmap.lockedPhaseCount || roadmap.phases.filter((p) => p.locked).length;
+  const phases = (roadmap.phases ?? []).filter(Boolean);
+  const lockedCount = roadmap.lockedPhaseCount || phases.filter((p) => p.locked).length;
   const showGate = locked || roadmap.guestPreview;
 
   return (
@@ -80,8 +82,8 @@ export default function RecoveryRoadmap({
       </div>
 
       <div className="space-y-8">
-        {roadmap.phases.map((phase, i) => (
-          <PhaseCard key={phase.id || phase.label} phase={phase} index={i} />
+        {phases.map((phase, i) => (
+          <PhaseCard key={phase.id || phase.label || i} phase={phase} index={i} />
         ))}
       </div>
 
