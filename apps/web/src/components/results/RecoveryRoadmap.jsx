@@ -1,5 +1,52 @@
-import RecommendationCard from './RecommendationCard.jsx';
 import SaveResultsSection from './SaveResultsSection.jsx';
+
+function ProtocolStep({ step }) {
+  if (!step) return null;
+
+  return (
+    <article className="rounded-md border border-linen-sunken bg-white/80 p-4 sm:p-5">
+      <p className="font-mono text-[11px] uppercase tracking-[0.06em] text-fern">
+        <span aria-hidden="true">{step.icon}</span> {step.when || 'Recovery step'}
+      </p>
+      <h5 className="mt-1 font-display text-[1.08rem] font-normal text-ink">{step.title}</h5>
+      {step.tip ? (
+        <p className="mt-2 font-sans text-[14px] leading-relaxed text-ink">{step.tip}</p>
+      ) : null}
+
+      {step.how ? (
+        <div className="mt-3">
+          <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-ink-faint">How</p>
+          <p className="mt-1 font-sans text-[14px] leading-relaxed text-ink-soft">{step.how}</p>
+        </div>
+      ) : null}
+
+      {step.script ? (
+        <blockquote className="mt-3 rounded-md border-l-2 border-canopy/30 bg-fern-tint/40 px-3 py-2 font-sans text-[14px] leading-relaxed text-ink">
+          <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-canopy">Say / send this</p>
+          <p className="mt-1">{step.script}</p>
+        </blockquote>
+      ) : null}
+
+      {step.why ? (
+        <div className="mt-3">
+          <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-ink-faint">Why this</p>
+          <p className="mt-1 font-sans text-[14px] leading-relaxed text-ink-soft">{step.why}</p>
+        </div>
+      ) : null}
+
+      {step.check ? (
+        <p className="mt-3 font-sans text-[13px] text-ink">
+          <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-ink-faint">Done when </span>
+          {step.check}
+        </p>
+      ) : null}
+
+      {step.trap ? (
+        <p className="mt-3 font-sans text-[13px] text-signal-amber">{step.trap}</p>
+      ) : null}
+    </article>
+  );
+}
 
 function PhaseCard({ phase, index }) {
   if (!phase) return null;
@@ -23,8 +70,10 @@ function PhaseCard({ phase, index }) {
     );
   }
 
+  const steps = phase.steps ?? [];
+
   return (
-    <article className="space-y-3">
+    <article className="space-y-4">
       <header>
         <p className="font-mono text-[11px] uppercase tracking-[0.06em] text-ink-faint">
           {phase.label}
@@ -32,17 +81,18 @@ function PhaseCard({ phase, index }) {
         </p>
         <h4 className="mt-1 font-display text-headline-md font-normal text-ink">{phase.title}</h4>
         {phase.focus ? (
-          <p className="mt-1 font-sans text-body-md text-ink-soft">{phase.focus}</p>
+          <p className="mt-2 font-sans text-body-md text-ink-soft">{phase.focus}</p>
+        ) : null}
+        {phase.outcome ? (
+          <p className="mt-2 font-sans text-[14px] text-ink">
+            <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-fern">This phase is done when </span>
+            {phase.outcome}
+          </p>
         ) : null}
       </header>
-      <div className="grid grid-cols-1 gap-gutter md:grid-cols-2">
-        {(phase.steps ?? []).map((step) => (
-          <div key={`${phase.id}-${step.title}`}>
-            <RecommendationCard {...step} />
-            {step.trap ? (
-              <p className="mt-2 px-1 font-sans text-[13px] text-signal-amber">{step.trap}</p>
-            ) : null}
-          </div>
+      <div className="grid grid-cols-1 gap-3">
+        {steps.map((item, i) => (
+          <ProtocolStep key={`${phase.id}-${item.title}-${i}`} step={item} />
         ))}
       </div>
     </article>
@@ -63,6 +113,7 @@ export default function RecoveryRoadmap({
   const phases = (roadmap.phases ?? []).filter(Boolean);
   const lockedCount = roadmap.lockedPhaseCount || phases.filter((p) => p.locked).length;
   const showGate = locked || roadmap.guestPreview;
+  const stepCount = phases.reduce((n, p) => n + (p.steps?.length || 0), 0);
 
   return (
     <section className="space-y-gutter">
@@ -77,11 +128,12 @@ export default function RecoveryRoadmap({
           <span className="ai-badge">{isPersonalised ? 'Personalised' : 'Curated'}</span>
           <span className="font-mono text-[11px] uppercase tracking-[0.06em] text-ink-faint">
             {roadmap.horizonLabel}
+            {stepCount > 0 && !showGate ? ` · ${stepCount} steps` : ''}
           </span>
         </div>
       </div>
 
-      <div className="space-y-8">
+      <div className="space-y-10">
         {phases.map((phase, i) => (
           <PhaseCard key={phase.id || phase.label || i} phase={phase} index={i} />
         ))}
@@ -96,8 +148,8 @@ export default function RecoveryRoadmap({
             {roadmap.unlockLabel || `Sign in to unlock the rest of your ${roadmap.horizonLabel}`}
           </h4>
           <p className="mt-2 max-w-xl font-sans text-body-md text-ink-soft">
-            Day 1 is yours to start now. The remaining days are a sequenced plan with your trait
-            traps and protocol rules — saved to your account so you can come back to it.
+            Day 1 is yours to start now. The remaining days are a sequenced protocol: what to do,
+            how to do it, what to say, and when each stretch is actually done.
           </p>
           {sessionId ? (
             <SaveResultsSection

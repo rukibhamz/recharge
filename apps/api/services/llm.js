@@ -168,9 +168,16 @@ function skeletonPhaseBlock(roadmap) {
   return (roadmap.phases ?? [])
     .map((phase) => {
       const steps = (phase.steps ?? [])
-        .map((s, i) => `    ${i + 1}. [${s.when}] ${s.title} — ${s.tip}`)
+        .map((s, i) => {
+          const lines = [`    ${i + 1}. [${s.when}] ${s.title}`, `       what: ${s.tip}`];
+          if (s.how) lines.push(`       how: ${s.how}`);
+          if (s.why) lines.push(`       why: ${s.why}`);
+          if (s.script) lines.push(`       script: ${s.script}`);
+          if (s.check) lines.push(`       done_when: ${s.check}`);
+          return lines.join('\n');
+        })
         .join('\n');
-      return `- id: ${phase.id}\n  label: ${phase.label}\n  title: ${phase.title}\n  focus: ${phase.focus}\n  steps:\n${steps}`;
+      return `- id: ${phase.id}\n  label: ${phase.label}\n  title: ${phase.title}\n  focus: ${phase.focus}\n  outcome: ${phase.outcome || ''}\n  steps:\n${steps}`;
     })
     .join('\n');
 }
@@ -194,25 +201,33 @@ ${explicitRecoveryStyle}
 Burnout level: ${burnout?.level || skeleton.cls} (${skeleton.horizonLabel})
 Plan intent: ${skeleton.intent}
 
-LOCKED phase skeleton (keep every phase id and the same number of steps). Rewrite titles and tips to feel written for THIS person:
+LOCKED phase skeleton (keep every phase id and the same number of steps). Personalise the copy for THIS person. Expand detail. Do not shorten.
+
 ${skeletonPhaseBlock(skeleton)}
 
 Rules:
 - Keep every phase id exactly: ${phaseIds}
 - Keep the same number of steps in each phase, in the same order
-- Each tip must be a concrete action with when/how (timebox, script, or constraint)
-- If protocol rules appear in the skeleton, keep them as constraints — do not replace them with vague wellness
-- Title should sound like an action ("Mute work chat after 7pm"), not a theme
+- This is a protocol, not four tips. Keep how / why / script / done_when on every step
+- tip = what to do (2-4 sentences, specific)
+- how = numbered procedure (1) (2) (3)
+- why = one or two sentences tying the step to THEIR trait trap or burnout load
+- script = a sendable or speakable line when the step involves another person; omit only if truly solo
+- check = observable "done when" test
+- outcome = what this phase looks like when it worked
+- If protocol rules appear in the skeleton, keep them as constraints. Do not replace them with vague wellness
+- Title should sound like an action ("Mute work chat after 7pm"), max 8 words
 - Match OCEAN / recovery preferences for HOW they recharge
 - Use their city ONLY if provided; never invent cities
 - Never mention app or product names
 - FORBIDDEN: "take a break", "meditate", "drink water", "practice self-care", "be mindful" without a specific constraint
+- Do not compress. If the skeleton is detailed, your rewrite must stay at least as detailed
 
 ${COACH_VOICE_RULES}
 ${LOCATION_RULES}
 
 Return JSON only:
-{"intent":"1-2 sentences","phases":[{"id":"${skeleton.phases[0]?.id || 'stabilize'}","title":"...","focus":"...","steps":[{"icon":"emoji","when":"...","title":"max 6 words","tip":"1-2 concrete sentences, max 55 words"}]}]}`;
+{"intent":"2-3 sentences","phases":[{"id":"${skeleton.phases[0]?.id || 'stabilize'}","title":"...","focus":"...","outcome":"...","steps":[{"icon":"emoji","when":"...","title":"...","tip":"...","how":"...","why":"...","script":"...","check":"..."}]}]}`;
 }
 
 function normalizeRecommendations(parsed, fallback) {

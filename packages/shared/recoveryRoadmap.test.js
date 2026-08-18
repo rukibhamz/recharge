@@ -7,6 +7,8 @@ import {
   mergeRoadmapCopy,
   packRecommendationsPayload,
   unpackRecommendationsPayload,
+  hydrateRecoveryRoadmap,
+  isThinRecoveryRoadmap,
   ROADMAP_HORIZON,
 } from './recoveryRoadmap.js';
 
@@ -86,5 +88,47 @@ describe('recoveryRoadmap', () => {
     assert.equal(merged.phases.length, skeleton.phases.length);
     assert.equal(merged.phases[0].steps[0].title, 'Cancel the 4pm');
     assert.equal(merged.phases[1].id, skeleton.phases[1].id);
+  });
+
+  it('builds a detailed protocol, not two-line tip cards', () => {
+    const plan = buildRecoveryRoadmap({
+      burnout: burnout('moderate', 55),
+      psychometricProfile: protocolProfile,
+    });
+    assert.ok(plan.phases.length >= 5);
+    for (const phaseItem of plan.phases) {
+      assert.ok((phaseItem.steps?.length ?? 0) >= 4, `${phaseItem.id} should have 4+ steps`);
+      assert.ok(String(phaseItem.outcome || '').length > 20);
+      for (const s of phaseItem.steps) {
+        assert.ok(String(s.tip || '').length > 40, `${s.title} tip too short`);
+        assert.ok(String(s.how || '').length > 20, `${s.title} missing how`);
+        assert.ok(String(s.why || '').length > 20, `${s.title} missing why`);
+        assert.ok(String(s.check || '').length > 8, `${s.title} missing done-when`);
+      }
+    }
+    const text = JSON.stringify(plan);
+    assert.match(text, /Say no|I cannot take|I will confirm|I am depleted/i);
+  });
+
+  it('treats short card plans as thin and hydrates them', () => {
+    const thin = {
+      cls: 'moderate',
+      horizonDays: 14,
+      phases: [
+        {
+          id: 'stabilize',
+          title: 'Stabilize',
+          steps: [{ title: 'Rest', tip: 'Block 30 minutes.' }],
+        },
+      ],
+    };
+    assert.equal(isThinRecoveryRoadmap(thin), true);
+    const hydrated = hydrateRecoveryRoadmap(thin, {
+      burnout: burnout('moderate', 55),
+      psychometricProfile: protocolProfile,
+    });
+    assert.equal(isThinRecoveryRoadmap(hydrated), false);
+    assert.ok(hydrated.phases[0].steps.length >= 4);
+    assert.ok(hydrated.phases[0].steps[0].how);
   });
 });

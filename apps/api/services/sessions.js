@@ -4,8 +4,7 @@ import { normalizeRecommendationsList } from '@recharge/shared/recommendations';
 import {
   packRecommendationsPayload,
   unpackRecommendationsPayload,
-  teaseRecoveryRoadmap,
-  buildRecoveryRoadmap,
+  hydrateRecoveryRoadmap,
 } from '@recharge/shared/recoveryRoadmap';
 import { supabase, isSupabaseConfigured } from '../lib/supabase.js';
 import { getMbtiTypeProfile } from './questionBank.js';
@@ -139,9 +138,9 @@ async function buildPersonalityFromRow(row) {
 export async function buildSessionResponse(row, { includeFullRoadmap = true } = {}) {
   const personality = await buildPersonalityFromRow(row);
   const unpacked = unpackRecommendationsPayload(row.recommendations ?? []);
-  let recoveryRoadmap = unpacked.recoveryRoadmap;
-  if (!recoveryRoadmap && includeFullRoadmap) {
-    recoveryRoadmap = buildRecoveryRoadmap({
+  const recoveryRoadmap = hydrateRecoveryRoadmap(
+    unpacked.recoveryRoadmap,
+    {
       burnout: {
         pct: row.burnout_pct,
         level: row.burnout_level,
@@ -150,10 +149,9 @@ export async function buildSessionResponse(row, { includeFullRoadmap = true } = 
       personality,
       psychometricProfile: personality?.psychometricProfile,
       recoveryPreferences: row.demographics?.recoveryPreferences,
-    });
-  } else if (recoveryRoadmap && !includeFullRoadmap) {
-    recoveryRoadmap = teaseRecoveryRoadmap(recoveryRoadmap);
-  }
+    },
+    { guestPreview: !includeFullRoadmap },
+  );
   return {
     sessionId: row.id,
     shareToken: row.share_token,

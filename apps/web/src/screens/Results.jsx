@@ -17,7 +17,9 @@ import TraitBars from '../components/results/TraitBars.jsx';
 import RecommendationCard from '../components/results/RecommendationCard.jsx';
 import ShareCard from '../components/results/ShareCard.jsx';
 import StructuredCopy, { MoodboardCopy } from '../components/results/StructuredCopy.jsx';
+import PsychometricProfile from '../components/results/PsychometricProfile.jsx';
 import RecoveryRoadmap from '../components/results/RecoveryRoadmap.jsx';
+import { hydrateRecoveryRoadmap } from '@recharge/shared/recoveryRoadmap';
 import { useShareCard } from '../hooks/useShareCard.js';
 import SaveResultsSection from '../components/results/SaveResultsSection.jsx';
 import EditorialArtwork from '../components/shared/EditorialArtwork.jsx';
@@ -26,6 +28,8 @@ import { ArcDivider } from '../components/shared/Arc.jsx';
 import { BURNOUT_BADGE_CLASSES } from '../lib/design.js';
 import { useAssessmentStore } from '../store/assessment.js';
 export default function Results({ data, error, onRetake, showSaveSection = true }) {
+  const mergeResults = useAssessmentStore((s) => s.mergeResults);
+  const recoveryPreferences = useAssessmentStore((s) => s.recoveryPreferences);
   const shareToken = data?.shareToken ?? null;
   const shareCardPayload =
     data?.burnout && data?.personality
@@ -87,7 +91,6 @@ export default function Results({ data, error, onRetake, showSaveSection = true 
     recoveryRoadmap,
     roadmapLocked,
   } = data;
-  const mergeResults = useAssessmentStore((s) => s.mergeResults);
   const recommendations = normalizeRecommendationsList(rawRecommendations ?? [], DEFAULT_RECOVERY_TIPS);
   const report = resolveBurnoutReport(burnout, personality);
   const moodboardSections = buildMoodboardSections(personality, burnout);
@@ -100,6 +103,17 @@ export default function Results({ data, error, onRetake, showSaveSection = true 
       }
       return null;
     })();
+  const displayRoadmap = hydrateRecoveryRoadmap(
+    recoveryRoadmap,
+    {
+      burnout,
+      personality,
+      psychometricProfile: psychometricProfile ?? personality.psychometricProfile,
+      recoveryPreferences: personality.recoveryPreferences ?? recoveryPreferences,
+    },
+    { guestPreview: Boolean(roadmapLocked || recoveryRoadmap?.guestPreview) },
+  );
+  const roadmapIsLocked = Boolean(roadmapLocked || displayRoadmap?.guestPreview);
   const isPersonalised = aiSource && !['static', 'bank'].includes(aiSource);
   const cloudSaved = persisted !== false;
   const personalityTitle =
@@ -201,10 +215,10 @@ export default function Results({ data, error, onRetake, showSaveSection = true 
         </section>
 
         <section className="space-y-gutter">
-          {recoveryRoadmap?.phases?.length ? (
+          {displayRoadmap?.phases?.length ? (
             <RecoveryRoadmap
-              roadmap={recoveryRoadmap}
-              locked={Boolean(roadmapLocked || recoveryRoadmap.guestPreview)}
+              roadmap={displayRoadmap}
+              locked={roadmapIsLocked}
               sessionId={sessionId}
               linked={linked}
               cloudSaved={cloudSaved}
@@ -261,7 +275,7 @@ export default function Results({ data, error, onRetake, showSaveSection = true 
             </>
           ) : null}
 
-          {showSaveSection && sessionId && !(roadmapLocked || recoveryRoadmap?.guestPreview) ? (
+          {showSaveSection && sessionId && !roadmapIsLocked ? (
             <SaveResultsSection
               sessionId={sessionId}
               initiallyLinked={linked}
