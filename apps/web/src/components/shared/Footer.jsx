@@ -47,10 +47,10 @@ export default function Footer({ compact = false }) {
             </a>
             {' · '}
             <a
-              href="mailto:victor@thedigitalerrand.com"
+              href="mailto:recharge@thedigitalerrand.com"
               className="underline underline-offset-2 hover:text-primary"
             >
-              victor@thedigitalerrand.com
+              recharge@thedigitalerrand.com
             </a>
           </p>
         ) : null}

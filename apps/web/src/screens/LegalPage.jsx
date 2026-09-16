@@ -2,7 +2,7 @@ import Header from '../components/shared/Header.jsx';
 import Footer from '../components/shared/Footer.jsx';
 import Button from '../components/shared/Button.jsx';
 
-const CONTACT_EMAIL = 'victor@thedigitalerrand.com';
+const CONTACT_EMAIL = 'recharge@thedigitalerrand.com';
 
 const PAGES = {
   privacy: {
