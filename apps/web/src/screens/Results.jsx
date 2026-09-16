@@ -19,9 +19,11 @@ import ShareCard from '../components/results/ShareCard.jsx';
 import StructuredCopy, { MoodboardCopy } from '../components/results/StructuredCopy.jsx';
 import PsychometricProfile from '../components/results/PsychometricProfile.jsx';
 import RecoveryRoadmap from '../components/results/RecoveryRoadmap.jsx';
+import EmailResultsSection from '../components/results/EmailResultsSection.jsx';
 import { hydrateRecoveryRoadmap } from '@recharge/shared/recoveryRoadmap';
 import { useShareCard } from '../hooks/useShareCard.js';
 import SaveResultsSection from '../components/results/SaveResultsSection.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
 import EditorialArtwork from '../components/shared/EditorialArtwork.jsx';
 import FeedbackForm from '../components/shared/FeedbackForm.jsx';
 import { ArcDivider } from '../components/shared/Arc.jsx';
@@ -30,6 +32,7 @@ import { useAssessmentStore } from '../store/assessment.js';
 export default function Results({ data, error, onRetake, showSaveSection = true }) {
   const mergeResults = useAssessmentStore((s) => s.mergeResults);
   const recoveryPreferences = useAssessmentStore((s) => s.recoveryPreferences);
+  const { user } = useAuth();
   const shareToken = data?.shareToken ?? null;
   const shareCardPayload =
     data?.burnout && data?.personality
@@ -278,6 +281,14 @@ export default function Results({ data, error, onRetake, showSaveSection = true 
                 <p className="text-center font-sans text-body-md text-signal-red">{downloadError}</p>
               ) : null}
             </>
+          ) : null}
+
+          {sessionId && cloudSaved ? (
+            <EmailResultsSection
+              sessionId={sessionId}
+              defaultEmail={user?.email || ''}
+              cloudSaved={cloudSaved}
+            />
           ) : null}
 
           {showSaveSection && sessionId && !roadmapIsLocked ? (

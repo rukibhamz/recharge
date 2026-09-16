@@ -423,3 +423,88 @@ export async function fetchCoachConversationMessages(accessToken, conversationId
   if (!res.ok) throw new Error(data.error || 'Could not load this chat');
   return data;
 }
+
+export async function emailAssessmentResults({ sessionId, email, newsletterOptIn }, accessToken) {
+  const res = await safeFetch(apiUrl('/api/email/results'), {
+    method: 'POST',
+    headers: await authHeaders(accessToken),
+    body: JSON.stringify({ sessionId, email, newsletterOptIn }),
+  });
+  const data = await parseJsonResponse(res, 'Could not email results');
+  if (!res.ok) throw new Error(data.error || 'Could not email results');
+  return data;
+}
+
+export async function subscribeNewsletter(email, source = 'other', accessToken) {
+  const res = await safeFetch(apiUrl('/api/email/newsletter'), {
+    method: 'POST',
+    headers: await authHeaders(accessToken),
+    body: JSON.stringify({ email, source }),
+  });
+  const data = await parseJsonResponse(res, 'Could not subscribe');
+  if (!res.ok) throw new Error(data.error || 'Could not subscribe');
+  return data;
+}
+
+export async function fetchAdminSmtpSettings(accessToken) {
+  const res = await safeFetch(apiUrl('/api/admin/smtp-settings'), {
+    headers: await authHeaders(accessToken),
+  });
+  const data = await parseJsonResponse(res, 'Could not load SMTP settings');
+  if (!res.ok) throw new Error(data.error || 'Could not load SMTP settings');
+  return data;
+}
+
+export async function updateAdminSmtpSettings(accessToken, payload) {
+  const res = await safeFetch(apiUrl('/api/admin/smtp-settings'), {
+    method: 'PUT',
+    headers: await authHeaders(accessToken),
+    body: JSON.stringify(payload),
+  });
+  const data = await parseJsonResponse(res, 'Could not save SMTP settings');
+  if (!res.ok) throw new Error(data.error || 'Could not save SMTP settings');
+  return data;
+}
+
+export async function testAdminSmtpSettings(accessToken, email) {
+  const res = await safeFetch(apiUrl('/api/admin/smtp-settings/test'), {
+    method: 'POST',
+    headers: await authHeaders(accessToken),
+    body: JSON.stringify(email ? { email } : {}),
+  });
+  const data = await parseJsonResponse(res, 'SMTP test failed');
+  if (!res.ok) throw new Error(data.error || 'SMTP test failed');
+  return data;
+}
+
+export async function fetchAdminNewsletterSubscribers(accessToken, status = 'subscribed') {
+  const res = await safeFetch(
+    apiUrl(`/api/admin/newsletter/subscribers?status=${encodeURIComponent(status)}`),
+    { headers: await authHeaders(accessToken) },
+  );
+  const data = await parseJsonResponse(res, 'Could not load subscribers');
+  if (!res.ok) throw new Error(data.error || 'Could not load subscribers');
+  return data;
+}
+
+export async function addAdminNewsletterSubscriber(accessToken, email) {
+  const res = await safeFetch(apiUrl('/api/admin/newsletter/subscribers'), {
+    method: 'POST',
+    headers: await authHeaders(accessToken),
+    body: JSON.stringify({ email }),
+  });
+  const data = await parseJsonResponse(res, 'Could not add subscriber');
+  if (!res.ok) throw new Error(data.error || 'Could not add subscriber');
+  return data;
+}
+
+export async function sendAdminNewsletter(accessToken, payload) {
+  const res = await safeFetch(apiUrl('/api/admin/newsletter/send'), {
+    method: 'POST',
+    headers: await authHeaders(accessToken),
+    body: JSON.stringify(payload),
+  });
+  const data = await parseJsonResponse(res, 'Could not send newsletter');
+  if (!res.ok) throw new Error(data.error || 'Could not send newsletter');
+  return data;
+}

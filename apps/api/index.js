@@ -11,6 +11,7 @@ import coachRouter from './routes/coach.js';
 import adminRouter from './routes/admin.js';
 import tenantRouter from './routes/tenant.js';
 import feedbackRouter from './routes/feedback.js';
+import emailRouter from './routes/email.js';
 import { rateLimit } from './middleware/rateLimit.js';
 import { ENV_EXISTS, ENV_PATH } from './loadEnv.js';
 import { geminiKeyFormat, isGeminiAvailable } from './config/gemini.js';
@@ -184,6 +185,7 @@ app.use('/api/coach', coachRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/tenant', tenantRouter);
 app.use('/api/feedback', rateLimit, feedbackRouter);
+app.use('/api/email', rateLimit, emailRouter);
 
 app.use((err, _req, res, _next) => {
   console.error(err);

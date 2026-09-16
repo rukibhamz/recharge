@@ -29,9 +29,10 @@
     "./oceanScoring": "./oceanScoring.js",
     "./oceanQuestions": "./oceanQuestions.js",
     "./oceanSelection": "./oceanSelection.js",
-    "./recoveryRoadmap": "./recoveryRoadmap.js"
+    "./recoveryRoadmap": "./recoveryRoadmap.js",
+    "./emailMarketing": "./emailMarketing.js"
   },
   "scripts": {
-    "test": "node --test scoring.test.js mbtiScoring.test.js demographics.test.js questionOptions.test.js questions.test.js burnoutCalibration.test.js llmConnectors.test.js workContextCoaching.test.js questionLifeDomains.test.js recommendations.test.js coachPersona.test.js personalitySelection.test.js resultNarratives.test.js knowledgeBank.test.js feedback.test.js psychometricEngine.test.js recoveryRoadmap.test.js"
+    "test": "node --test scoring.test.js mbtiScoring.test.js demographics.test.js questionOptions.test.js questions.test.js burnoutCalibration.test.js llmConnectors.test.js workContextCoaching.test.js questionLifeDomains.test.js recommendations.test.js coachPersona.test.js personalitySelection.test.js resultNarratives.test.js knowledgeBank.test.js feedback.test.js psychometricEngine.test.js recoveryRoadmap.test.js emailMarketing.test.js"
   }
 }

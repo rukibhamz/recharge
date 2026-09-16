@@ -10,10 +10,20 @@ import LlmMonitorPanel from '../components/admin/LlmMonitorPanel.jsx';
 import CoachSettingsPanel from '../components/admin/CoachSettingsPanel.jsx';
 import HealthDashboard from '../components/admin/HealthDashboard.jsx';
 import FeedbackInbox from '../components/admin/FeedbackInbox.jsx';
+import NewsletterPanel from '../components/admin/NewsletterPanel.jsx';
+import SmtpSettingsPanel from '../components/admin/SmtpSettingsPanel.jsx';
 import { firstName } from '@recharge/shared/name';
 
 const ADMIN_TAB_KEY = 'recharge-admin-tab';
-const VALID_TABS = new Set(['dashboard', 'organizations', 'analytics', 'settings', 'monitor', 'feedback']);
+const VALID_TABS = new Set([
+  'dashboard',
+  'organizations',
+  'analytics',
+  'settings',
+  'monitor',
+  'feedback',
+  'newsletter',
+]);
 
 /** Map legacy tab ids from bookmarks / older localStorage values. */
 const LEGACY_TAB_MAP = {
@@ -21,6 +31,7 @@ const LEGACY_TAB_MAP = {
   saas: 'organizations',
   coach: 'settings',
   connectors: 'settings',
+  email: 'settings',
 };
 
 function resolveInitialTab() {
@@ -43,13 +54,14 @@ function SettingsHub({ getAccessToken, section, setSection }) {
         <p className="hero-badge">Platform settings</p>
         <h1 className="mt-3 font-display text-headline-lg font-light text-ink">Settings</h1>
         <p className="mt-2 max-w-xl font-sans text-body-md text-ink-soft">
-          Configure Oma and connected AI providers for assessments and coach chat.
+          Configure Oma, outbound email (SMTP), and connected AI providers.
         </p>
       </header>
 
       <div className="flex flex-wrap gap-2 border-b border-linen-sunken pb-px">
         {[
           { id: 'coach', label: 'Coach' },
+          { id: 'email', label: 'Email / SMTP' },
           { id: 'connectors', label: 'AI connectors' },
         ].map((s) => (
           <button
@@ -68,6 +80,7 @@ function SettingsHub({ getAccessToken, section, setSection }) {
       </div>
 
       {section === 'coach' ? <CoachSettingsPanel getAccessToken={getAccessToken} /> : null}
+      {section === 'email' ? <SmtpSettingsPanel getAccessToken={getAccessToken} /> : null}
       {section === 'connectors' ? <ConnectorsManager getAccessToken={getAccessToken} /> : null}
     </div>
   );
@@ -216,6 +229,13 @@ export default function AdminDashboard() {
         onClick: () => setTab('feedback'),
       },
       {
+        id: 'newsletter',
+        label: 'Newsletter',
+        icon: 'chat',
+        active: tab === 'newsletter',
+        onClick: () => setTab('newsletter'),
+      },
+      {
         id: 'settings',
         label: 'Settings',
         icon: 'settings',
@@ -334,6 +354,10 @@ export default function AdminDashboard() {
           ) : null}
 
           {!error && tab === 'feedback' ? <FeedbackInbox getAccessToken={getAccessToken} /> : null}
+
+          {!error && tab === 'newsletter' ? (
+            <NewsletterPanel getAccessToken={getAccessToken} />
+          ) : null}
 
           {!error && tab === 'settings' ? (
             <SettingsHub

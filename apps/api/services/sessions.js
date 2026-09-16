@@ -338,6 +338,26 @@ export async function getSessionByShareToken(shareToken) {
   return { data, error };
 }
 
+/** Raw session row by id (service role). Used for result emails. */
+export async function getSessionById(sessionId) {
+  if (!isSupabaseConfigured()) return null;
+  if (!sessionId || !/^[0-9a-f-]{36}$/i.test(String(sessionId))) return null;
+
+  const { data, error } = await supabase
+    .from('sessions')
+    .select(
+      'id, share_token, display_name, demographics, burnout_pct, burnout_level, burnout_cls, burnout_summary, personality_type, personality_name, personality_snapshot, traits, recommendations, created_at',
+    )
+    .eq('id', sessionId)
+    .maybeSingle();
+
+  if (error) {
+    console.warn('getSessionById failed:', error.message);
+    return null;
+  }
+  return data ?? null;
+}
+
 export async function getSharedSessionResponse(shareToken) {
   const { data, error } = await getSessionByShareToken(shareToken);
   if (error) return { data: null, error };

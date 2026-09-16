@@ -23,6 +23,24 @@ import { LLM_PROVIDERS } from '@recharge/shared/llmConnectors';
 import { getCoachSettings, updateCoachSettings } from '../services/coachSettings.js';
 import { listFeedback, updateFeedback, countNewFeedback } from '../services/feedback.js';
 import { FEEDBACK_STATUSES } from '@recharge/shared/feedback';
+import {
+  validateNewsletterSendPayload,
+  validateSmtpSettingsPayload,
+  sanitizeEmailAddress,
+} from '@recharge/shared/emailMarketing';
+import {
+  getSmtpSettings,
+  updateSmtpSettings,
+  redactSmtpSettings,
+  clearSmtpSettingsCache,
+} from '../services/smtpSettings.js';
+import { testSmtpConnection } from '../services/mailer.js';
+import {
+  countNewsletterSubscribers,
+  listNewsletterSubscribers,
+  sendNewsletter,
+  upsertNewsletterSubscriber,
+} from '../services/newsletter.js';
 
 const router = Router();
 
@@ -225,6 +243,97 @@ router.patch('/feedback/:id', requireAdmin, async (req, res) => {
   } catch (err) {
     console.error('Admin feedback update failed:', err.message);
     res.status(500).json({ error: err.message || 'Could not update feedback.' });
+  }
+});
+
+router.get('/smtp-settings', requireAdmin, async (_req, res) => {
+  try {
+    const settings = await getSmtpSettings({ force: true });
+    res.json({ settings: redactSmtpSettings(settings) });
+  } catch (err) {
+    console.error('SMTP settings load failed:', err.message);
+    res.status(500).json({ error: err.message || 'Could not load SMTP settings.' });
+  }
+});
+
+router.put('/smtp-settings', requireAdmin, async (req, res) => {
+  try {
+    const body = req.body ?? {};
+    const existing = await getSmtpSettings({ force: true });
+    const check = validateSmtpSettingsPayload(
+      {
+        ...body,
+        pass: body.pass?.trim() ? body.pass : existing.pass || 'placeholder',
+      },
+      { requirePass: !existing.pass && !String(body.pass ?? '').trim() },
+    );
+    if (!check.ok) return res.status(400).json({ error: check.error });
+
+    const saved = await updateSmtpSettings({
+      ...check.value,
+      pass: body.pass?.trim() ? body.pass : undefined,
+    });
+    clearSmtpSettingsCache();
+    res.json({ settings: redactSmtpSettings(saved) });
+  } catch (err) {
+    const status = /required|invalid|must/i.test(err.message) ? 400 : 500;
+    console.error('SMTP settings update failed:', err.message);
+    res.status(status).json({ error: err.message || 'Could not save SMTP settings.' });
+  }
+});
+
+router.post('/smtp-settings/test', requireAdmin, async (req, res) => {
+  try {
+    const to = sanitizeEmailAddress(req.body?.email) || sanitizeEmailAddress(req.user?.email);
+    if (!to) return res.status(400).json({ error: 'Enter an email to receive the test message.' });
+    const result = await testSmtpConnection(to);
+    res.json(result);
+  } catch (err) {
+    console.error('SMTP test failed:', err.message);
+    res.status(503).json({ error: err.message || 'SMTP test failed.' });
+  }
+});
+
+router.get('/newsletter/subscribers', requireAdmin, async (req, res) => {
+  try {
+    const status = String(req.query.status || 'subscribed').toLowerCase();
+    const [subscribers, counts] = await Promise.all([
+      listNewsletterSubscribers({ status, limit: 500 }),
+      countNewsletterSubscribers(),
+    ]);
+    res.json({ subscribers, counts });
+  } catch (err) {
+    console.error('Newsletter list failed:', err.message);
+    res.status(500).json({ error: err.message || 'Could not load subscribers.' });
+  }
+});
+
+router.post('/newsletter/subscribers', requireAdmin, async (req, res) => {
+  try {
+    const email = sanitizeEmailAddress(req.body?.email);
+    if (!email) return res.status(400).json({ error: 'Enter a valid email address.' });
+    const row = await upsertNewsletterSubscriber({
+      email,
+      source: 'admin',
+      userId: req.user?.id ?? null,
+    });
+    res.status(201).json({ subscriber: row });
+  } catch (err) {
+    res.status(503).json({ error: err.message || 'Could not add subscriber.' });
+  }
+});
+
+router.post('/newsletter/send', requireAdmin, async (req, res) => {
+  const check = validateNewsletterSendPayload(req.body ?? {});
+  if (!check.ok) return res.status(400).json({ error: check.error });
+
+  try {
+    const result = await sendNewsletter(check.value);
+    res.json(result);
+  } catch (err) {
+    console.error('Newsletter send failed:', err.message);
+    const status = /SMTP|not configured|No subscribed/i.test(err.message) ? 503 : 500;
+    res.status(status).json({ error: err.message || 'Could not send newsletter.' });
   }
 });
 

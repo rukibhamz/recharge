@@ -10,8 +10,9 @@ const PAGES = {
     updated: '15 September 2026',
     body: [
       'Recharge (“we”, “us”) provides a burnout and personality self-reflection assessment, personalised recovery guidance, and an optional AI wellbeing companion (Oma).',
-      'What we collect. When you use Recharge you may provide: a display name; profile details (country, city, age band, work context); recovery preferences; assessment answers; and, if you sign in, an email address via magic-link authentication.',
-      'What we store. Assessment sessions, scores, recovery roadmaps, and (when you use them) coach conversations are stored so you can revisit history when signed in. Share links expose a summary result only, not your full profile.',
+      'What we collect. When you use Recharge you may provide: a display name; profile details (country, city, age band, work context); recovery preferences; assessment answers; an email address to receive your results or sign in; and, if you opt in, that email for occasional product updates.',
+      'What we store. Assessment sessions, scores, recovery roadmaps, newsletter opt-ins, outbound email logs (address, subject, status), and (when you use them) coach conversations are stored so you can revisit history when signed in. Share links expose a summary result only, not your full profile.',
+      'Marketing email. Newsletter messages are only sent if you opt in (for example when emailing your results). You can ask to unsubscribe via the feedback form or by emailing us. We do not sell your list.',
       'How we use AI. Language models help generate or polish questions, narratives, and recovery-plan wording. Prompts describe burnout patterns and personality context. We do not require your email or full identity in those prompts. AI providers process that content under their own terms.',
       'We do not sell your personal data. We use trusted processors (hosting, database, authentication, AI) solely to run the service.',
       'Your choices. From Account settings you can export a JSON copy of your data or delete your account. Deletion removes linked sessions and coach history we control. Cached or backup copies may take a short time to clear.',
