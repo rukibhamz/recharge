@@ -131,8 +131,8 @@ export default function Results({ data, error, onRetake, showSaveSection = true 
         {persisted === false ? (
           <div className="rounded-md border border-signal-red/30 bg-signal-red-tint px-4 py-3 text-center font-sans text-body-md text-ink-soft">
             Your results could not be saved to the cloud
-            {persistError ? ` (${persistError})` : ''}. Share links and account history will not work
-            until database setup is complete.
+            {persistError ? ` (${persistError})` : ''}. You can still read them on this device.
+            Share links and account history will not be available until saving works again.
           </div>
         ) : null}
 
@@ -153,8 +153,13 @@ export default function Results({ data, error, onRetake, showSaveSection = true 
                 )}
               </h1>
               <p className="mt-4 max-w-xl font-sans text-body-md text-ink-soft">
-                Your burnout pattern, personality profile, and recovery plan, framed as information,
+                Your burnout pattern, personality profile, and recovery plan — framed as information,
                 not a verdict.
+              </p>
+              <p className="mt-3 max-w-xl font-sans text-[13px] leading-relaxed text-ink-faint">
+                Recharge is for self-reflection only. It is not a medical diagnosis or a substitute
+                for professional care. If you are in crisis, contact emergency services or a
+                qualified professional.
               </p>
             </div>
             <EditorialArtwork variant="recovery" className="editorial-frame aspect-[4/3] lg:aspect-[1.1/1]" />

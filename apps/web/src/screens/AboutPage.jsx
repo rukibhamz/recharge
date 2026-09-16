@@ -29,8 +29,8 @@ export default function AboutPage() {
             <p className="hero-badge">About Recharge</p>
             <h1 className="mt-5 font-display text-headline-lg text-ink">A calmer way to understand burnout.</h1>
             <p className="mt-4 max-w-2xl font-sans text-body-md leading-relaxed text-ink-soft">
-              Recharge combines a personality profile with a burnout check-in to produce clear,
-              compassionate recommendations. It is designed for reflection, not diagnosis.
+              Recharge combines a personality profile with a burnout check-in to produce a day-by-day
+              recovery protocol. About 10 minutes. Designed for reflection, not diagnosis.
             </p>
           </div>
           <div className="editorial-frame">

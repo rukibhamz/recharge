@@ -1,16 +1,16 @@
 /** Default white-label landing copy. Businesses override per workspace. */
 
 export const DEFAULT_WORKSPACE_CONTENT = {
-  badge: 'Science-informed warmth',
-  badgeMobile: 'A science-informed sanctuary',
+  badge: 'Burnout check-in · About 10 minutes',
+  badgeMobile: 'About 10 minutes',
   headline: 'Are you truly okay?',
   headlineDesktop: 'Are you truly okay, or just managing?',
   supporting:
-    'Quiet your mind, look inward, and discover the path back to your most resilient self.',
+    'A calm burnout and personality check-in. Leave with a day-by-day recovery plan — not a pile of tips.',
   supportingDesktop:
-    'Two tailored interviews — personality first, then burnout shaped by who you are. Personalised recommendations at the end. No account required.',
-  cta: 'Begin Assessment',
-  footerTagline: 'Not medical advice. For self-reflection only.',
+    'Two short interviews: personality, then burnout shaped by who you are. Start Day 1 free. Sign in to unlock your full recovery roadmap.',
+  cta: 'Begin assessment',
+  footerTagline: 'For self-reflection only. Not medical advice or diagnosis.',
 };
 
 export function sanitizeWorkspaceContent(raw) {

@@ -9,6 +9,11 @@ const FAQS = [
       'No. Recharge is a self-reflection tool that offers informational guidance, not medical diagnosis or treatment.',
   },
   {
+    question: 'Do I need an account?',
+    answer:
+      'No. You can complete the assessment and start Day 1 without signing in. Create an account with a magic link to unlock the full multi-day recovery plan, save history, and talk to Oma.',
+  },
+  {
     question: 'How long does the assessment take?',
     answer:
       'Most people complete it in under 10 minutes across two phases: personality and burnout check-in.',
@@ -21,12 +26,12 @@ const FAQS = [
   {
     question: 'Do you store my data?',
     answer:
-      'We store assessment results securely so you can revisit your history when signed in. You can export or delete your data from account settings.',
+      'We store assessment results securely so you can revisit your history when signed in. You can export or delete your data from account settings. See the Privacy Policy for details.',
   },
   {
     question: 'Do AI providers see my identity?',
     answer:
-      'Recommendations are generated from burnout/personality context. Identity details are not required in recommendation prompts.',
+      'Recommendations are generated from burnout and personality context. Your email and full identity are not required in those prompts.',
   },
 ];
 

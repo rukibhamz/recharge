@@ -14,25 +14,46 @@ export default function Footer({ compact = false }) {
           </p>
         ) : null}
         <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2 font-sans text-sm font-medium text-on-surface-variant">
+          <a href="/about" className="transition hover:text-primary">
+            About
+          </a>
+          <a href="/faq" className="transition hover:text-primary">
+            FAQ
+          </a>
           <a href="/feedback" className="transition hover:text-primary">
-            Share feedback
+            Feedback
           </a>
           <a href="/privacy" className="transition hover:text-primary">
-            Privacy Policy
+            Privacy
           </a>
           <a href="/terms" className="transition hover:text-primary">
-            Terms of Service
+            Terms
           </a>
-          {!compact && (
+          {!compact ? (
             <a href="/security" className="transition hover:text-primary">
-              Data Security
+              Security
             </a>
-          )}
+          ) : null}
         </div>
         <p className="font-sans text-[12px] text-on-surface-variant/70">
           © {new Date().getFullYear()} {brandName}
-          {isWhiteLabel ? ' · Powered by Recharge' : '. Confidential & Proprietary'}
+          {isWhiteLabel ? ' · Powered by Recharge' : ''}
         </p>
+        {!isWhiteLabel ? (
+          <p className="font-sans text-[12px] text-on-surface-variant/70">
+            Questions?{' '}
+            <a href="/feedback" className="underline underline-offset-2 hover:text-primary">
+              Send feedback
+            </a>
+            {' · '}
+            <a
+              href="mailto:victor@thedigitalerrand.com"
+              className="underline underline-offset-2 hover:text-primary"
+            >
+              victor@thedigitalerrand.com
+            </a>
+          </p>
+        ) : null}
       </footer>
     </div>
   );

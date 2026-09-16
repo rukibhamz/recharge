@@ -52,9 +52,11 @@ The web app build runs: `node ../../node_modules/vite/bin/vite.js build` so Vite
 | `VITE_SUPABASE_URL` | Yes |
 | `VITE_SUPABASE_ANON_KEY` | Yes |
 | `VITE_API_URL` | Yes — your Render/Railway API URL |
-| `VITE_APP_URL` | Yes in production — public web origin, e.g. `https://YOUR-PROJECT.vercel.app` (no trailing slash). Used for magic-link redirects. |
+| `VITE_APP_URL` | Yes in production — public web origin, e.g. `https://YOUR-PROJECT.vercel.app` (no trailing slash). Used for magic-link redirects **and** Open Graph / LinkedIn preview URLs in `index.html`. |
 
 Do **not** put `SUPABASE_SERVICE_ROLE_KEY` or `GEMINI_API_KEY` on Vercel.
+
+After setting `VITE_APP_URL`, redeploy and verify the LinkedIn debugger (or [opengraph.xyz](https://www.opengraph.xyz/)) shows title, description, and `/images/hero.jpg`.
 
 ## Supabase Auth (magic link emails)
 

@@ -188,8 +188,8 @@ export default function CoachChatPanel({ getAccessToken }) {
             <p className="card-eyebrow">Private coach</p>
             <h3 className="font-display text-headline-md text-primary">Talk to {coachName}</h3>
             <p className="mt-1 font-sans text-body-md text-on-surface-variant">
-              Grounded conversation shaped by your saved check-ins, not therapy, just a calm ear
-              and practical tips.
+              A calm ear and practical tips shaped by your saved check-ins. {coachName} is not a
+              therapist, doctor, or crisis service.
             </p>
           </div>
           {conversation ? (

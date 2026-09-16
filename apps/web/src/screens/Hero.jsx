@@ -7,31 +7,51 @@ import { useTenant } from '../context/TenantContext.jsx';
 
 const FEATURES = [
   {
-    title: 'Tailored interviews',
-    text: 'Questions shaped around your context — not a generic form.',
+    eyebrow: 'About 10 minutes',
+    title: 'Two short interviews',
+    text: 'Personality first, then a burnout check-in shaped by how you actually operate.',
   },
   {
-    title: 'Two calm phases',
-    text: 'Personality first, then a burnout check-in calibrated to you.',
+    eyebrow: 'Your pattern',
+    title: 'A clear energy portrait',
+    text: 'See what is draining you now — framed as information, never a medical verdict.',
   },
   {
-    title: 'Recovery plan',
-    text: 'Clear next steps framed as information, never a verdict.',
+    eyebrow: 'What to do',
+    title: 'A day-by-day plan',
+    text: 'Start Day 1 immediately. Sign in to unlock the full recovery roadmap and keep it.',
   },
 ];
 
 const STEPS = [
   {
-    title: 'Share your context',
-    text: 'Name, location, age, and work — used only to personalize questions and tips.',
+    title: 'Share a little context',
+    text: 'Name, location, age band, and work setting — used only to personalise questions and tips.',
   },
   {
     title: 'Personality interview',
-    text: 'Answer tailored questions. We build a consistent profile from your responses.',
+    text: 'A focused set of questions builds a stable profile of how you think, relate, and recover.',
   },
   {
-    title: 'Burnout & recovery',
-    text: 'A second interview shaped by your personality, then a personalised recovery plan.',
+    title: 'Burnout check-in & plan',
+    text: 'Map your current load, then get a sequenced recovery protocol — not four generic tips.',
+  },
+];
+
+const LANDING_FAQS = [
+  {
+    question: 'Is this a medical diagnosis?',
+    answer:
+      'No. Recharge is a self-reflection tool. Results and recommendations are informational, not diagnosis or treatment.',
+  },
+  {
+    question: 'Do I need an account?',
+    answer:
+      'No account is required to take the assessment and see Day 1. Sign in with a magic link to unlock the full multi-day plan, save history, and talk to Oma.',
+  },
+  {
+    question: 'How long does it take?',
+    answer: 'Most people finish both interviews in under 10 minutes.',
   },
 ];
 
@@ -77,16 +97,19 @@ export default function Hero({ onStart }) {
               <span className="hidden lg:inline">{content.supportingDesktop}</span>
             </p>
 
-            <div className="mt-10 flex justify-center lg:justify-start">
-              <Button size="lg" onClick={onStart} className="w-full max-w-[220px] sm:w-auto">
+            <div className="mt-10 flex flex-col items-center gap-3 lg:items-start">
+              <Button size="lg" onClick={onStart} className="w-full max-w-[240px] sm:w-auto">
                 {content.cta}
               </Button>
+              <p className="font-mono text-[11px] uppercase tracking-[0.06em] text-ink-faint">
+                Free · About 10 minutes · No account required to start
+              </p>
             </div>
 
             <div className="mt-10 grid grid-cols-1 gap-3 sm:grid-cols-3 lg:max-w-2xl">
               {FEATURES.map((card) => (
                 <div key={card.title} className="demo-card p-4 text-left">
-                  <p className="card-eyebrow relative z-[1]">Step</p>
+                  <p className="card-eyebrow relative z-[1]">{card.eyebrow}</p>
                   <p className="relative z-[1] font-display text-[1.05rem] font-normal text-ink">
                     {card.title}
                   </p>
@@ -103,7 +126,7 @@ export default function Hero({ onStart }) {
             <div className="glass-panel absolute bottom-4 left-4 right-4 p-5 lg:bottom-6 lg:left-auto lg:right-6 lg:max-w-xs">
               <p className="card-eyebrow">Private and personal</p>
               <p className="font-display text-[1.25rem] font-normal leading-snug text-ink">
-                A calmer way to understand your capacity.
+                Understand your capacity. Leave with a plan you can actually follow.
               </p>
             </div>
           </div>
@@ -119,23 +142,24 @@ export default function Hero({ onStart }) {
               <EditorialArtwork variant="reflection" className="aspect-[4/3] lg:aspect-[5/4]" />
               <div className="glass-panel absolute bottom-5 left-5 right-5 max-w-sm p-5 lg:bottom-8 lg:left-8 lg:max-w-md">
                 <h2 className="font-display text-headline-md font-normal text-ink">
-                  Designed as a calm room
+                  Built for people who already feel tired
                 </h2>
                 <p className="mt-2 font-sans text-[14px] leading-relaxed text-ink-soft">
-                  Warm linen surfaces, unhurried motion, and plain language — built for someone who
-                  may already feel tired.
+                  Warm language, unhurried screens, and a plan that starts with one concrete day —
+                  not a pile of wellness advice.
                 </p>
               </div>
             </div>
 
             <div className="demo-card">
-              <p className="card-eyebrow relative z-[1]">Foundation</p>
+              <p className="card-eyebrow relative z-[1]">What you leave with</p>
               <h3 className="relative z-[1] font-display text-headline-md font-normal text-ink">
-                Plain, never clinical
+                Portrait, score, and protocol
               </h3>
               <p className="relative z-[1] mt-3 font-sans text-[14px] leading-relaxed text-ink-soft">
-                Results are framed as information, not verdicts — even at the most severe burnout
-                level. Green carries the brand; amber and red stay reserved for severity only.
+                Your results combine personality patterns with burnout load, then turn them into a
+                sequenced recovery roadmap. Severe ranges still get clear language — and a reminder
+                this is reflection, not diagnosis.
               </p>
             </div>
           </div>
@@ -146,7 +170,7 @@ export default function Hero({ onStart }) {
           className="mx-auto mt-16 max-w-landing px-margin-mobile pb-12 sm:px-8 lg:mt-24 lg:px-12 lg:pb-16"
         >
           <h2 className="mb-10 text-center font-display text-headline-md font-normal text-ink">
-            Your path to recovery
+            How Recharge works
           </h2>
 
           <div className="mx-auto max-w-2xl space-y-10">
@@ -171,8 +195,32 @@ export default function Hero({ onStart }) {
           </div>
         </section>
 
-        <section id="faq" className="sr-only">
-          FAQ placeholder
+        <section
+          id="faq"
+          className="mx-auto max-w-landing px-margin-mobile pb-16 sm:px-8 lg:px-12 lg:pb-20"
+        >
+          <div className="mx-auto max-w-2xl">
+            <h2 className="text-center font-display text-headline-md font-normal text-ink">
+              Common questions
+            </h2>
+            <div className="mt-8 space-y-4">
+              {LANDING_FAQS.map((item) => (
+                <article key={item.question} className="surface-card p-5 sm:p-6">
+                  <h3 className="font-display text-[1.15rem] font-normal text-ink">{item.question}</h3>
+                  <p className="mt-2 font-sans text-body-md leading-relaxed text-ink-soft">
+                    {item.answer}
+                  </p>
+                </article>
+              ))}
+            </div>
+            <p className="mt-6 text-center font-sans text-body-md text-ink-soft">
+              More detail on{' '}
+              <a href="/faq" className="font-medium text-canopy-600 underline underline-offset-2">
+                the FAQ
+              </a>
+              , including how Oma works.
+            </p>
+          </div>
         </section>
       </main>
 
