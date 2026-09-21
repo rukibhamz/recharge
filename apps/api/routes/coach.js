@@ -56,7 +56,12 @@ router.post('/conversations/:id/messages', async (req, res) => {
   }
 
   const content = req.body?.content;
-  const { data, error } = await sendCoachMessage(req.user.id, req.user.email, id, content);
+  const completedDayKeys = Object.prototype.hasOwnProperty.call(req.body ?? {}, 'completedDayKeys')
+    ? req.body.completedDayKeys
+    : null;
+  const { data, error } = await sendCoachMessage(req.user.id, req.user.email, id, content, {
+    completedDayKeys,
+  });
   if (error) {
     if (/Conversation not found/i.test(error.message)) {
       return res.status(404).json({ error: 'Conversation not found.' });

@@ -404,11 +404,16 @@ export async function startCoachConversation(accessToken, sessionId = null) {
   return data;
 }
 
-export async function sendCoachMessage(accessToken, conversationId, content) {
+export async function sendCoachMessage(
+  accessToken,
+  conversationId,
+  content,
+  { completedDayKeys = [] } = {},
+) {
   const res = await safeFetch(apiUrl(`/api/coach/conversations/${conversationId}/messages`), {
     method: 'POST',
     headers: await authHeaders(accessToken),
-    body: JSON.stringify({ content }),
+    body: JSON.stringify({ content, completedDayKeys }),
   });
   const data = await parseJsonResponse(res, 'Oma could not reply right now');
   if (!res.ok) throw new Error(data.error || 'Oma could not reply right now');

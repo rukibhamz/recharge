@@ -9,6 +9,8 @@ import {
   sendCoachMessage,
   startCoachConversation,
 } from '../../services/api.js';
+import { Funnel } from '../../lib/analytics.js';
+import { loadRoadmapProgress } from '../../lib/roadmapProgress.js';
 import Button from '../shared/Button.jsx';
 import { formatDate } from '../../lib/formatDate.js';
 import { useRefreshOnFocus } from '../../hooks/useRefreshOnFocus.js';
@@ -57,6 +59,7 @@ export default function CoachChatPanel({ getAccessToken }) {
     try {
       const token = await getAccessToken();
       const data = await startCoachConversation(token, selectedSessionId || null);
+      Funnel.coachOpened();
       setStatus((prev) => ({
         ...data,
         conversations: data.conversations ?? prev?.conversations ?? [],
@@ -118,7 +121,16 @@ export default function CoachChatPanel({ getAccessToken }) {
 
     try {
       const token = await getAccessToken();
-      const data = await sendCoachMessage(token, status.conversation.id, content);
+      const sessionId =
+        status?.conversation?.sessionId ||
+        status?.activeSessionId ||
+        selectedSessionId ||
+        null;
+      const { completedDayKeys } = loadRoadmapProgress(sessionId);
+      const data = await sendCoachMessage(token, status.conversation.id, content, {
+        completedDayKeys,
+      });
+      Funnel.coachMessageSent();
       setStatus((prev) => {
         if (!prev) return prev;
         const withoutOptimistic = (prev.messages ?? []).filter((m) => m.id !== optimisticUser.id);

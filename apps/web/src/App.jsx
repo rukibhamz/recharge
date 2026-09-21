@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { isValidRecoveryPreferences } from '@recharge/shared/recoveryPreferences';
-import { normalizePath, parsePathRoute } from './lib/navigation.js';
+import { normalizePath, parsePathRoute, pathForPhase, syncUrl } from './lib/navigation.js';
+import { Funnel } from './lib/analytics.js';
 import { getLastPersonalityType, setLastPersonalityType } from './lib/lastPersonality.js';
 import { useAssessmentStore, useAssessmentHydrated } from './store/assessment.js';
 import {
@@ -44,7 +45,11 @@ function usePathRoute() {
   useEffect(() => {
     const syncPath = () => setPath(normalizePath(window.location.pathname));
     window.addEventListener('popstate', syncPath);
-    return () => window.removeEventListener('popstate', syncPath);
+    window.addEventListener('recharge:url', syncPath);
+    return () => {
+      window.removeEventListener('popstate', syncPath);
+      window.removeEventListener('recharge:url', syncPath);
+    };
   }, []);
 
   return parsePathRoute(path);
@@ -65,10 +70,10 @@ export default function App() {
   if (route.kind === 'history-detail') return <SavedResult sessionId={route.sessionId} />;
   if (route.kind === 'share') return <SharePage shareToken={route.shareToken} />;
 
-  return <AssessmentFlow />;
+  return <AssessmentFlow route={route} />;
 }
 
-function AssessmentFlow() {
+function AssessmentFlow({ route }) {
   const hydrated = useAssessmentHydrated();
   const { getAccessToken } = useAuth();
   const {
@@ -161,6 +166,46 @@ function AssessmentFlow() {
     results,
     setPhase,
   ]);
+
+  // Keep the address bar aligned with the assessment phase (/assess/*, /results).
+  useEffect(() => {
+    if (!hydrated) return;
+    const urlPhase = phase === 'results' && !results?.burnout ? 'processing' : phase;
+    const next = pathForPhase(urlPhase);
+    if (next) syncUrl(next);
+  }, [hydrated, phase, results]);
+
+  // Browser back/forward: follow /assess/* and /results when they diverge from the store.
+  useEffect(() => {
+    if (!hydrated || route?.kind !== 'app') return;
+    const hint = route.assessPhase;
+    if (!hint) {
+      if (phase !== 'hero' && pathForPhase(phase) && pathForPhase(phase) !== '/') {
+        syncUrl(pathForPhase(phase));
+      }
+      return;
+    }
+    if (pathForPhase(phase) === pathForPhase(hint)) return;
+    if (hint === 'results') {
+      if (results?.burnout) setPhase('results');
+      else syncUrl(pathForPhase(phase) || '/');
+      return;
+    }
+    const transient = [
+      'loading-personality-test',
+      'scoring-personality',
+      'loading-burnout-test',
+      'processing',
+    ];
+    if (transient.includes(phase) && pathForPhase(phase) === pathForPhase(hint)) return;
+    setPhase(hint);
+  }, [hydrated, route?.kind, route?.assessPhase, phase, results, setPhase]);
+
+  // Funnel: results viewed
+  useEffect(() => {
+    if (!hydrated || phase !== 'results' || !results?.burnout) return;
+    Funnel.resultsViewed(results.burnout?.cls || results.burnout?.level);
+  }, [hydrated, phase, results?.burnout?.cls, results?.burnout?.level, results?.burnout]);
 
   if (!hydrated) {
     return <PageLoadingState message="Restoring your session…" artworkVariant="reflection" />;
@@ -270,6 +315,7 @@ function AssessmentFlow() {
         const token = await getAccessToken();
         const data = await completeAssessment(payload, token);
         setResults(data);
+        Funnel.assessmentCompleted(data?.burnout?.cls || data?.burnout?.level);
         const typeCode = data?.personality?.typeCode ?? payload?.personality?.typeCode;
         if (typeCode) setLastPersonalityType(typeCode);
       } catch (err) {
@@ -331,7 +377,14 @@ function AssessmentFlow() {
 
   return (
     <ScreenTransition screenKey={activePhase}>
-      {activePhase === 'hero' && <Hero onStart={() => setPhase('name')} />}
+      {activePhase === 'hero' && (
+        <Hero
+          onStart={() => {
+            Funnel.assessmentStarted();
+            setPhase('name');
+          }}
+        />
+      )}
 
       {activePhase === 'name' && (
         <NameStep
@@ -341,6 +394,7 @@ function AssessmentFlow() {
           onClose={handleClose}
           onContinue={(name) => {
             setUserName(name);
+            Funnel.phaseCompleted('name');
             setPhase('profile');
           }}
         />
@@ -354,6 +408,7 @@ function AssessmentFlow() {
           onClose={handleClose}
           onContinue={(profile) => {
             setDemographics(profile);
+            Funnel.phaseCompleted('profile');
             setPhase('loading-personality-test');
           }}
         />
@@ -386,7 +441,10 @@ function AssessmentFlow() {
           }}
           onClose={handleClose}
           onComplete={() => {
-            if (isPersonalityComplete()) setPhase('scoring-personality');
+            if (isPersonalityComplete()) {
+              Funnel.phaseCompleted('personality');
+              setPhase('scoring-personality');
+            }
           }}
         />
       )}
@@ -405,7 +463,10 @@ function AssessmentFlow() {
         <PersonalityInsight
           personality={personalityResult}
           userName={userName}
-          onContinue={() => setPhase('loading-burnout-test')}
+          onContinue={() => {
+            Funnel.phaseCompleted('personality-insight');
+            setPhase('loading-burnout-test');
+          }}
           onBack={() => setPhase('personality')}
           onClose={handleClose}
         />
@@ -439,6 +500,7 @@ function AssessmentFlow() {
           }}
           onClose={handleClose}
           onComplete={() => {
+            Funnel.phaseCompleted('burnout');
             if (!hasRecoveryPreferences) {
               setPhase('recovery-preferences');
               return;

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { emailAssessmentResults } from '../../services/api.js';
+import { Funnel } from '../../lib/analytics.js';
 import Button from '../shared/Button.jsx';
 
 /**
@@ -25,6 +26,7 @@ export default function EmailResultsSection({ sessionId, defaultEmail = '', clou
         newsletterOptIn,
       });
       setSent(true);
+      Funnel.resultsEmailed(newsletterOptIn);
     } catch (err) {
       setError(err.message);
     } finally {

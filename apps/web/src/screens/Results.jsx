@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import {
   DEFAULT_RECOVERY_TIPS,
   normalizeRecommendationsList,
@@ -28,6 +29,7 @@ import EditorialArtwork from '../components/shared/EditorialArtwork.jsx';
 import FeedbackForm from '../components/shared/FeedbackForm.jsx';
 import { ArcDivider } from '../components/shared/Arc.jsx';
 import { BURNOUT_BADGE_CLASSES } from '../lib/design.js';
+import { Funnel } from '../lib/analytics.js';
 import { useAssessmentStore } from '../store/assessment.js';
 export default function Results({ data, error, onRetake, showSaveSection = true }) {
   const mergeResults = useAssessmentStore((s) => s.mergeResults);
@@ -125,6 +127,12 @@ export default function Results({ data, error, onRetake, showSaveSection = true 
     personality.type?.name ||
     'Your profile';
   const badgeClass = BURNOUT_BADGE_CLASSES[burnout.cls] ?? BURNOUT_BADGE_CLASSES.moderate;
+
+  useEffect(() => {
+    if (roadmapIsLocked && sessionId) {
+      Funnel.signinPromptShown('roadmap_gate');
+    }
+  }, [roadmapIsLocked, sessionId]);
 
   return (
     <div className="flex min-h-screen flex-col">

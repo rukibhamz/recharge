@@ -8,6 +8,7 @@ import {
   omaTurnGuidance,
 } from '@recharge/shared/coachPersona';
 import { flattenRoadmapSteps } from '@recharge/shared/recoveryRoadmap';
+import { formatTodayPlanForCoach } from '@recharge/shared/roadmapProgress';
 import { normalizeRecommendationsList } from '@recharge/shared/recommendations';
 import { getSessionForUser, getSessionsForUser } from './sessions.js';
 import { supabase, isSupabaseConfigured } from '../lib/supabase.js';
@@ -49,6 +50,16 @@ function formatRecommendations(session) {
     .join('\n');
 }
 
+function formatPlanForOma(session, completedDayKeys = null) {
+  const roadmap = session?.recoveryRoadmap;
+  if (roadmap?.phases?.length) {
+    const startedAt = session?.createdAt || session?.created_at || null;
+    const todayBlock = formatTodayPlanForCoach(roadmap, completedDayKeys, startedAt);
+    if (todayBlock) return todayBlock;
+  }
+  return `Broader recovery tips (use only if they ask beyond today):\n${formatRecommendations(session)}`;
+}
+
 function formatTraits(traits) {
   if (!Array.isArray(traits) || !traits.length) return '';
   return traits
@@ -63,7 +74,12 @@ function formatTraits(traits) {
 /** Build Oma's system prompt from a saved assessment. */
 export function buildOmaSystemPrompt(
   session,
-  { userTurnCount = 0, adviceAcknowledged = false, coachName = COACH_NAME } = {},
+  {
+    userTurnCount = 0,
+    adviceAcknowledged = false,
+    coachName = COACH_NAME,
+    completedDayKeys = null,
+  } = {},
 ) {
   const name = firstName(session?.displayName) || 'there';
   const demographics = session?.demographics ?? {};
@@ -128,7 +144,9 @@ export function buildOmaSystemPrompt(
     lines.push('', session.knowledgeContext);
   }
 
-  lines.push(`- Their recovery roadmap (only offer when they want advice):\n${formatRecommendations(session)}`);
+  lines.push(
+    `- Their recovery plan (prefer TODAY; only expand if they ask):\n${formatPlanForOma(session, completedDayKeys)}`,
+  );
   lines.push('');
   if (coachName && coachName !== COACH_NAME) {
     lines.push(`For this conversation, your name is ${coachName}. Introduce yourself with this name.`);

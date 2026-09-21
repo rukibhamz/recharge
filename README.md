@@ -17,18 +17,20 @@ Burnout & personality assessment PWA with AI-powered, day-by-day recovery plans 
 
 ### Results & recovery
 - **Energy portrait** — score ring, structured burnout narrative, trait bars, moodboard
-- **Day-by-day recovery roadmap** — horizon by severity (3 / 7 / 14 / 21 days); each day is a checklist (what / how / why / script / done-when)
+- **Day-by-day recovery roadmap** — horizon by severity (3 / 7 / 14 / 21 days); Today / Upcoming / Done with local check-offs
 - **Guest teaser** — Day 1 free; sign in to unlock the full plan and save history
 - **Email results** — send a summary to your inbox with optional newsletter opt-in
 - **Share card + public link** — downloadable image and time-limited share URL
+- **Stable URLs** — `/assess/*` during the interview and `/results` when finished (refresh-safe)
 
 ### Account & coach
 - **Magic-link auth** — no password; save results and revisit history
-- **Oma** — private AI wellbeing companion grounded in your check-ins (not therapy or crisis care)
+- **Oma** — private AI wellbeing companion grounded in your check-ins and **today’s** recovery checklist (not therapy or crisis care)
 - **Coach chat archive** — idle threads archive; earlier chats stay available
 
 ### Admin & platform
 - **Admin dashboard** — health, analytics, AI monitoring, feedback inbox
+- **Funnel analytics** — client events (optional PostHog via `VITE_POSTHOG_KEY`)
 - **Newsletter** — collect opt-ins from results email; compose and send from admin
 - **SMTP settings** — configure outbound mail in Admin → Settings → Email (env fallback supported)
 - **LLM connectors** — Gemini and other providers; usage monitoring

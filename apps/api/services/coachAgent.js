@@ -29,7 +29,12 @@ export async function getOmaOpening() {
   }
 }
 
-export async function generateOmaReply({ session, history, userMessage }) {
+export async function generateOmaReply({
+  session,
+  history,
+  userMessage,
+  completedDayKeys = null,
+}) {
   const trimmed = String(userMessage ?? '').trim();
   if (!trimmed) {
     return { reply: 'Take your time. What would you like to talk about?', source: 'validation' };
@@ -73,6 +78,7 @@ export async function generateOmaReply({ session, history, userMessage }) {
       userTurnCount,
       adviceAcknowledged,
       coachName,
+      completedDayKeys,
     },
   );
   const messages = [

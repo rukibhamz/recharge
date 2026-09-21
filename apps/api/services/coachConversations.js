@@ -237,7 +237,13 @@ export async function getCoachConversationMessages(userId, conversationId) {
   };
 }
 
-export async function sendCoachMessage(userId, email, conversationId, content) {
+export async function sendCoachMessage(
+  userId,
+  email,
+  conversationId,
+  content,
+  { completedDayKeys = null } = {},
+) {
   if (!isSupabaseConfigured()) {
     return { data: null, error: new Error('Database not configured') };
   }
@@ -246,6 +252,10 @@ export async function sendCoachMessage(userId, email, conversationId, content) {
   if (!trimmed || trimmed.length > 2000) {
     return { data: null, error: new Error('Message must be between 1 and 2000 characters.') };
   }
+
+  const safeCompletedKeys = Array.isArray(completedDayKeys)
+    ? completedDayKeys.map(String).slice(0, 31)
+    : null;
 
   await ensureProfile(userId, email);
 
@@ -283,6 +293,7 @@ export async function sendCoachMessage(userId, email, conversationId, content) {
     session,
     history: historyRows ?? [],
     userMessage: trimmed,
+    completedDayKeys: safeCompletedKeys,
   });
 
   ingestCoachKnowledge({
