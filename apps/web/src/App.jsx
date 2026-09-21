@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { isValidRecoveryPreferences } from '@recharge/shared/recoveryPreferences';
 import { normalizePath, parsePathRoute } from './lib/navigation.js';
 import { getLastPersonalityType, setLastPersonalityType } from './lib/lastPersonality.js';
-import { useAssessmentStore } from './store/assessment.js';
+import { useAssessmentStore, useAssessmentHydrated } from './store/assessment.js';
 import {
   completeAssessment,
   fetchBurnoutTest,
@@ -12,6 +12,7 @@ import {
 import { useAuth } from './context/AuthContext.jsx';
 import { runOnce, clearFetchGuards } from './lib/fetchGuards.js';
 import ScreenTransition from './components/shared/ScreenTransition.jsx';
+import PageLoadingState from './components/shared/PageLoadingState.jsx';
 import Hero from './screens/Hero.jsx';
 import NameStep from './screens/NameStep.jsx';
 import ProfileStep from './screens/ProfileStep.jsx';
@@ -68,6 +69,7 @@ export default function App() {
 }
 
 function AssessmentFlow() {
+  const hydrated = useAssessmentHydrated();
   const { getAccessToken } = useAuth();
   const {
     phase,
@@ -116,6 +118,7 @@ function AssessmentFlow() {
   // Abandoned in-progress tests expire after 12 hours (also when the tab is shown again).
   // Completed results stay on this page until Retake or TTL.
   useEffect(() => {
+    if (!hydrated) return undefined;
     const dropStale = () => {
       const state = useAssessmentStore.getState();
       if (state.expireIfStale()) {
@@ -129,10 +132,11 @@ function AssessmentFlow() {
       window.removeEventListener('focus', dropStale);
       document.removeEventListener('visibilitychange', dropStale);
     };
-  }, []);
+  }, [hydrated]);
 
   // Recover from stale persisted state that would otherwise render a blank screen
   useEffect(() => {
+    if (!hydrated) return;
     if (phase === 'personality' && personalityQuestions.length < 10) {
       setPhase('loading-personality-test');
     } else if (phase === 'burnout' && burnoutQuestions.length < 10) {
@@ -141,8 +145,12 @@ function AssessmentFlow() {
       setPhase(personalityQuestions.length >= 10 ? 'personality' : 'loading-personality-test');
     } else if (phase === 'processing' && burnoutDone && !hasRecoveryPreferences) {
       setPhase('recovery-preferences');
+    } else if (phase === 'results' && !results?.burnout) {
+      // Results phase without payload — resume completion rather than bouncing to hero.
+      setPhase(burnoutDone ? 'processing' : 'hero');
     }
   }, [
+    hydrated,
     phase,
     personalityQuestions.length,
     burnoutQuestions.length,
@@ -150,8 +158,13 @@ function AssessmentFlow() {
     personalityResult,
     burnoutDone,
     hasRecoveryPreferences,
+    results,
     setPhase,
   ]);
+
+  if (!hydrated) {
+    return <PageLoadingState message="Restoring your session…" artworkVariant="reflection" />;
+  }
 
   const fail = useCallback(
     (message, failedPhase) => {
@@ -298,7 +311,12 @@ function AssessmentFlow() {
     setPhase(retryPhase);
   };
 
-  const activePhase = phase === 'error' ? 'error' : phase === 'results' && !results ? 'hero' : phase;
+  const activePhase =
+    phase === 'error'
+      ? 'error'
+      : phase === 'results' && !results
+        ? 'processing'
+        : phase;
 
   if (activePhase === 'error') {
     return (

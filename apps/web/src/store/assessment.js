@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
+import { useEffect, useState } from 'react';
 import { isValidDemographics } from '@recharge/shared/demographics';
 import { isValidRecoveryPreferences } from '@recharge/shared/recoveryPreferences';
 
@@ -60,9 +61,38 @@ function expiringLocalStorage() {
       try {
         const parsed = JSON.parse(value);
         if (parsed?.state) parsed.state.updatedAt = Date.now();
-        window.localStorage.setItem(name, JSON.stringify(parsed));
+        const payload = JSON.stringify(parsed);
+        try {
+          window.localStorage.setItem(name, payload);
+        } catch (quotaErr) {
+          // Full results + roadmap can exceed quota — drop bulky roadmap copy and retry.
+          if (parsed?.state?.results?.recoveryRoadmap) {
+            parsed.state.results = {
+              ...parsed.state.results,
+              recoveryRoadmap: {
+                ...parsed.state.results.recoveryRoadmap,
+                phases: (parsed.state.results.recoveryRoadmap.phases ?? []).map((p) => ({
+                  ...p,
+                  steps: (p.steps ?? []).map((s) => ({
+                    icon: s.icon,
+                    when: s.when,
+                    title: s.title,
+                    tip: s.tip,
+                  })),
+                })),
+              },
+            };
+            window.localStorage.setItem(name, JSON.stringify(parsed));
+            return;
+          }
+          throw quotaErr;
+        }
       } catch {
-        window.localStorage.setItem(name, value);
+        try {
+          window.localStorage.setItem(name, value);
+        } catch (err) {
+          console.warn('Could not persist assessment session:', err?.message || err);
+        }
       }
     },
     removeItem(name) {
@@ -147,8 +177,10 @@ export const useAssessmentStore = create(
       setError: (error, errorPhase = null) =>
         set({ error, errorPhase, phase: 'error' }),
       clearError: () => set({ error: null, errorPhase: null }),
-      reset: () => set({ ...initialState, updatedAt: 0 }),
+      reset: () => set({ ...initialState, updatedAt: Date.now() }),
       expireIfStale: () => {
+        // Don't wipe state before localStorage rehydration finishes.
+        if (!useAssessmentStore.persist.hasHydrated()) return false;
         const { updatedAt, phase, results } = get();
         if (phase === 'hero') return false;
         if (phase === 'results' || results?.burnout) {
@@ -215,7 +247,7 @@ export const useAssessmentStore = create(
       merge: (persisted, current) => {
         try {
         if (!persisted || isExpired(persisted.updatedAt)) {
-          return { ...current, ...initialState };
+          return { ...current, ...initialState, updatedAt: Date.now() };
         }
         const merged = {
           ...current,
@@ -262,6 +294,10 @@ export const useAssessmentStore = create(
           'personality-insight',
           'burnout',
           'recovery-preferences',
+          'processing',
+          'loading-personality-test',
+          'loading-burnout-test',
+          'scoring-personality',
         ]);
         if (keepPhases.has(persisted.phase)) {
           merged.phase = persisted.phase;
@@ -298,9 +334,23 @@ export const useAssessmentStore = create(
         return merged;
         } catch (err) {
           console.warn('Could not restore assessment session:', err);
-          return { ...current, ...initialState };
+          return { ...current, ...initialState, updatedAt: Date.now() };
         }
       },
     },
   ),
 );
+
+/** True after localStorage rehydration finished (safe to trust phase/results). */
+export function useAssessmentHydrated() {
+  const [hydrated, setHydrated] = useState(() =>
+    typeof window === 'undefined' ? false : useAssessmentStore.persist.hasHydrated(),
+  );
+
+  useEffect(() => {
+    setHydrated(useAssessmentStore.persist.hasHydrated());
+    return useAssessmentStore.persist.onFinishHydration(() => setHydrated(true));
+  }, []);
+
+  return hydrated;
+}

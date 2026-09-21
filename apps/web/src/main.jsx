@@ -7,7 +7,7 @@ import { TenantProvider } from './context/TenantContext.jsx';
 import ErrorBoundary from './components/shared/ErrorBoundary.jsx';
 import './index.css';
 
-const ASSESSMENT_STORAGE_KEY = 'recharge-assessment-v19';
+const ASSESSMENT_STORAGE_KEY = 'recharge-assessment-v20';
 
 function persistedAssessmentPhase() {
   try {
