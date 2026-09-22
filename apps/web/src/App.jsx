@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { isValidRecoveryPreferences } from '@recharge/shared/recoveryPreferences';
-import { normalizePath, parsePathRoute, pathForPhase, syncUrl } from './lib/navigation.js';
+import { normalizePath, parsePathRoute, pathForPhase, phaseFromAssessPath, syncUrl } from './lib/navigation.js';
 import { Funnel } from './lib/analytics.js';
 import { getLastPersonalityType, setLastPersonalityType } from './lib/lastPersonality.js';
 import { useAssessmentStore, useAssessmentHydrated } from './store/assessment.js';
@@ -70,10 +70,10 @@ export default function App() {
   if (route.kind === 'history-detail') return <SavedResult sessionId={route.sessionId} />;
   if (route.kind === 'share') return <SharePage shareToken={route.shareToken} />;
 
-  return <AssessmentFlow route={route} />;
+  return <AssessmentFlow />;
 }
 
-function AssessmentFlow({ route }) {
+function AssessmentFlow() {
   const hydrated = useAssessmentHydrated();
   const { getAccessToken } = useAuth();
   const {
@@ -168,6 +168,7 @@ function AssessmentFlow({ route }) {
   ]);
 
   // Keep the address bar aligned with the assessment phase (/assess/*, /results).
+  // One-way only — never let URL updates fight the store (that trapped users on /assess/name).
   useEffect(() => {
     if (!hydrated) return;
     const urlPhase = phase === 'results' && !results?.burnout ? 'processing' : phase;
@@ -175,31 +176,54 @@ function AssessmentFlow({ route }) {
     if (next) syncUrl(next);
   }, [hydrated, phase, results]);
 
-  // Browser back/forward: follow /assess/* and /results when they diverge from the store.
+  // Browser back/forward only — apply the location to the store.
   useEffect(() => {
-    if (!hydrated || route?.kind !== 'app') return;
-    const hint = route.assessPhase;
-    if (!hint) {
-      if (phase !== 'hero' && pathForPhase(phase) && pathForPhase(phase) !== '/') {
-        syncUrl(pathForPhase(phase));
+    if (!hydrated) return undefined;
+
+    const applyLocation = () => {
+      const path = normalizePath(window.location.pathname);
+      const hint = phaseFromAssessPath(path);
+      const state = useAssessmentStore.getState();
+      const current = state.phase;
+
+      if (!hint) {
+        if (path === '/' && current !== 'hero') state.setPhase('hero');
+        return;
       }
-      return;
+
+      if (pathForPhase(current) === pathForPhase(hint)) return;
+
+      if (hint === 'results') {
+        if (state.results?.burnout) state.setPhase('results');
+        else syncUrl(pathForPhase(current) || '/');
+        return;
+      }
+
+      const transient = [
+        'loading-personality-test',
+        'scoring-personality',
+        'loading-burnout-test',
+        'processing',
+      ];
+      if (transient.includes(current) && pathForPhase(current) === pathForPhase(hint)) return;
+
+      state.setPhase(hint);
+    };
+
+    window.addEventListener('popstate', applyLocation);
+    return () => window.removeEventListener('popstate', applyLocation);
+  }, [hydrated]);
+
+  // Deep-link bootstrap once after hydrate (e.g. refresh on /results).
+  useEffect(() => {
+    if (!hydrated) return;
+    const hint = phaseFromAssessPath(window.location.pathname);
+    if (hint === 'results' && results?.burnout && phase !== 'results') {
+      setPhase('results');
     }
-    if (pathForPhase(phase) === pathForPhase(hint)) return;
-    if (hint === 'results') {
-      if (results?.burnout) setPhase('results');
-      else syncUrl(pathForPhase(phase) || '/');
-      return;
-    }
-    const transient = [
-      'loading-personality-test',
-      'scoring-personality',
-      'loading-burnout-test',
-      'processing',
-    ];
-    if (transient.includes(phase) && pathForPhase(phase) === pathForPhase(hint)) return;
-    setPhase(hint);
-  }, [hydrated, route?.kind, route?.assessPhase, phase, results, setPhase]);
+    // Intentionally run once after hydrate with initial snapshot.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated]);
 
   // Funnel: results viewed
   useEffect(() => {
